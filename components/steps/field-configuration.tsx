@@ -75,7 +75,7 @@ export default function FieldConfiguration({
         ctx.textAlign = field.alignment
 
         const x =
-          field.alignment === "center" ? field.x : field.alignment === "right" ? field.x + field.maxWidth : field.x
+          field.alignment === "center" ? field.x : field.alignment === "right" ? field.x + (field.maxWidth || 0) : field.x
         ctx.fillText(demoText, x, field.y, field.maxWidth)
 
         // Draw field marker

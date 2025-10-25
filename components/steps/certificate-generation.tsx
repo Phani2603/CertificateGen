@@ -42,6 +42,7 @@ export default function CertificateGeneration({
   const [emailErrors, setEmailErrors] = useState<Array<{ email: string; error: string }>>([])
   const [isSendingMail, setIsSendingMail] = useState(false)
   const [emailProvider, setEmailProvider] = useState<"resend" | "gmail">("resend")
+  const [sendingMode, setSendingMode] = useState<"auto" | "sequential" | "pooled">("auto")
   const fileInputRef = useRef<HTMLInputElement>(null)
   const previewCanvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -136,7 +137,7 @@ export default function CertificateGeneration({
         ctx.textAlign = field.alignment
 
         const x =
-          field.alignment === "center" ? field.x : field.alignment === "right" ? field.x + field.maxWidth : field.x
+          field.alignment === "center" ? field.x : field.alignment === "right" ? field.x + (field.maxWidth || 0) : field.x
         ctx.fillText(text, x, field.y, field.maxWidth)
       })
     }
@@ -181,7 +182,11 @@ export default function CertificateGeneration({
       const response = await fetch("/api/send-certificates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipients: recipientsWithBase64, provider: emailProvider }),
+        body: JSON.stringify({ 
+          recipients: recipientsWithBase64, 
+          provider: emailProvider,
+          sendingMode: sendingMode === "auto" ? undefined : sendingMode
+        }),
       })
 
       const result = await response.json()
@@ -331,7 +336,7 @@ export default function CertificateGeneration({
           ctx.textAlign = field.alignment
 
           const x =
-            field.alignment === "center" ? field.x : field.alignment === "right" ? field.x + field.maxWidth : field.x
+            field.alignment === "center" ? field.x : field.alignment === "right" ? field.x + (field.maxWidth || 0) : field.x
           ctx.fillText(text, x, field.y, field.maxWidth)
         })
 
@@ -485,6 +490,28 @@ export default function CertificateGeneration({
                         : "Configure GMAIL_USER and GMAIL_APP_PASSWORD in .env.local"}
                     </p>
                   </div>
+
+                  {emailProvider === "gmail" && (
+                    <div className="pt-4 border-t border-[#21808D]/20">
+                      <label className="text-sm font-medium text-gray-700 mb-2 block">Sending Mode</label>
+                      <select
+                        value={sendingMode}
+                        onChange={(e) => setSendingMode(e.target.value as "auto" | "sequential" | "pooled")}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                      >
+                        <option value="auto">Auto ({generatedCertificates.length >= 50 ? "Pooled" : "Sequential"})</option>
+                        <option value="sequential">Sequential (Safer, Slower)</option>
+                        <option value="pooled">Pooled (Faster, For Bulk)</option>
+                      </select>
+                      <p className="text-xs text-gray-500 mt-2">
+                        {sendingMode === "sequential" 
+                          ? "Sends emails one by one with 500ms delay (recommended for <50 recipients)"
+                          : sendingMode === "pooled"
+                          ? "Uses connection pooling to send emails in parallel (recommended for 50+ recipients)"
+                          : `Auto-selects mode based on recipient count (currently ${generatedCertificates.length} recipients)`}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </Card>
 
