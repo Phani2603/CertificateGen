@@ -1,10 +1,11 @@
-import { sendBulkCertificates } from "@/lib/email-service"
+import { sendBulkCertificates, type EmailProvider } from "@/lib/email-service"
 
 export async function POST(request: Request) {
   try {
-    const { recipients } = await request.json()
+    const { recipients, provider } = await request.json()
 
     console.log("[API] Received request to send emails to", recipients?.length, "recipients")
+    console.log("[API] Email provider:", provider || "resend")
 
     if (!recipients || recipients.length === 0) {
       return Response.json({ success: false, error: "No recipients provided" }, { status: 400 })
@@ -20,7 +21,7 @@ export async function POST(request: Request) {
 
     console.log("[API] Processing", processedRecipients.length, "recipients")
 
-    const results = await sendBulkCertificates(processedRecipients)
+    const results = await sendBulkCertificates(processedRecipients, provider as EmailProvider)
 
     const successCount = results.filter((r) => r.success).length
     const errors = results.filter((r) => !r.success).map((r) => ({ email: r.email, error: r.error }))
@@ -34,6 +35,7 @@ export async function POST(request: Request) {
       success: true,
       sentCount: successCount,
       errors,
+      provider: provider || "resend",
     })
   } catch (error) {
     console.error("[API] Error:", error)

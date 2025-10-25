@@ -5,20 +5,9 @@ import { Card } from "@/components/ui/card"
 import TemplateUpload from "@/components/steps/template-upload"
 import FieldConfiguration from "@/components/steps/field-configuration"
 import CertificateGeneration from "@/components/steps/certificate-generation"
+import type { CertificateField } from "@/types/certificate"
 
 type Step = "upload" | "configure" | "generate"
-
-interface CertificateField {
-  id: string
-  name: string
-  x: number
-  y: number
-  fontSize: number
-  fontFamily: string
-  color: string
-  alignment: "left" | "center" | "right"
-  maxWidth: number
-}
 
 interface AppState {
   templateImage: string | null

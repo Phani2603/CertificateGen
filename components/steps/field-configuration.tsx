@@ -7,19 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Trash2, Plus } from "lucide-react"
 import { CERTIFICATE_FONTS, FONT_WEIGHTS } from "@/lib/fonts"
-
-interface CertificateField {
-  id: string
-  name: string
-  x: number
-  y: number
-  fontSize: number
-  fontFamily: string
-  fontWeight: number
-  color: string
-  alignment: "left" | "center" | "right"
-  maxWidth: number
-}
+import type { CertificateField } from "@/types/certificate"
 
 interface FieldConfigurationProps {
   templateImage: string

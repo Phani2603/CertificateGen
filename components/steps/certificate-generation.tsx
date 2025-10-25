@@ -8,19 +8,7 @@ import { Card } from "@/components/ui/card"
 import { Upload, Download, Loader2, CheckCircle, AlertCircle, Mail } from "lucide-react"
 import JSZip from "jszip"
 import FileSaver from "file-saver"
-
-interface CertificateField {
-  id: string
-  name: string
-  x: number
-  y: number
-  fontSize: number
-  fontFamily: string
-  fontWeight: number
-  color: string
-  alignment: "left" | "center" | "right"
-  maxWidth: number
-}
+import type { CertificateField } from "@/types/certificate"
 
 interface CertificateGenerationProps {
   templateImage: string
@@ -53,6 +41,7 @@ export default function CertificateGeneration({
   const [emailsSent, setEmailsSent] = useState(0)
   const [emailErrors, setEmailErrors] = useState<Array<{ email: string; error: string }>>([])
   const [isSendingMail, setIsSendingMail] = useState(false)
+  const [emailProvider, setEmailProvider] = useState<"resend" | "gmail">("resend")
   const fileInputRef = useRef<HTMLInputElement>(null)
   const previewCanvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -192,7 +181,7 @@ export default function CertificateGeneration({
       const response = await fetch("/api/send-certificates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipients: recipientsWithBase64 }),
+        body: JSON.stringify({ recipients: recipientsWithBase64, provider: emailProvider }),
       })
 
       const result = await response.json()
@@ -257,18 +246,31 @@ export default function CertificateGeneration({
         const filename = `certificate_${String(i + 1).padStart(3, "0")}.png`
         zip.file(filename, blob)
 
-        // Store certificate for potential email sending (if email exists in CSV)
-        if (row.email) {
-          const firstName = row.firstname || ""
-          const lastName = row.lastname || ""
-          const recipientName = `${firstName} ${lastName}`.trim()
+        // Store certificate for potential email sending (check for email field - case insensitive)
+        const emailField = Object.keys(row).find(key => key.toLowerCase() === 'email')
+        const emailAddress = emailField ? row[emailField] : null
+        
+        console.log(`[Row ${i}] Email field:`, emailAddress, "| All fields:", Object.keys(row))
+        
+        if (emailAddress && emailAddress.trim()) {
+          // Try to get first and last name (case insensitive)
+          const firstNameField = Object.keys(row).find(key => key.toLowerCase() === 'firstname')
+          const lastNameField = Object.keys(row).find(key => key.toLowerCase() === 'lastname')
+          
+          const firstName = firstNameField ? row[firstNameField] : ""
+          const lastName = lastNameField ? row[lastNameField] : ""
+          const recipientName = `${firstName} ${lastName}`.trim() || "Recipient"
 
           emailRecipients.push({
-            email: row.email,
+            email: emailAddress.trim(),
             name: recipientName,
             certificateBlob: blob,
             fileName: filename,
           })
+          
+          console.log(`[Row ${i}] Added to email list:`, emailAddress, recipientName)
+        } else {
+          console.warn(`[Row ${i}] No email found in row, skipping email for this certificate`)
         }
 
         setGeneratedCount(i + 1)
@@ -276,6 +278,9 @@ export default function CertificateGeneration({
 
       // Store generated certificates for later email sending
       setGeneratedCertificates(emailRecipients)
+      
+      console.log("[Certificate Generation] Generated certificates for email:", emailRecipients.length)
+      console.log("[Certificate Generation] Email recipients:", emailRecipients.map(r => r.email))
 
       const zipBlob = await zip.generateAsync({ type: "blob" })
       const timestamp = new Date().toISOString().split("T")[0]
@@ -350,8 +355,14 @@ export default function CertificateGeneration({
               <Upload className="w-12 h-12 text-[#21808D] mx-auto mb-4" />
               <h3 className="font-semibold text-[#1a1a1a] mb-2">Upload CSV File</h3>
               <p className="text-gray-600 text-sm mb-4">
-                CSV should have columns for your fields (FirstName, LastName, Date, Course, etc.)
+                CSV should have: <strong>Email, FirstName, LastName</strong> + your certificate fields
               </p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 text-left text-xs">
+                <p className="font-semibold text-blue-900 mb-1">Required CSV Format:</p>
+                <code className="text-blue-700 block">Email,ID,FirstName,LastName</code>
+                <code className="text-blue-700 block">student@klh.edu.in,123,John,Doe</code>
+                <p className="text-blue-600 mt-2">💡 Email column is required for sending certificates</p>
+              </div>
               <input ref={fileInputRef} type="file" accept=".csv,.txt" onChange={handleCsvUpload} className="hidden" />
               <Button
                 onClick={() => fileInputRef.current?.click()}
@@ -456,6 +467,23 @@ export default function CertificateGeneration({
                       <option value="standard">Standard (72 DPI)</option>
                       <option value="high">High (300 DPI)</option>
                     </select>
+                  </div>
+
+                  <div className="pt-4 border-t border-[#21808D]/20">
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Email Provider</label>
+                    <select
+                      value={emailProvider}
+                      onChange={(e) => setEmailProvider(e.target.value as "resend" | "gmail")}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    >
+                      <option value="resend">Resend (Requires Domain)</option>
+                      <option value="gmail">Gmail SMTP (Personal Email)</option>
+                    </select>
+                    <p className="text-xs text-gray-500 mt-2">
+                      {emailProvider === "resend" 
+                        ? "Use onboarding@resend.dev for testing (limited to verified email)"
+                        : "Configure GMAIL_USER and GMAIL_APP_PASSWORD in .env.local"}
+                    </p>
                   </div>
                 </div>
               </Card>
@@ -568,6 +596,12 @@ export default function CertificateGeneration({
               <div>
                 <p className="text-gray-600">Quality</p>
                 <p className="text-lg font-semibold text-[#1a1a1a]">{quality === "high" ? "300 DPI" : "72 DPI"}</p>
+              </div>
+              <div className="pt-2 border-t border-[#21808D]/20">
+                <p className="text-gray-600 text-xs">Email Provider</p>
+                <p className="text-sm font-semibold text-[#1a1a1a]">
+                  {emailProvider === "resend" ? "Resend" : "Gmail SMTP"}
+                </p>
               </div>
               {generatedCertificates.length > 0 && (
                 <div className="pt-2 border-t border-[#21808D]/20">
