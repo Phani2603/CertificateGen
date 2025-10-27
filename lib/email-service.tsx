@@ -1,56 +1,106 @@
 import { Resend } from "resend"
 import nodemailer from "nodemailer"
+import { decryptCredentials } from "@/utils/secure-storage"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-// Pooled Gmail transporter for bulk sending (reuses connections)
-let pooledGmailTransporter: nodemailer.Transporter | null = null
+// Pooled email transporter for bulk sending (reuses connections)
+let pooledEmailTransporter: nodemailer.Transporter | null = null
 
-const createPooledGmailTransporter = () => {
-  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
-    throw new Error("Gmail credentials not configured. Please set GMAIL_USER and GMAIL_APP_PASSWORD in .env.local")
+const createPooledEmailTransporter = async (credentials: { email: string; appPassword: string }) => {
+  console.log('[Email Service] Creating pooled transporter with provided credentials')
+  
+  if (!credentials) {
+    console.error('[Email Service] No credentials provided')
+    throw new Error("Email credentials not found. Please authenticate first.")
   }
 
-  if (!pooledGmailTransporter) {
-    pooledGmailTransporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false,
+  if (!pooledEmailTransporter) {
+    // Determine SMTP settings based on email domain
+    const isGmail = credentials.email.endsWith('@gmail.com')
+    const isEducational = credentials.email.includes('.edu.in')
+    
+    let smtpConfig
+    
+    if (isGmail) {
+      smtpConfig = {
+        host: "smtp.gmail.com",
+        port: 587,
+        secure: false,
+      }
+    } else if (isEducational) {
+      // For .edu.in emails, many use Gmail for Education
+      smtpConfig = {
+        host: "smtp.gmail.com",
+        port: 587,
+        secure: false,
+      }
+    } else {
+      throw new Error("Unsupported email domain")
+    }
+
+    pooledEmailTransporter = nodemailer.createTransport({
+      ...smtpConfig,
       pool: true, // Enable connection pooling
       maxConnections: 5, // Max parallel connections (Gmail recommended: 3-5)
       maxMessages: 100, // Messages per connection before reconnecting
       rateDelta: 1000, // Rate limiting: time window in ms
       rateLimit: 5, // Max emails per rateDelta
       auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD,
+        user: credentials.email,
+        pass: credentials.appPassword,
       },
     })
 
-    console.log("[Email Service] Pooled Gmail transporter created (max 5 connections, 100 msgs each)")
+    console.log("[Email Service] Pooled email transporter created (max 5 connections, 100 msgs each)")
 
     // Handle idle event for logging
-    pooledGmailTransporter.on("idle", () => {
-      if (pooledGmailTransporter?.isIdle()) {
+    pooledEmailTransporter.on("idle", () => {
+      if (pooledEmailTransporter?.isIdle()) {
         console.log("[Email Service] Transporter is idle and ready for more emails")
       }
     })
   }
 
-  return pooledGmailTransporter
+  return pooledEmailTransporter
 }
 
-// Create Gmail transporter (single connection - for small batches)
-const createGmailTransporter = () => {
-  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
-    throw new Error("Gmail credentials not configured. Please set GMAIL_USER and GMAIL_APP_PASSWORD in .env.local")
+// Create email transporter (single connection - for small batches)
+const createEmailTransporter = async (credentials: { email: string; appPassword: string }) => {
+  console.log('[Email Service] (Single) Creating transporter with provided credentials')
+  
+  if (!credentials) {
+    console.error('[Email Service] (Single) No credentials provided')
+    throw new Error("Email credentials not found. Please authenticate first.")
+  }
+
+  // Determine SMTP settings based on email domain
+  const isGmail = credentials.email.endsWith('@gmail.com')
+  const isEducational = credentials.email.includes('.edu.in')
+  
+  let smtpConfig
+  
+  if (isGmail) {
+    smtpConfig = {
+      service: "gmail",
+    }
+  } else if (isEducational) {
+    // For .edu.in emails, we'll try the same logic as validation
+    // Most educational institutions use Gmail for Education
+    smtpConfig = {
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+    }
+  } else {
+    throw new Error("Unsupported email domain")
   }
   
   return nodemailer.createTransport({
-    service: "gmail",
+    ...smtpConfig,
     auth: {
-      user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_APP_PASSWORD,
+      user: credentials.email,
+      pass: credentials.appPassword,
     },
   })
 }
@@ -61,10 +111,10 @@ export type SendingMode = "sequential" | "pooled"
 // Graceful shutdown handler
 if (typeof process !== "undefined") {
   const shutdownHandler = async () => {
-    if (pooledGmailTransporter) {
+    if (pooledEmailTransporter) {
       console.log("[Email Service] Closing pooled transporter...")
-      pooledGmailTransporter.close()
-      pooledGmailTransporter = null
+      pooledEmailTransporter.close()
+      pooledEmailTransporter = null
     }
   }
 
@@ -78,6 +128,7 @@ export async function sendCertificateEmail(
   certificateBlob: Blob | Buffer,
   fileName: string,
   provider: EmailProvider = "resend",
+  credentials?: { email: string; appPassword: string }
 ) {
   try {
     // Handle both Blob and Buffer types
@@ -95,10 +146,13 @@ export async function sendCertificateEmail(
 
     if (provider === "gmail") {
       // Send via Gmail SMTP
-      const transporter = createGmailTransporter()
+      if (!credentials) {
+        throw new Error("Gmail credentials required but not provided")
+      }
+      const transporter = await createEmailTransporter(credentials)
       
       const info = await transporter.sendMail({
-        from: `"KLH University - Certificate Team" <${process.env.GMAIL_USER}>`,
+        from: `"KLH University - Certificate Team" <${credentials.email}>`,
         to: email,
         subject: `🎓 Congratulations ${recipientName}! Your Certificate is Ready`,
         html: `
@@ -337,10 +391,11 @@ export async function sendBulkCertificatesPooled(
     certificateBlob: Blob | Buffer
     fileName: string
   }>,
+  credentials: { email: string; appPassword: string }
 ) {
   console.log(`[Pooled Email] Starting pooled send for ${recipients.length} recipients`)
   
-  const pooledTransporter = await createPooledGmailTransporter()
+  const pooledTransporter = await createPooledEmailTransporter(credentials)
   const results: Array<{
     email: string
     success: boolean
@@ -367,7 +422,7 @@ export async function sendBulkCertificatesPooled(
             : Buffer.from(await (recipient.certificateBlob as Blob).arrayBuffer())
 
           const info = await pooledTransporter.sendMail({
-            from: process.env.GMAIL_USER!,
+            from: `"KLH University - Certificate Team" <${credentials?.email}>`,
             to: recipient.email,
             subject: `🎓 Congratulations ${recipient.name}! Your Certificate is Ready`,
             html: `
@@ -498,6 +553,7 @@ export async function sendBulkCertificates(
   }>,
   provider: EmailProvider = "resend",
   sendingMode?: "sequential" | "pooled",
+  credentials?: { email: string; appPassword: string }
 ) {
   // Auto-select mode: pooled for Gmail with 50+ recipients, otherwise sequential
   const shouldUsePooled = 
@@ -506,7 +562,10 @@ export async function sendBulkCertificates(
 
   if (shouldUsePooled && provider === "gmail") {
     console.log(`[Bulk Email] Using POOLED mode for ${recipients.length} recipients`)
-    return await sendBulkCertificatesPooled(recipients)
+    if (!credentials) {
+      throw new Error("Gmail credentials required for pooled sending")
+    }
+    return await sendBulkCertificatesPooled(recipients, credentials)
   }
 
   // Sequential mode (original implementation)
@@ -520,6 +579,7 @@ export async function sendBulkCertificates(
       recipient.certificateBlob,
       recipient.fileName,
       provider,
+      credentials
     )
     results.push({
       email: recipient.email,
