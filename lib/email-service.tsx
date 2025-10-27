@@ -2,8 +2,14 @@ import { Resend } from "resend"
 import nodemailer from "nodemailer"
 import { decryptCredentials } from "@/utils/secure-storage"
 
-// Initialize Resend only if API key is available
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
+// Lazy initialization of Resend - only create when needed
+let resend: Resend | null = null
+const getResend = () => {
+  if (!resend && process.env.RESEND_API_KEY) {
+    resend = new Resend(process.env.RESEND_API_KEY)
+  }
+  return resend
+}
 
 // Pooled email transporter for bulk sending (reuses connections)
 let pooledEmailTransporter: nodemailer.Transporter | null = null
@@ -264,7 +270,8 @@ export async function sendCertificateEmail(
       return { success: true, messageId: info.messageId, provider: "gmail" }
     } else {
       // Send via Resend (original code)
-      if (!resend) {
+      const resendClient = getResend()
+      if (!resendClient) {
         throw new Error("Resend API key not configured")
       }
       
@@ -272,7 +279,7 @@ export async function sendCertificateEmail(
       
       console.log("[Email Service] From:", process.env.RESEND_FROM_EMAIL)
 
-      const response = await resend.emails.send({
+      const response = await resendClient.emails.send({
         from: process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev",
         to: email,
         subject: `🎓 Congratulations ${recipientName}! Your Certificate is Ready`,
