@@ -2,7 +2,8 @@ import { Resend } from "resend"
 import nodemailer from "nodemailer"
 import { decryptCredentials } from "@/utils/secure-storage"
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Initialize Resend only if API key is available
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
 // Pooled email transporter for bulk sending (reuses connections)
 let pooledEmailTransporter: nodemailer.Transporter | null = null
@@ -263,6 +264,10 @@ export async function sendCertificateEmail(
       return { success: true, messageId: info.messageId, provider: "gmail" }
     } else {
       // Send via Resend (original code)
+      if (!resend) {
+        throw new Error("Resend API key not configured")
+      }
+      
       const base64 = buffer.toString("base64")
       
       console.log("[Email Service] From:", process.env.RESEND_FROM_EMAIL)
