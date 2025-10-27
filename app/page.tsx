@@ -1,11 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { CheckCircle, Trash2 } from "lucide-react"
 import TemplateUpload from "@/components/steps/template-upload"
 import FieldConfiguration from "@/components/steps/field-configuration"
 import CertificateGeneration from "@/components/steps/certificate-generation"
 import type { CertificateField } from "@/types/certificate"
+import { saveSession, loadSession, clearSession, hasValidSession } from "@/utils/storage"
 
 type Step = "upload" | "configure" | "generate"
 
@@ -22,6 +25,55 @@ export default function Home() {
     fields: [],
     csvData: [],
   })
+  const [sessionRestored, setSessionRestored] = useState(false)
+
+  // Restore session on mount
+  useEffect(() => {
+    if (hasValidSession()) {
+      const session = loadSession()
+      console.log("[Session] Restoring session from localStorage:", session)
+
+      const restoredState: AppState = {
+        templateImage: session.templateImage || null,
+        fields: session.fields || [],
+        csvData: session.csvData || [],
+      }
+
+      setAppState(restoredState)
+
+      // Restore current step
+      if (session.currentStep === 1) setCurrentStep("upload")
+      else if (session.currentStep === 2) setCurrentStep("configure")
+      else if (session.currentStep === 3) setCurrentStep("generate")
+
+      setSessionRestored(true)
+
+      // Auto-clear the session restored message after 5 seconds
+      setTimeout(() => setSessionRestored(false), 5000)
+    }
+  }, [])
+
+  // Save session whenever important data changes
+  useEffect(() => {
+    const stepNumber =
+      currentStep === "upload" ? 1 : currentStep === "configure" ? 2 : 3
+
+    const sessionData = {
+      currentStep: stepNumber,
+      templateImage: appState.templateImage || "",
+      fields: appState.fields,
+      csvData: appState.csvData,
+    }
+
+    saveSession(sessionData)
+  }, [currentStep, appState])
+
+  const handleClearSession = () => {
+    if (confirm("Are you sure you want to clear all progress and start fresh?")) {
+      clearSession()
+      window.location.reload()
+    }
+  }
 
   const handleTemplateUpload = (image: string) => {
     setAppState((prev) => ({ ...prev, templateImage: image }))
@@ -46,8 +98,29 @@ export default function Home() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-[#1a1a1a] mb-2">Certificate Generator</h1>
-          <p className="text-gray-600">Create professional certificates in bulk with ease</p>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-4xl font-bold text-[#1a1a1a] mb-2">Certificate Generator</h1>
+              <p className="text-gray-600">Create professional certificates in bulk with ease</p>
+            </div>
+            <div className="flex items-center gap-4">
+              {sessionRestored && (
+                <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 px-3 py-2 rounded-md border border-green-200">
+                  <CheckCircle className="w-4 h-4" />
+                  Session restored
+                </div>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleClearSession}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Clear Session
+              </Button>
+            </div>
+          </div>
         </div>
 
         {/* Progress Indicator */}

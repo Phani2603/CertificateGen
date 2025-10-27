@@ -8,7 +8,8 @@ export interface CertificateField {
   fontWeight: number
   color: string
   alignment: "left" | "center" | "right"
-  maxWidth: number
+  maxWidth?: number
 }
 
 export type EmailProvider = "resend" | "gmail"
+export type SendingMode = "sequential" | "pooled"

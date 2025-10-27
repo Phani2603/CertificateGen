@@ -9,6 +9,9 @@ import { Upload, Download, Loader2, CheckCircle, AlertCircle, Mail } from "lucid
 import JSZip from "jszip"
 import FileSaver from "file-saver"
 import type { CertificateField } from "@/types/certificate"
+import { saveSession, loadSession, blobToBase64, base64ToBlob } from "@/utils/storage"
+import { useCredentials } from "@/hooks/useCredentials"
+import DevNav from "@/components/DevNav"
 
 interface CertificateGenerationProps {
   templateImage: string
@@ -42,10 +45,55 @@ export default function CertificateGeneration({
   const [emailErrors, setEmailErrors] = useState<Array<{ email: string; error: string }>>([])
   const [isSendingMail, setIsSendingMail] = useState(false)
   const [emailProvider, setEmailProvider] = useState<"resend" | "gmail">("resend")
+  const [sendingMode, setSendingMode] = useState<"auto" | "sequential" | "pooled">("auto")
+  const [showDevNav, setShowDevNav] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const previewCanvasRef = useRef<HTMLCanvasElement>(null)
+  
+  // Use credentials hook
+  const credentialsData = useCredentials()
+  const { isAuthenticated, email: authenticatedEmail } = credentialsData
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('[CertGen] useCredentials state changed:', credentialsData)
+  }, [credentialsData])
 
-  useEffect(() => {}, [])
+  // Restore generated certificates from session on mount
+  useEffect(() => {
+    const session = loadSession()
+    
+    // Restore CSV data and field mapping
+    if (session.csvData && session.csvData.length > 0) {
+      console.log("[Session] Restoring CSV data:", session.csvData.length, "rows")
+      setCsvData(session.csvData)
+      onCsvUpload(session.csvData)
+    }
+    
+    if (session.csvHeaders && session.csvHeaders.length > 0) {
+      console.log("[Session] Restoring CSV headers:", session.csvHeaders)
+      setCsvHeaders(session.csvHeaders)
+    }
+    
+    if (session.fieldMapping) {
+      console.log("[Session] Restoring field mapping:", session.fieldMapping)
+      setFieldMapping(session.fieldMapping)
+    }
+    
+    // Restore generated certificates
+    if (session.generatedCertificates && session.generatedCertificates.length > 0) {
+      console.log("[Session] Restoring generated certificates:", session.generatedCertificates.length)
+      const restoredCerts = session.generatedCertificates.map((cert) => ({
+        email: cert.email,
+        name: cert.name,
+        certificateBlob: base64ToBlob(cert.certificateBlobBase64),
+        fileName: cert.fileName,
+      }))
+      setGeneratedCertificates(restoredCerts)
+      setGenerationStatus("success")
+      setGeneratedCount(restoredCerts.length)
+    }
+  }, [])
 
   const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -94,6 +142,14 @@ export default function CertificateGeneration({
         }
       })
       setFieldMapping(autoMapping)
+      
+      // Save CSV data and headers to session
+      saveSession({ 
+        csvData: data, 
+        csvHeaders: headers,
+        fieldMapping: autoMapping
+      })
+      console.log("[Session] Saved CSV data and field mapping to localStorage")
     }
     reader.readAsText(file)
   }
@@ -136,7 +192,7 @@ export default function CertificateGeneration({
         ctx.textAlign = field.alignment
 
         const x =
-          field.alignment === "center" ? field.x : field.alignment === "right" ? field.x + field.maxWidth : field.x
+          field.alignment === "center" ? field.x : field.alignment === "right" ? field.x + (field.maxWidth || 0) : field.x
         ctx.fillText(text, x, field.y, field.maxWidth)
       })
     }
@@ -157,10 +213,33 @@ export default function CertificateGeneration({
   }
 
   const sendEmailsOnly = async () => {
+    console.log(`[sendEmailsOnly] Starting - isAuthenticated: ${isAuthenticated}, emailProvider: ${emailProvider}`)
+    
     if (generatedCertificates.length === 0) {
       alert("Please generate certificates first")
       return
     }
+
+    // Check if Gmail is selected and credentials are required
+    // Also check if credentials exist in storage as a fallback
+    const hasStoredCredentials = await (async () => {
+      try {
+        const { hasValidCredentials } = await import('@/utils/secure-storage')
+        return await hasValidCredentials()
+      } catch {
+        return false
+      }
+    })()
+    
+    console.log(`[sendEmailsOnly] hasStoredCredentials: ${hasStoredCredentials}`)
+    
+    if (emailProvider === "gmail" && !isAuthenticated && !hasStoredCredentials) {
+      console.log('[sendEmailsOnly] Not authenticated, showing DevNav again')
+      setShowDevNav(true)
+      return
+    }
+    
+    console.log('[sendEmailsOnly] Proceeding with email sending...')
 
     setIsSendingMail(true)
     setEmailStatus("sending")
@@ -168,6 +247,21 @@ export default function CertificateGeneration({
     setEmailErrors([])
 
     try {
+      // Get credentials from secure storage (client-side only)
+      let credentials = null
+      if (emailProvider === "gmail") {
+        const { decryptCredentials } = await import('@/utils/secure-storage')
+        credentials = await decryptCredentials()
+        
+        if (!credentials) {
+          console.log('[sendEmailsOnly] No credentials found after checking storage')
+          setShowDevNav(true)
+          return
+        }
+        
+        console.log('[sendEmailsOnly] Credentials found, proceeding with email sending')
+      }
+
       // Convert blobs to base64 before sending
       const recipientsWithBase64 = await Promise.all(
         generatedCertificates.map(async (recipient) => ({
@@ -181,7 +275,16 @@ export default function CertificateGeneration({
       const response = await fetch("/api/send-certificates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipients: recipientsWithBase64, provider: emailProvider }),
+        body: JSON.stringify({ 
+          recipients: recipientsWithBase64, 
+          provider: emailProvider,
+          sendingMode: sendingMode === "auto" ? undefined : sendingMode,
+          // Pass credentials to server for Gmail
+          credentials: credentials ? {
+            email: credentials.email,
+            appPassword: credentials.appPassword
+          } : null
+        }),
       })
 
       const result = await response.json()
@@ -282,6 +385,18 @@ export default function CertificateGeneration({
       console.log("[Certificate Generation] Generated certificates for email:", emailRecipients.length)
       console.log("[Certificate Generation] Email recipients:", emailRecipients.map(r => r.email))
 
+      // Save generated certificates to session storage
+      const certificatesForStorage = await Promise.all(
+        emailRecipients.map(async (cert) => ({
+          email: cert.email,
+          name: cert.name,
+          certificateBlobBase64: await blobToBase64(cert.certificateBlob),
+          fileName: cert.fileName,
+        }))
+      )
+      saveSession({ generatedCertificates: certificatesForStorage })
+      console.log("[Session] Saved generated certificates to localStorage")
+
       const zipBlob = await zip.generateAsync({ type: "blob" })
       const timestamp = new Date().toISOString().split("T")[0]
       const zipFilename = `certificates_${timestamp}.zip`
@@ -331,7 +446,7 @@ export default function CertificateGeneration({
           ctx.textAlign = field.alignment
 
           const x =
-            field.alignment === "center" ? field.x : field.alignment === "right" ? field.x + field.maxWidth : field.x
+            field.alignment === "center" ? field.x : field.alignment === "right" ? field.x + (field.maxWidth || 0) : field.x
           ctx.fillText(text, x, field.y, field.maxWidth)
         })
 
@@ -477,14 +592,59 @@ export default function CertificateGeneration({
                       className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                     >
                       <option value="resend">Resend (Requires Domain)</option>
-                      <option value="gmail">Gmail SMTP (Personal Email)</option>
+                      <option value="gmail">Gmail/Educational SMTP</option>
                     </select>
-                    <p className="text-xs text-gray-500 mt-2">
-                      {emailProvider === "resend" 
-                        ? "Use onboarding@resend.dev for testing (limited to verified email)"
-                        : "Configure GMAIL_USER and GMAIL_APP_PASSWORD in .env.local"}
-                    </p>
+                    <div className="mt-2 space-y-2">
+                      {emailProvider === "resend" ? (
+                        <p className="text-xs text-gray-500">
+                          Use onboarding@resend.dev for testing (limited to verified email)
+                        </p>
+                      ) : (
+                        <div className="space-y-1">
+                          {isAuthenticated ? (
+                            <div className="flex items-center space-x-2 text-xs">
+                              <CheckCircle className="w-3 h-3 text-green-500" />
+                              <span className="text-green-700">
+                                Connected as: {authenticatedEmail}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center space-x-2 text-xs">
+                              <AlertCircle className="w-3 h-3 text-orange-500" />
+                              <span className="text-orange-700">
+                                Email credentials required (will prompt when sending)
+                              </span>
+                            </div>
+                          )}
+                          <p className="text-xs text-gray-500">
+                            Secure credential input • Session-only storage • AES-256 encrypted
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
+
+                  {emailProvider === "gmail" && (
+                    <div className="pt-4 border-t border-[#21808D]/20">
+                      <label className="text-sm font-medium text-gray-700 mb-2 block">Sending Mode</label>
+                      <select
+                        value={sendingMode}
+                        onChange={(e) => setSendingMode(e.target.value as "auto" | "sequential" | "pooled")}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                      >
+                        <option value="auto">Auto ({generatedCertificates.length >= 50 ? "Pooled" : "Sequential"})</option>
+                        <option value="sequential">Sequential (Safer, Slower)</option>
+                        <option value="pooled">Pooled (Faster, For Bulk)</option>
+                      </select>
+                      <p className="text-xs text-gray-500 mt-2">
+                        {sendingMode === "sequential" 
+                          ? "Sends emails one by one with 500ms delay (recommended for <50 recipients)"
+                          : sendingMode === "pooled"
+                          ? "Uses connection pooling to send emails in parallel (recommended for 50+ recipients)"
+                          : `Auto-selects mode based on recipient count (currently ${generatedCertificates.length} recipients)`}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </Card>
 
@@ -661,6 +821,21 @@ export default function CertificateGeneration({
           )}
         </Button>
       </div>
+
+      {/* DevNav for secure credential input */}
+      <DevNav
+        isOpen={showDevNav}
+        onClose={() => setShowDevNav(false)}
+        onSuccess={() => {
+          console.log('[DevNav] Credentials authenticated successfully')
+          console.log(`[DevNav] isAuthenticated state: ${isAuthenticated}`)
+          // Auto-proceed with email sending after successful authentication
+          setTimeout(() => {
+            console.log(`[DevNav] After timeout - isAuthenticated: ${isAuthenticated}`)
+            sendEmailsOnly()
+          }, 1000) // Increased timeout to allow state to update
+        }}
+      />
     </div>
   )
 }

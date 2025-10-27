@@ -1,14 +1,23 @@
 import { sendBulkCertificates, type EmailProvider } from "@/lib/email-service"
+import type { SendingMode } from "@/types/certificate"
 
 export async function POST(request: Request) {
   try {
-    const { recipients, provider } = await request.json()
+    const { recipients, provider = "resend", sendingMode, credentials } = await request.json()
 
-    console.log("[API] Received request to send emails to", recipients?.length, "recipients")
-    console.log("[API] Email provider:", provider || "resend")
+    console.log("[API] Sending", recipients.length, "certificates via", provider.toUpperCase())
+    console.log("[API] Sending mode:", sendingMode || "auto")
+    console.log("[API] Credentials provided:", !!credentials)
 
     if (!recipients || recipients.length === 0) {
       return Response.json({ success: false, error: "No recipients provided" }, { status: 400 })
+    }
+
+    if (provider === "gmail" && !credentials) {
+      return Response.json(
+        { success: false, error: "Gmail credentials required but not provided" },
+        { status: 400 }
+      )
     }
 
     // Convert base64 strings back to Buffers for email attachment
@@ -21,7 +30,18 @@ export async function POST(request: Request) {
 
     console.log("[API] Processing", processedRecipients.length, "recipients")
 
-    const results = await sendBulkCertificates(processedRecipients, provider as EmailProvider)
+    const results = await sendBulkCertificates(
+      processedRecipients, 
+      provider as EmailProvider,
+      sendingMode as SendingMode | undefined,
+      credentials
+    ) as Array<{
+      email: string
+      success: boolean
+      messageId?: string
+      error?: string
+      provider: string
+    }>
 
     const successCount = results.filter((r) => r.success).length
     const errors = results.filter((r) => !r.success).map((r) => ({ email: r.email, error: r.error }))
@@ -36,6 +56,7 @@ export async function POST(request: Request) {
       sentCount: successCount,
       errors,
       provider: provider || "resend",
+      mode: results[0]?.provider?.includes("pooled") ? "pooled" : "sequential",
     })
   } catch (error) {
     console.error("[API] Error:", error)
