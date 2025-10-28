@@ -9,7 +9,7 @@ import { Upload, Download, Loader2, CheckCircle, AlertCircle, Mail } from "lucid
 import JSZip from "jszip"
 import FileSaver from "file-saver"
 import type { CertificateField } from "@/types/certificate"
-import { saveSession, loadSession, blobToBase64, base64ToBlob } from "@/utils/storage"
+import { saveSession, loadSession,  base64ToBlob } from "@/utils/storage"
 import { useCredentials } from "@/hooks/useCredentials"
 import DevNav from "@/components/DevNav"
 
@@ -52,7 +52,7 @@ export default function CertificateGeneration({
   
   // Use credentials hook
   const credentialsData = useCredentials()
-  const { isAuthenticated, email: authenticatedEmail } = credentialsData
+  const { isAuthenticated, email: authenticatedEmail, checkCredentials } = credentialsData
   
   // Debug logging
   useEffect(() => {
