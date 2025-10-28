@@ -1,5 +1,6 @@
 import { Resend } from "resend"
 import nodemailer from "nodemailer"
+import path from "path"
 import { decryptCredentials } from "@/utils/secure-storage"
 
 // Lazy initialization of Resend - only create when needed
@@ -255,7 +256,7 @@ export async function sendCertificateEmail(
         attachments: [
           {
             filename: "klh-logo.png",
-            path: "./public/klh.png",
+            path: path.join(process.cwd(), "public", "klh.png"),
             cid: "klh-logo",
           },
           {
@@ -513,7 +514,7 @@ export async function sendBulkCertificatesPooled(
             attachments: [
               {
                 filename: "klh-logo.png",
-                path: "./public/klh.png",
+                path: path.join(process.cwd(), "public", "klh.png"),
                 cid: "klh-logo",
               },
               {
