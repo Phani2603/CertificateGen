@@ -828,12 +828,12 @@ export default function CertificateGeneration({
         onClose={() => setShowDevNav(false)}
         onSuccess={() => {
           console.log('[DevNav] Credentials authenticated successfully')
-          console.log(`[DevNav] isAuthenticated state: ${isAuthenticated}`)
-          // Auto-proceed with email sending after successful authentication
-          setTimeout(() => {
-            console.log(`[DevNav] After timeout - isAuthenticated: ${isAuthenticated}`)
+          // Force re-check credentials to update state
+          checkCredentials().then(() => {
+            console.log(`[DevNav] After checkCredentials - isAuthenticated: ${isAuthenticated}`)
+            // Auto-proceed with email sending after successful authentication
             sendEmailsOnly()
-          }, 1000) // Increased timeout to allow state to update
+          })
         }}
       />
     </div>
