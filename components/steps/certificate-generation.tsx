@@ -346,7 +346,8 @@ export default function CertificateGeneration({
           }, "image/png")
         })
 
-        const filename = `certificate_${String(i + 1).padStart(3, "0")}.png`
+        const filename = `${row.ID || String(i + 1).padStart(3, "0")}_${row.FirstName}_${row.LastName}.png`
+
         zip.file(filename, blob)
 
         // Store certificate for potential email sending (check for email field - case insensitive)
