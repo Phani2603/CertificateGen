@@ -12,7 +12,13 @@ export const metadata: Metadata = {
   title: "CertificateHash",
   description: "Certificate Generator - Bulk Certificate Creation and Emailing generated and send professional certificates with ease.",
   generator: "senement.com",
+  icons:{
+    icon: "/favicon-32x32.png",
+    apple: "/apple-touch-icon.png",
+    shortcut: "/favicon.ico"
+  }
 }
+
 
 export default function RootLayout({
   children,
