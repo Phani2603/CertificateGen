@@ -20,29 +20,35 @@ export interface SessionData {
   timestamp: number
 }
 
-const STORAGE_KEY = "cert-generator-session"
+const STORAGE_KEY_PREFIX = "cert-generator-session"
 const MAX_STORAGE_AGE = 24 * 60 * 60 * 1000 // 24 hours
 
-export function saveSession(data: Partial<SessionData>) {
+function getStorageKey(eventId?: string): string {
+  return eventId ? `${STORAGE_KEY_PREFIX}-${eventId}` : STORAGE_KEY_PREFIX
+}
+
+export function saveSession(data: Partial<SessionData>, eventId?: string) {
   try {
-    const existing = loadSession()
+    const key = getStorageKey(eventId)
+    const existing = loadSession(eventId)
     const updated = { ...existing, ...data, timestamp: Date.now() }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+    localStorage.setItem(key, JSON.stringify(updated))
   } catch (error) {
     console.warn("Failed to save session:", error)
   }
 }
 
-export function loadSession(): Partial<SessionData> {
+export function loadSession(eventId?: string): Partial<SessionData> {
   try {
-    const data = localStorage.getItem(STORAGE_KEY)
+    const key = getStorageKey(eventId)
+    const data = localStorage.getItem(key)
     if (!data) return {}
 
     const parsed = JSON.parse(data)
 
     // Clear old sessions (older than 24 hours)
     if (Date.now() - (parsed.timestamp || 0) > MAX_STORAGE_AGE) {
-      clearSession()
+      clearSession(eventId)
       return {}
     }
 
@@ -53,16 +59,18 @@ export function loadSession(): Partial<SessionData> {
   }
 }
 
-export function clearSession() {
+export function clearSession(eventId?: string) {
   try {
-    localStorage.removeItem(STORAGE_KEY)
+    const key = getStorageKey(eventId)
+    localStorage.removeItem(key)
+    console.log(`[Storage] Cleared session for ${eventId || 'default'}`)
   } catch (error) {
     console.warn("Failed to clear session:", error)
   }
 }
 
-export function hasValidSession(): boolean {
-  const session = loadSession()
+export function hasValidSession(eventId?: string): boolean {
+  const session = loadSession(eventId)
   return (
     Object.keys(session).length > 0 &&
     Date.now() - (session.timestamp || 0) < MAX_STORAGE_AGE

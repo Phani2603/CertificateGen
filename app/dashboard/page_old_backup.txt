@@ -1,0 +1,1613 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { useSession, signOut } from "next-auth/react"
+import { useRouter } from "next/navigation"
+import Image from "next/image"
+import { format } from "date-fns"
+import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { 
+  Award, 
+  History, 
+  Settings, 
+  LogOut, 
+  Menu, 
+  X,
+  User,
+  Bell,
+  Search,
+  ChevronRight,
+  FileText,
+  Users,
+  Building2,
+  CalendarIcon
+} from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { UserNav } from "@/components/user-nav"
+import TemplateUpload from "@/components/steps/template-upload"
+import FieldConfiguration from "@/components/steps/field-configuration"
+import CertificateGeneration from "@/components/steps/certificate-generation"
+import type { CertificateField } from "@/types/certificate"
+import { saveSession, loadSession, clearSession, hasValidSession } from "@/utils/storage"
+import { useDashboardData } from "@/hooks/useDashboardData"
+
+type Step = "upload" | "configure" | "generate"
+type Page = "generate" | "history" | "settings" | "organizations"
+
+interface AppState {
+  templateImage: string | null
+  fields: CertificateField[]
+  csvData: Array<Record<string, string>>
+}
+
+export default function DashboardPage() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
+  
+  // Use centralized dashboard data hook
+  const {
+    loading: dashboardLoading,
+    profile,
+    organization,
+    clubs,
+    userClubIds,
+    events,
+    history,
+    pagination,
+    fetchHistory,
+    createOrganization,
+    joinOrganization,
+    createClub,
+    joinClub,
+    createEvent,
+    addHistoryEntry,
+    updateProfile,
+  } = useDashboardData()
+
+  const [currentPage, setCurrentPage] = useState<Page>("organizations")
+  const [currentStep, setCurrentStep] = useState<Step>("upload")
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [showJoinOrgModal, setShowJoinOrgModal] = useState(false)
+  const [showCreateOrgModal, setShowCreateOrgModal] = useState(false)
+  const [showCreateClubModal, setShowCreateClubModal] = useState(false)
+  const [selectedClub, setSelectedClub] = useState<string | null>(null)
+  const [showClubDetailModal, setShowClubDetailModal] = useState(false)
+  const [showCreateEventModal, setShowCreateEventModal] = useState(false)
+  const [selectedEvent, setSelectedEvent] = useState<{club: string, eventId: string, eventName: string} | null>(null)
+  const [eventDate, setEventDate] = useState<Date | undefined>(undefined)
+  const [showHistoryDetailModal, setShowHistoryDetailModal] = useState(false)
+  const [selectedHistoryItem, setSelectedHistoryItem] = useState<any>(null)
+  const [colleges, setColleges] = useState<Array<{id: string, name: string, city: string, state: string, rank: number}>>([])
+  const [collegeSearch, setCollegeSearch] = useState("")
+  const [appState, setAppState] = useState<AppState>({
+    templateImage: null,
+    fields: [],
+    csvData: [],
+  })
+  
+  // Profile form state (synced with profile from hook)
+  const [profileName, setProfileName] = useState("")
+  const [profileEmail, setProfileEmail] = useState("")
+  const [profilePhone, setProfilePhone] = useState("")
+  const [profileBio, setProfileBio] = useState("")
+  const [profileImageUrl, setProfileImageUrl] = useState("")
+  const [isSavingProfile, setIsSavingProfile] = useState(false)
+
+  // Form states for modals
+  const [orgForm, setOrgForm] = useState({
+    name: '',
+    type: 'college' as 'college' | 'university' | 'custom',
+    city: '',
+    state: '',
+    website: '',
+    description: '',
+    logoUrl: '',
+  })
+  const [clubForm, setClubForm] = useState({
+    name: '',
+    description: '',
+    color: '#3B82F6',
+    logoUrl: '',
+  })
+  const [eventForm, setEventForm] = useState({
+    name: '',
+    description: '',
+    clubId: '',
+    date: new Date(),
+  })
+
+  // Load user profile from API (sync with auth)
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (status === "authenticated" && session?.user) {
+        // Set email from session
+        setProfileEmail(session.user.email || "")
+        
+        try {
+          const response = await fetch("/api/profile")
+          const data = await response.json()
+          
+          if (data.success) {
+            setProfileName(data.user.name || "")
+            setProfilePhone(data.user.phone || "")
+            setProfileBio(data.user.bio || "")
+            setProfileImageUrl(data.user.image || "")
+            
+            if (data.user.organization) {
+              setUserOrganization(data.user.organization)
+              setHasOrganization(true)
+            }
+          }
+        } catch (error) {
+          console.error('Failed to load profile from API:', error)
+          // Fallback to localStorage
+          const savedProfile = localStorage.getItem('userProfile')
+          if (savedProfile) {
+            try {
+              const profile = JSON.parse(savedProfile)
+              setProfileName(profile.name || "")
+              setProfilePhone(profile.phone || "")
+              setProfileBio(profile.bio || "")
+              setProfileImageUrl(profile.imageUrl || "")
+            } catch (e) {
+              console.error('Failed to parse saved profile:', e)
+            }
+          }
+        }
+      }
+    }
+
+    loadUserProfile()
+
+    // Load localStorage data
+    const savedOrgLogo = localStorage.getItem('userOrganizationLogo')
+    if (savedOrgLogo) {
+      setUserOrganizationLogo(savedOrgLogo)
+    }
+
+    const savedClubs = localStorage.getItem('userClubs')
+    if (savedClubs) {
+      try {
+        const clubs = JSON.parse(savedClubs)
+        setUserClubs(clubs)
+        setHasClubMembership(clubs.length > 0)
+      } catch (error) {
+        console.error('Failed to load clubs:', error)
+      }
+    }
+
+    // Load generation history
+    const savedHistory = localStorage.getItem('generationHistory')
+    if (savedHistory) {
+      try {
+        const history = JSON.parse(savedHistory)
+        setGenerationHistory(history)
+      } catch (error) {
+        console.error('Failed to load history:', error)
+      }
+    }
+  }, [status, session])
+
+  // Restore session on mount
+  useEffect(() => {
+    if (hasValidSession()) {
+      const session = loadSession()
+      const restoredState: AppState = {
+        templateImage: session.templateImage || null,
+        fields: session.fields || [],
+        csvData: session.csvData || [],
+      }
+      setAppState(restoredState)
+      if (session.currentStep === 1) setCurrentStep("upload")
+      else if (session.currentStep === 2) setCurrentStep("configure")
+      else if (session.currentStep === 3) setCurrentStep("generate")
+    }
+
+    // Load college data from CSV
+    fetch('/nirf_engineering_2025.csv')
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to load CSV')
+        return res.text()
+      })
+      .then(csv => {
+        const lines = csv.split('\n').slice(1) // Skip header
+        const data = lines.filter(line => line.trim()).map(line => {
+          const [id, name, city, state, score, rank] = line.split(',')
+          return {
+            id: id?.trim() || '',
+            name: name?.replace(/More Details.*/, '').trim() || '',
+            city: city?.trim() || '',
+            state: state?.trim() || '',
+            rank: parseInt(rank) || 0
+          }
+        })
+        setColleges(data)
+        console.log(`Loaded ${data.length} colleges`)
+      })
+      .catch(err => console.error('Failed to load college data:', err))
+  }, [])
+
+  // Save profile to localStorage whenever it changes
+  useEffect(() => {
+    if (profileName) {
+      const profile = {
+        name: profileName,
+        email: profileEmail,
+        phone: profilePhone,
+        bio: profileBio,
+        imageUrl: profileImageUrl
+      }
+      localStorage.setItem('userProfile', JSON.stringify(profile))
+    }
+  }, [profileName, profileEmail, profilePhone, profileBio, profileImageUrl])
+
+  // Save organization to localStorage
+  useEffect(() => {
+    if (userOrganization) {
+      localStorage.setItem('userOrganization', userOrganization)
+    } else {
+      localStorage.removeItem('userOrganization')
+    }
+    if (userOrganizationLogo) {
+      localStorage.setItem('userOrganizationLogo', userOrganizationLogo)
+    } else {
+      localStorage.removeItem('userOrganizationLogo')
+    }
+  }, [userOrganization, userOrganizationLogo])
+
+  // Save clubs to localStorage
+  useEffect(() => {
+    localStorage.setItem('userClubs', JSON.stringify(userClubs))
+  }, [userClubs])
+
+  // Save history to localStorage
+  useEffect(() => {
+    if (generationHistory.length > 0) {
+      localStorage.setItem('generationHistory', JSON.stringify(generationHistory))
+    }
+  }, [generationHistory])
+
+  // Save available clubs to localStorage
+  useEffect(() => {
+    localStorage.setItem('availableClubs', JSON.stringify(availableClubs))
+  }, [availableClubs])
+
+  // Save user-created organizations to localStorage
+  useEffect(() => {
+    if (userCreatedOrgs.length > 0) {
+      localStorage.setItem('userCreatedOrganizations', JSON.stringify(userCreatedOrgs))
+    }
+  }, [userCreatedOrgs])
+
+  // Save session
+  useEffect(() => {
+    const stepNumber = currentStep === "upload" ? 1 : currentStep === "configure" ? 2 : 3
+    saveSession({
+      currentStep: stepNumber,
+      templateImage: appState.templateImage || "",
+      fields: appState.fields,
+      csvData: appState.csvData,
+    })
+  }, [currentStep, appState])
+
+  // Combine colleges from CSV and user-created organizations
+  const allOrganizations = [
+    ...userCreatedOrgs.map(org => ({
+      id: org.id,
+      name: org.name,
+      city: org.city || 'Custom',
+      state: org.state || 'User Created',
+      rank: 0 // User-created orgs don't have ranks
+    })),
+    ...colleges
+  ]
+  
+  // Deduplicate organizations by name (keep first occurrence)
+  const uniqueOrganizations = allOrganizations.reduce((acc, org) => {
+    if (!acc.find(item => item.name.toLowerCase() === org.name.toLowerCase())) {
+      acc.push(org)
+    }
+    return acc
+  }, [] as typeof allOrganizations)
+
+  const handleTemplateUpload = (image: string) => {
+    setAppState((prev) => ({ ...prev, templateImage: image }))
+    setCurrentStep("configure")
+  }
+
+  const handleFieldsUpdate = (fields: CertificateField[]) => {
+    setAppState((prev) => ({ ...prev, fields }))
+  }
+
+  const handleCsvUpload = (data: Array<Record<string, string>>) => {
+    setAppState((prev) => ({ ...prev, csvData: data }))
+  }
+
+  const handleBack = () => {
+    if (currentStep === "configure") setCurrentStep("upload")
+    if (currentStep === "generate") setCurrentStep("configure")
+  }
+
+  // Helper to get user initials
+  const getUserInitials = () => {
+    if (!profileName) return 'U'
+    return profileName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+  }
+
+  // Add generation to history
+  const addToHistory = (eventName: string, clubName: string, count: number, totalSizeBytes: number) => {
+    const newHistoryItem: HistoryItem = {
+      id: Date.now().toString(),
+      eventName,
+      clubName,
+      count,
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      timestamp: Date.now(),
+      successRate: 100,
+      totalSize: formatBytes(totalSizeBytes)
+    }
+    setGenerationHistory(prev => [newHistoryItem, ...prev])
+  }
+
+  // Format bytes to human readable
+  const formatBytes = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
+  }
+
+  // Only show generate & history if user has selected an event (step 7 in workflow)
+  const navItems = [
+    ...(selectedEvent ? [
+      { id: "generate" as Page, label: "Generate Certificates", icon: Award },
+      { id: "history" as Page, label: "History", icon: History },
+    ] : []),
+    { id: "organizations" as Page, label: "Organizations", icon: Building2 },
+    { id: "settings" as Page, label: "Settings", icon: Settings },
+  ]
+
+  return (
+    <div className="min-h-screen w-full bg-white relative text-gray-800 flex">
+      {/* Crosshatch Art - Light Pattern */}
+      <div
+        className="absolute inset-0 z-0 pointer-events-none"
+        style={{
+          backgroundImage: `
+            repeating-linear-gradient(22.5deg, transparent, transparent 2px, rgba(75, 85, 99, 0.06) 2px, rgba(75, 85, 99, 0.06) 3px, transparent 3px, transparent 8px),
+            repeating-linear-gradient(67.5deg, transparent, transparent 2px, rgba(107, 114, 128, 0.05) 2px, rgba(107, 114, 128, 0.05) 3px, transparent 3px, transparent 8px),
+            repeating-linear-gradient(112.5deg, transparent, transparent 2px, rgba(55, 65, 81, 0.04) 2px, rgba(55, 65, 81, 0.04) 3px, transparent 3px, transparent 8px),
+            repeating-linear-gradient(157.5deg, transparent, transparent 2px, rgba(31, 41, 55, 0.03) 2px, rgba(31, 41, 55, 0.03) 3px, transparent 3px, transparent 8px)
+          `,
+        }}
+      />
+      
+      {/* Mobile Backdrop Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="md:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-30 transition-opacity duration-300"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Mobile Menu Button */}
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="md:hidden fixed top-4 left-4 z-50 w-10 h-10 bg-white rounded-lg shadow-lg flex items-center justify-center hover:bg-gray-50"
+      >
+        <Menu className="h-5 w-5" />
+      </button>
+
+      {/* Sidebar */}
+      <aside
+        className={`${
+          sidebarOpen ? "w-64" : "w-20"
+        } bg-green-300/60 backdrop-blur-2xl rounded-r-3xl border-r border-gray-200 transition-all duration-300 flex flex-col shadow-sm fixed md:sticky md:top-0 min-h-screen md:h-screen z-40 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        }`}
+      >
+        {/* Logo */}
+        <div className="p-2 flex items-center ">
+          <div className="flex flex-col items-center w-full">
+            <div className="w-18 h-18 rounded-xl overflow-hidden flex items-center justify-center">
+              <Image 
+                src="/c.svg" 
+                alt="CertificateHash Logo" 
+                width={56} 
+                height={56}
+                className="w-full h-full object-contain"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 p-3">
+          <ul className="space-y-1.5">
+            {navItems.map((item) => {
+              const Icon = item.icon
+              return (
+                <li key={item.id}>
+                  <button
+                    onClick={() => setCurrentPage(item.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                      currentPage === item.id
+                        ? "bg-[#21808D] text-white"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    <Icon className="h-6 w-6 shrink-0" />
+                    {sidebarOpen && <span className="font-medium sm:text-base md:text-lg lg:text-xl">{item.label}</span>}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </nav>
+
+        {/* User Profile */}
+        <div className="p-2">
+          <button className="w-full flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors">
+            <Avatar className="w-10 h-10">
+              {session?.user?.image && (
+                <AvatarImage src={session.user.image} alt={session?.user?.name || "User"} />
+              )}
+              <AvatarFallback className="bg-[#21808D] text-white">
+                {session?.user?.name ? session.user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
+              </AvatarFallback>
+            </Avatar>
+            {sidebarOpen && (
+              <div className="flex-1 text-left">
+                <p className="text-base font-medium text-gray-900">{session?.user?.name || "User"}</p>
+                <p className="text-sm text-gray-600">{session?.user?.email}</p>
+              </div>
+            )}
+          </button>
+          {sidebarOpen && (
+          <button 
+            onClick={() => signOut({ callbackUrl: '/login' })}
+            className="w-full flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors text-red-600 mt-2">
+              <LogOut className="h-5 w-5" />
+              <span className="font-medium">Sign out</span>
+            </button>
+          )}
+        </div>
+
+        {/* Toggle Button */}
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="absolute -right-3 top-6 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors z-10"
+        >
+          {sidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+        </button>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col min-h-screen p-2 md:p-4 w-full md:w-auto relative z-10">
+        {/* Top Header - Active Event Only */}
+        <header className="flex items-center justify-between gap-3 md:gap-4 mb-3 md:mb-4 px-2 md:px-4 py-2 mt-16 md:mt-2">
+          {/* Selected Event Indicator */}
+          {selectedEvent ? (
+            <div className="flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-white rounded-lg md:rounded-xl shadow-sm border border-gray-200">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shrink-0"></div>
+              <div className="text-xs md:text-sm flex-1 min-w-0">
+                <span className="text-gray-500 hidden sm:inline">Active Event: </span>
+                <span className="font-semibold text-gray-900 truncate">{selectedEvent.eventName}</span>
+              </div>
+            </div>
+          ) : (
+            <div />
+          )}
+          
+          {/* Avatar */}
+          <Avatar className="w-10 h-10 md:w-12 md:h-12 cursor-pointer ring-2 ring-white shadow-lg" onClick={() => setCurrentPage("settings")} title="Go to Settings">
+            {session?.user?.image && (
+              <AvatarImage src={session.user.image} alt={session?.user?.name || "User"} />
+            )}
+            <AvatarFallback className="bg-[#21808D] text-white text-sm md:text-base">
+              {session?.user?.name ? session.user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
+            </AvatarFallback>
+          </Avatar>
+        </header>
+
+        {/* Page Content */}
+        <div className="flex-1 overflow-auto p-4 md:p-8 bg-white rounded-t-3xl shadow-sm">
+          {currentPage === "generate" && (
+            <div className="max-w-6xl mx-auto">
+              {/* Progress Indicator */}
+              <div className="flex gap-4 mb-8">
+                {(["upload", "configure", "generate"] as const).map((step, index) => (
+                  <div key={step} className="flex items-center gap-4">
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all ${
+                        currentStep === step
+                          ? "bg-[#21808D] text-white"
+                          : index < (currentStep === "upload" ? 0 : currentStep === "configure" ? 1 : 2)
+                            ? "bg-[#21808D] text-white"
+                            : "bg-gray-200 text-gray-600"
+                      }`}
+                    >
+                      {index + 1}
+                    </div>
+                    <span className="font-medium text-gray-700 hidden sm:inline">
+                      {step === "upload" && "Upload Template"}
+                      {step === "configure" && "Configure Fields"}
+                      {step === "generate" && "Generate"}
+                    </span>
+                    {index < 2 && <div className="w-8 h-0.5 bg-gray-300 hidden sm:block" />}
+                  </div>
+                ))}
+              </div>
+
+              {/* Step Content */}
+              <Card className="bg-white shadow-lg">
+                {currentStep === "upload" && <TemplateUpload onUpload={handleTemplateUpload} />}
+                {currentStep === "configure" && appState.templateImage && (
+                  <FieldConfiguration
+                    templateImage={appState.templateImage}
+                    fields={appState.fields}
+                    onFieldsUpdate={handleFieldsUpdate}
+                    onNext={() => setCurrentStep("generate")}
+                    onBack={handleBack}
+                  />
+                )}
+                {currentStep === "generate" && (
+                  <CertificateGeneration
+                    templateImage={appState.templateImage!}
+                    fields={appState.fields}
+                    onCsvUpload={handleCsvUpload}
+                    onBack={handleBack}
+                    selectedEvent={selectedEvent}
+                    onAddToHistory={addToHistory}
+                  />
+                )}
+              </Card>
+            </div>
+          )}
+
+          {currentPage === "history" && (
+            <div className="max-w-6xl mx-auto">
+              <Card className="bg-white p-4 md:p-6 lg:p-8 rounded-2xl">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 md:mb-6 gap-3">
+                  <h2 className="text-xl md:text-2xl lg:text-3xl font-bold">Generation History</h2>
+                  {generationHistory.length > 0 && (
+                    <Button variant="outline" className="border-[#21808D] text-[#21808D] hover:bg-[#21808D] hover:text-white text-sm md:text-base w-full sm:w-auto">
+                      Export All
+                    </Button>
+                  )}
+                </div>
+
+                {/* History Items */}
+                {generationHistory.length === 0 ? (
+                  <div className="text-center py-12">
+                    <FileText className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                    <p className="text-gray-500 mb-2">No generation history yet</p>
+                    <p className="text-sm text-gray-400">Generate certificates for events to see them here</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 md:space-y-4">
+                    {generationHistory.map((item, i) => {
+                      const colors = [
+                        "from-[#FF5733] to-[#ff7a59]",
+                        "from-[#8FD6BD] to-[#a8e0cd]",
+                        "from-[#F4E04D] to-[#f7e878]"
+                      ]
+                      return (
+                        <div
+                          key={item.id}
+                          className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 md:p-4 border-2 border-gray-100 rounded-lg hover:shadow-md transition-all bg-white gap-3"
+                        >
+                          <div className="flex items-center gap-3 md:gap-4 w-full sm:w-auto">
+                            <div className={`w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br ${colors[i % 3]} rounded-lg flex items-center justify-center shrink-0`}>
+                              <FileText className="h-6 w-6 md:h-7 md:w-7 text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-base md:text-lg text-gray-900 truncate">{item.eventName}</h3>
+                              <p className="text-sm md:text-base text-gray-500 truncate">{item.count} certificates • {item.date}</p>
+                              <p className="text-xs text-gray-400">{item.clubName}</p>
+                            </div>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-[#21808D] hover:bg-[#21808D]/10 w-full sm:w-auto text-sm md:text-base"
+                            onClick={() => {
+                              setSelectedHistoryItem(item)
+                              setShowHistoryDetailModal(true)
+                            }}
+                          >
+                            View Details
+                            <ChevronRight className="h-4 w-4 ml-1" />
+                          </Button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </Card>
+            </div>
+          )}
+
+          {currentPage === "organizations" && (
+            <div className="max-w-6xl mx-auto">
+              {/* Step 3: No Organization - Prompt to Join or Create */}
+              {!hasOrganization && (
+                <div className="text-center py-8 md:py-16 px-4">
+                  <div className="w-20 h-20 md:w-24 md:h-24 mx-auto mb-4 md:mb-6 bg-gradient-to-br from-[#21808D] to-[#1a6570] rounded-2xl md:rounded-3xl flex items-center justify-center">
+                    <Building2 className="h-10 w-10 md:h-12 md:w-12 text-white" />
+                  </div>
+                  <h2 className="text-3xl md:text-4xl lg:text-8xl font-semibold mb-3 md:mb-4">Welcome to Forge!</h2>
+                  <p className="text-lg md:text-xl lg:text-2xl text-gray-600 mb-6 md:mb-8 max-w-2xl mx-auto px-4">
+                    To start generating certificates, you need to join or create an organization.
+                  </p>
+                  
+                  <div className="grid md:grid-cols-2 gap-4 md:gap-6 max-w-3xl mx-auto">
+                    {/* Step 4: Join Existing Organization */}
+                    <Card className="p-6 md:p-8 bg-white rounded-2xl shadow-lg border-2 border-transparent hover:border-[#21808D] transition-all cursor-pointer" onClick={() => setShowJoinOrgModal(true)}>
+                      <div className="w-14 h-14 md:w-16 md:h-16 mx-auto mb-3 md:mb-4 bg-gradient-to-br from-[#8FD6BD] to-[#a8e0cd] rounded-xl md:rounded-2xl flex items-center justify-center">
+                        <Search className="h-7 w-7 md:h-8 md:w-8 text-gray-900" />
+                      </div>
+                      <h3 className="text-xl md:text-2xl font-bold mb-2">Join Organization</h3>
+                      <p className="text-lg md:text-lg lg:text-xl text-gray-600 mb-4">Search and join your college, university, or company</p>
+                      <Button className="w-full bg-[#8FD6BD] hover:bg-[#7bc5ac] text-gray-900">
+                        Browse Organizations
+                      </Button>
+                    </Card>
+
+                    {/* Step 4: Create New Organization */}
+                    <Card className="p-6 md:p-8 bg-white rounded-2xl shadow-lg border-2 border-transparent hover:border-[#21808D] transition-all cursor-pointer" onClick={() => setShowCreateOrgModal(true)}>
+                      <div className="w-14 h-14 md:w-16 md:h-16 mx-auto mb-3 md:mb-4 bg-gradient-to-br from-[#FF5733] to-[#ff7a59] rounded-xl md:rounded-2xl flex items-center justify-center">
+                        <Building2 className="h-7 w-7 md:h-8 md:w-8 text-white" />
+                      </div>
+                      <h3 className="text-xl md:text-2xl font-bold mb-2">Create Organization</h3>
+                      <p className="text-sm md:text-base text-gray-600 mb-4">Create a new organization if yours doesn't exist</p>
+                      <Button className="w-full bg-[#FF5733] hover:bg-[#e64d2a] text-white">
+                        Create New
+                      </Button>
+                    </Card>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 5 & 6: Has Organization - Show Clubs */}
+              {hasOrganization && (
+                <div>
+                  {/* Organization Header */}
+                  <Card className="bg-white p-6 md:p-8 rounded-2xl shadow-md mb-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
+                        {userOrganizationLogo ? (
+                          <div className="w-14 h-14 md:w-20 md:h-20 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden bg-white shadow-sm">
+                            <img src={userOrganizationLogo} alt={userOrganization || 'Organization'} className="w-full h-full object-contain p-1" />
+                          </div>
+                        ) : (
+                          <div className="w-14 h-14 md:w-20 md:h-20 bg-gradient-to-br from-[#21808D] to-[#1a6570] rounded-2xl flex items-center justify-center shrink-0">
+                            <Building2 className="h-7 w-7 md:h-10 md:w-10 text-white" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-bold text-lg md:text-2xl truncate">{userOrganization || "Your Organization"}</h3>
+                          <p className="text-sm md:text-lg text-gray-500">Organization Member</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          className="p-2 md:p-3 hover:bg-blue-50 rounded-lg transition-colors group shrink-0"
+                          onClick={() => setShowCreateOrgModal(true)}
+                          title="Edit Organization"
+                        >
+                          <Settings className="h-5 w-5 md:h-6 md:w-6 text-blue-500 group-hover:text-blue-600" />
+                        </button>
+                        <button
+                          className="p-2 md:p-3 hover:bg-red-50 rounded-lg transition-colors group shrink-0"
+                          onClick={() => {
+                            if (confirm(`Are you sure you want to leave ${userOrganization}? This will remove you from all clubs.`)) {
+                              setHasOrganization(false)
+                              setUserOrganization(null)
+                              setUserOrganizationLogo(null)
+                              setUserClubs([])
+                              setHasClubMembership(false)
+                              setSelectedEvent(null)
+                              // Clear from localStorage
+                              localStorage.removeItem('userOrganization')
+                              localStorage.removeItem('userOrganizationLogo')
+                              localStorage.setItem('userClubs', JSON.stringify([]))
+                            }
+                          }}
+                          title="Leave Organization"
+                        >
+                          <LogOut className="h-5 w-5 md:h-6 md:w-6 text-red-500 group-hover:text-red-600" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 md:gap-3">
+                      <div className="p-3 md:p-4 bg-gradient-to-br from-[#FF5733] to-[#ff7a59] rounded-lg md:rounded-xl text-white text-center">
+                        <div className="text-xl md:text-2xl font-bold">1</div>
+                        <div className="text-[10px] md:text-xs opacity-90">Members</div>
+                      </div>
+                      <div className="p-3 md:p-4 bg-gradient-to-br from-[#8FD6BD] to-[#a8e0cd] rounded-lg md:rounded-xl text-gray-900 text-center">
+                        <div className="text-xl md:text-2xl font-bold">{userClubs.length}</div>
+                        <div className="text-[10px] md:text-xs opacity-80">Your Clubs</div>
+                      </div>
+                      <div className="p-3 md:p-4 bg-gradient-to-br from-[#F4E04D] to-[#f7e878] rounded-lg md:rounded-xl text-gray-900 text-center">
+                        <div className="text-xl md:text-2xl font-bold">{Object.values(clubEvents).reduce((total, events) => total + events.length, 0)}</div>
+                        <div className="text-[10px] md:text-xs opacity-80">Events</div>
+                      </div>
+                    </div>
+                  </Card>
+
+                  {/* Step 5 & 6: Browse and Join Clubs */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+                    {/* Your Clubs */}
+                    <Card className="bg-white p-4 md:p-6 lg:p-8 rounded-2xl shadow-md">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="font-bold text-lg md:text-xl lg:text-2xl">Your Clubs</h3>
+                        <span className="text-xs md:text-sm text-gray-500">{userClubs.length} clubs</span>
+                      </div>
+                      {userClubs.length === 0 ? (
+                        <div className="text-center py-6 md:py-8">
+                          <Users className="h-10 w-10 md:h-12 md:w-12 mx-auto mb-3 text-gray-300" />
+                          <p className="text-sm md:text-base text-gray-500 mb-2 md:mb-4">You haven't joined any clubs yet</p>
+                          <p className="text-xs md:text-sm text-gray-400 mb-3 md:mb-4">Join a club to start generating certificates!</p>
+                          <Button 
+                            onClick={() => setShowCreateClubModal(true)} 
+                            className="bg-[#21808D] hover:bg-[#1a6570] text-white text-sm md:text-base"
+                          >
+                            Create Club
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {userClubs.map((club, i) => {
+                            const colors = [
+                              "from-[#FF5733] to-[#ff7a59]",
+                              "from-[#8FD6BD] to-[#a8e0cd]",
+                              "from-[#F4E04D] to-[#f7e878]"
+                            ]
+                            return (
+                              <div 
+                                key={i} 
+                                className="flex items-center justify-between p-3 bg-white border-2 border-gray-100 rounded-lg hover:shadow-md hover:border-[#21808D] transition-all cursor-pointer group"
+                                onClick={() => {
+                                  setSelectedClub(club)
+                                  setShowClubDetailModal(true)
+                                }}
+                              >
+                                <div className="flex items-center gap-3">
+                                  {availableClubs.find(c => c.name === club)?.logoUrl ? (
+                                    <div className="w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-lg flex items-center justify-center overflow-hidden bg-white shadow-sm shrink-0">
+                                      <img src={availableClubs.find(c => c.name === club)!.logoUrl!} alt={club} className="w-full h-full object-contain" />
+                                    </div>
+                                  ) : (
+                                    <div className={`w-12 h-12 md:w-14 md:h-14 rounded-lg bg-gradient-to-br ${colors[i % 3]} flex items-center justify-center shrink-0`}>
+                                      <Users className="h-6 w-6 md:h-7 md:w-7 text-white" />
+                                    </div>
+                                  )}
+                                  <div>
+                                    <span className="font-medium text-base md:text-lg">{club}</span>
+                                    {clubEvents[club] && clubEvents[club].length > 0 && (
+                                      <p className="text-xs text-gray-500">{clubEvents[club].length} events</p>
+                                    )}
+                                  </div>
+                                </div>
+                                <ChevronRight className="h-4 w-4 text-gray-400" />
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </Card>
+                  </div>
+                </div>
+              )}
+
+              {/* Join Organization Modal */}
+              {showJoinOrgModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 md:p-4">
+                  <Card className="bg-white p-4 md:p-8 rounded-2xl max-w-3xl w-full max-h-[85vh] md:max-h-[80vh] overflow-hidden flex flex-col">
+                    <div className="flex items-center justify-between mb-4 md:mb-6">
+                      <div className="flex-1 min-w-0 pr-2">
+                        <h2 className="text-2xl md:text-3xl font-bold truncate">Join an Organization</h2>
+                        <p className="text-xs md:text-sm text-gray-500 mt-1">
+                          {userCreatedOrgs.length > 0 
+                            ? `${userCreatedOrgs.length} Custom + Top Engineering Colleges (NIRF 2025)` 
+                            : 'Top Engineering Colleges (NIRF 2025)'}
+                        </p>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => {
+                        setShowJoinOrgModal(false)
+                        setCollegeSearch("")
+                      }}>
+                        <X className="h-5 w-5" />
+                      </Button>
+                    </div>
+                    <div className="relative mb-6">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Input 
+                        placeholder="Search by college name, city, or state..." 
+                        className="pl-10 text-base" 
+                        value={collegeSearch}
+                        onChange={(e) => setCollegeSearch(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex-1 overflow-y-auto space-y-3">
+                      {uniqueOrganizations
+                        .filter(college => 
+                          (collegeSearch === '' || 
+                          college.name.toLowerCase().includes(collegeSearch.toLowerCase()) ||
+                          college.city.toLowerCase().includes(collegeSearch.toLowerCase()) ||
+                          college.state.toLowerCase().includes(collegeSearch.toLowerCase()))
+                          && college.name !== userOrganization  // Don't show current organization
+                        )
+                        .slice(0, 20)
+                        .map((college, i) => (
+                        <div key={college.id} className="flex items-center gap-2 md:gap-3 p-3 md:p-4 border-2 border-gray-100 rounded-lg hover:border-[#21808D] transition-all group">
+                          {userCreatedOrgs.find(org => org.id === college.id)?.logoUrl ? (
+                            <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center shrink-0 overflow-hidden bg-white shadow-sm">
+                              <img src={userCreatedOrgs.find(org => org.id === college.id)!.logoUrl!} alt={college.name} className="w-full h-full object-contain p-1" />
+                            </div>
+                          ) : (
+                            <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-[#21808D] to-[#1a6570] rounded-lg flex items-center justify-center shrink-0">
+                              <Building2 className="h-5 w-5 md:h-6 md:w-6 text-white" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <h4 className="font-semibold text-sm md:text-base line-clamp-1 flex-1" title={college.name}>{college.name}</h4>
+                              {college.rank > 0 ? (
+                                <span className="text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 bg-[#21808D]/10 text-[#21808D] rounded-full shrink-0 font-medium">#{college.rank}</span>
+                              ) : (
+                                <span className="text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 bg-green-100 text-green-700 rounded-full shrink-0 font-medium">Custom</span>
+                              )}
+                            </div>
+                            <p className="text-xs md:text-sm text-gray-500 truncate">{college.city}, {college.state}</p>
+                          </div>
+                          <Button 
+                            size="sm"
+                            className="bg-[#21808D] hover:bg-[#1a6570] text-white shrink-0 text-xs md:text-sm px-3 md:px-4 py-1.5 md:py-2"
+                            onClick={() => {
+                              setUserOrganization(college.name)
+                              setHasOrganization(true)
+                              setShowJoinOrgModal(false)
+                              setCollegeSearch("")
+                              // Save organization logo if it's a user-created org
+                              const orgData = userCreatedOrgs.find(org => org.id === college.id)
+                              if (orgData?.logoUrl) {
+                                setUserOrganizationLogo(orgData.logoUrl)
+                                localStorage.setItem('userOrganizationLogo', orgData.logoUrl)
+                              } else {
+                                setUserOrganizationLogo(null)
+                                localStorage.removeItem('userOrganizationLogo')
+                              }
+                              // Save to localStorage
+                              localStorage.setItem('userOrganization', college.name)
+                            }}
+                          >
+                            Join
+                          </Button>
+                        </div>
+                      ))}
+                      {uniqueOrganizations
+                        .filter(college => 
+                          (collegeSearch === '' || 
+                          college.name.toLowerCase().includes(collegeSearch.toLowerCase()) ||
+                          college.city.toLowerCase().includes(collegeSearch.toLowerCase()) ||
+                          college.state.toLowerCase().includes(collegeSearch.toLowerCase()))
+                          && college.name !== userOrganization
+                        ).length === 0 && (
+                        <div className="text-center py-12">
+                          <Building2 className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                          <p className="text-gray-500 mb-2">No colleges found</p>
+                          <p className="text-sm text-gray-400">Try a different search term or create your organization</p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-6 pt-4 border-t">
+                      <Button 
+                        variant="outline" 
+                        className="w-full border-[#21808D] text-[#21808D] hover:bg-[#21808D] hover:text-white"
+                        onClick={() => {
+                          setShowJoinOrgModal(false)
+                          setShowCreateOrgModal(true)
+                          setCollegeSearch("")
+                        }}
+                      >
+                        Can't find your organization? Create New
+                      </Button>
+                    </div>
+                  </Card>
+                </div>
+              )}
+
+              {/* Create Organization Modal */}
+              {showCreateOrgModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 md:p-4">
+                  <Card className="bg-white p-4 md:p-8 rounded-2xl max-w-2xl w-full max-h-[85vh] md:max-h-auto overflow-y-auto">
+                    <div className="flex items-center justify-between mb-4 md:mb-6">
+                      <h2 className="text-2xl md:text-3xl font-bold">Create New Organization</h2>
+                      <Button variant="ghost" size="sm" onClick={() => setShowCreateOrgModal(false)}>
+                        <X className="h-5 w-5" />
+                      </Button>
+                    </div>
+                    <form onSubmit={(e) => {
+                      e.preventDefault()
+                      const formData = new FormData(e.currentTarget)
+                      const orgName = formData.get('orgName') as string
+                      const orgType = formData.get('orgType') as string
+                      const orgWebsite = formData.get('orgWebsite') as string
+                      const orgDescription = formData.get('orgDescription') as string
+                      const orgLogoUrl = formData.get('orgLogoUrl') as string
+                      const orgCity = formData.get('orgCity') as string || ''
+                      const orgState = formData.get('orgState') as string || ''
+                      
+                      // Create new organization object
+                      const newOrg = {
+                        id: Date.now().toString(),
+                        name: orgName || "Your New Organization",
+                        city: orgCity,
+                        state: orgState,
+                        type: orgType,
+                        website: orgWebsite,
+                        description: orgDescription,
+                        logoUrl: orgLogoUrl
+                      }
+                      
+                      // Add to user-created organizations list
+                      setUserCreatedOrgs(prev => [newOrg, ...prev])
+                      
+                      // Set as user's current organization
+                      setUserOrganization(orgName || "Your New Organization")
+                      setUserOrganizationLogo(orgLogoUrl || null)
+                      setHasOrganization(true)
+                      setShowCreateOrgModal(false)
+                      
+                      // Save to localStorage
+                      localStorage.setItem('userOrganization', orgName || "Your New Organization")
+                      if (orgLogoUrl) {
+                        localStorage.setItem('userOrganizationLogo', orgLogoUrl)
+                      }
+                    }}>
+                      <div className="space-y-3 md:space-y-4">
+                        <div>
+                          <label className="block text-sm md:text-base font-medium text-gray-700 mb-2">Organization Logo URL</label>
+                          <Input 
+                            type="url"
+                            name="orgLogoUrl"
+                            placeholder="https://example.com/logo.png" 
+                            className="text-sm md:text-base" 
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Provide a web URL for your organization's logo</p>
+                        </div>
+                        <div>
+                          <label className="block text-sm md:text-base font-medium text-gray-700 mb-2">Organization Name *</label>
+                          <Input 
+                            name="orgName"
+                            placeholder="e.g., IIT Bombay, Google India" 
+                            className="text-sm md:text-base" 
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm md:text-base font-medium text-gray-700 mb-2">Organization Type</label>
+                          <select name="orgType" className="w-full p-2 border border-gray-300 rounded-lg text-sm md:text-base">
+                            <option>University</option>
+                            <option>College</option>
+                            <option>Company</option>
+                            <option>Non-Profit</option>
+                            <option>Other</option>
+                          </select>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm md:text-base font-medium text-gray-700 mb-2">City (Optional)</label>
+                            <Input 
+                              name="orgCity"
+                              placeholder="e.g., Mumbai, Bangalore" 
+                              className="text-sm md:text-base" 
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm md:text-base font-medium text-gray-700 mb-2">State (Optional)</label>
+                            <Input 
+                              name="orgState"
+                              placeholder="e.g., Maharashtra, Karnataka" 
+                              className="text-sm md:text-base" 
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-base font-medium text-gray-700 mb-2">Website (Optional)</label>
+                          <Input 
+                            type="url"
+                            name="orgWebsite"
+                            placeholder="https://example.com" 
+                            className="text-base" 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-base font-medium text-gray-700 mb-2">Description</label>
+                          <textarea 
+                            name="orgDescription"
+                            className="w-full p-3 border border-gray-300 rounded-lg text-base" 
+                            rows={4} 
+                            placeholder="Tell us about your organization..."
+                          />
+                        </div>
+                        <div className="flex gap-3 pt-4">
+                          <Button 
+                            type="button"
+                            variant="outline" 
+                            className="flex-1"
+                            onClick={() => setShowCreateOrgModal(false)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button 
+                            type="submit"
+                            className="flex-1 bg-[#21808D] hover:bg-[#1a6570] text-white"
+                          >
+                            Create Organization
+                          </Button>
+                        </div>
+                      </div>
+                    </form>
+                  </Card>
+                </div>
+              )}
+
+              {/* Club Detail Modal - Shows Events */}
+              {showClubDetailModal && selectedClub && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 md:p-4">
+                  <Card className="bg-white p-4 md:p-8 rounded-2xl max-w-3xl w-full max-h-[85vh] md:max-h-[80vh] overflow-hidden flex flex-col">
+                    <div className="flex items-center justify-between mb-4 md:mb-6">
+                      <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
+                        {availableClubs.find(c => c.name === selectedClub)?.logoUrl ? (
+                          <div className="w-14 h-14 md:w-20 md:h-20 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 overflow-hidden bg-white shadow-sm">
+                            <img src={availableClubs.find(c => c.name === selectedClub)!.logoUrl!} alt={selectedClub} className="w-full h-full object-contain" />
+                          </div>
+                        ) : (
+                          <div className="w-14 h-14 md:w-20 md:h-20 bg-gradient-to-br from-[#21808D] to-[#1a6570] rounded-xl md:rounded-2xl flex items-center justify-center shrink-0">
+                            <Users className="h-7 w-7 md:h-10 md:w-10 text-white" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <h2 className="text-xl md:text-3xl font-bold truncate">{selectedClub}</h2>
+                          <p className="text-xs md:text-sm text-gray-500 truncate">
+                            {userOrganization}
+                            {availableClubs.find(c => c.name === selectedClub)?.members && (
+                              <span> • {availableClubs.find(c => c.name === selectedClub)!.members} {availableClubs.find(c => c.name === selectedClub)!.members === 1 ? 'member' : 'members'}</span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                          onClick={() => {
+                            if (confirm(`Are you sure you want to leave ${selectedClub}?`)) {
+                              setUserClubs(userClubs.filter(c => c !== selectedClub))
+                              setShowClubDetailModal(false)
+                              setSelectedClub(null)
+                              // If this was the selected event's club, clear the event
+                              if (selectedEvent?.club === selectedClub) {
+                                setSelectedEvent(null)
+                              }
+                            }
+                          }}
+                        >
+                          Leave Club
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => {
+                          setShowClubDetailModal(false)
+                          setSelectedClub(null)
+                        }}>
+                          <X className="h-5 w-5" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-xl font-bold">Events</h3>
+                      <Button 
+                        className="bg-[#21808D] hover:bg-[#1a6570] text-white"
+                        onClick={() => setShowCreateEventModal(true)}
+                      >
+                        Create Event
+                      </Button>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto space-y-3">
+                      {(!clubEvents[selectedClub] || clubEvents[selectedClub].length === 0) ? (
+                        <div className="text-center py-12">
+                          <FileText className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                          <p className="text-gray-500 mb-2">No events yet</p>
+                          <p className="text-sm text-gray-400 mb-4">Create an event to start generating certificates</p>
+                        </div>
+                      ) : (
+                        clubEvents[selectedClub].map((event, i) => (
+                          <div 
+                            key={event.id} 
+                            className={`flex items-center justify-between p-4 border-2 rounded-lg transition-all cursor-pointer ${
+                              selectedEvent?.eventId === event.id 
+                                ? 'border-[#21808D] bg-[#21808D]/5' 
+                                : 'border-gray-100 hover:border-[#21808D]'
+                            }`}
+                            onClick={() => {
+                              setSelectedEvent({
+                                club: selectedClub,
+                                eventId: event.id,
+                                eventName: event.name
+                              })
+                              setShowClubDetailModal(false)
+                              setCurrentPage("generate")
+                            }}
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 bg-gradient-to-br from-[#8FD6BD] to-[#a8e0cd] rounded-lg flex items-center justify-center">
+                                <FileText className="h-6 w-6 text-gray-900" />
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-lg">{event.name}</h4>
+                                <p className="text-sm text-gray-500">{event.date}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {selectedEvent?.eventId === event.id && (
+                                <span className="text-xs px-2 py-1 bg-[#21808D] text-white rounded-full">Active</span>
+                              )}
+                              <ChevronRight className="h-4 w-4 text-gray-400" />
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </Card>
+                </div>
+              )}
+
+              {/* Create Event Modal */}
+              {showCreateEventModal && selectedClub && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+                  <Card className="bg-white p-8 rounded-2xl max-w-2xl w-full">
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-3xl font-bold">Create Event</h2>
+                      <Button variant="ghost" size="sm" onClick={() => setShowCreateEventModal(false)}>
+                        <X className="h-5 w-5" />
+                      </Button>
+                    </div>
+                    <form onSubmit={(e) => {
+                      e.preventDefault()
+                      const formData = new FormData(e.currentTarget)
+                      const eventName = formData.get('eventName') as string
+                      
+                      const newEvent = {
+                        id: Date.now().toString(),
+                        name: eventName,
+                        date: eventDate ? eventDate.toLocaleDateString() : new Date().toLocaleDateString()
+                      }
+                      
+                      setClubEvents(prev => ({
+                        ...prev,
+                        [selectedClub]: [...(prev[selectedClub] || []), newEvent]
+                      }))
+                      
+                      setSelectedEvent({
+                        club: selectedClub,
+                        eventId: newEvent.id,
+                        eventName: newEvent.name
+                      })
+                      
+                      setShowCreateEventModal(false)
+                      setShowClubDetailModal(false)
+                      setEventDate(undefined)
+                      setCurrentPage("generate")
+                    }}>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-base font-medium text-gray-700 mb-2">Event Name *</label>
+                          <Input 
+                            name="eventName"
+                            placeholder="e.g., Annual Tech Fest 2025, Workshop on AI" 
+                            className="text-base" 
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm md:text-base font-medium text-gray-700 mb-2">Event Date</label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className={`w-full justify-start text-left font-normal text-sm md:text-base ${
+                                  !eventDate && "text-muted-foreground"
+                                }`}
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {eventDate ? format(eventDate, "PPP") : <span>Pick a date</span>}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0 z-[70]" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={eventDate}
+                                onSelect={setEventDate}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        <div className="flex gap-3 pt-4">
+                          <Button 
+                            type="button"
+                            variant="outline" 
+                            className="flex-1"
+                            onClick={() => setShowCreateEventModal(false)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button 
+                            type="submit"
+                            className="flex-1 bg-[#21808D] hover:bg-[#1a6570] text-white"
+                          >
+                            Create & Select Event
+                          </Button>
+                        </div>
+                      </div>
+                    </form>
+                  </Card>
+                </div>
+              )}
+
+              {/* Create Club Modal */}
+              {showCreateClubModal && hasOrganization && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+                  <Card className="bg-white p-6 md:p-8 rounded-2xl max-w-2xl w-full">
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-2xl md:text-3xl font-bold">Create New Club</h2>
+                      <Button variant="ghost" size="sm" onClick={() => setShowCreateClubModal(false)}>
+                        <X className="h-5 w-5" />
+                      </Button>
+                    </div>
+                    <form onSubmit={(e) => {
+                      e.preventDefault()
+                      const formData = new FormData(e.currentTarget)
+                      const clubName = formData.get('clubName') as string
+                      const clubLogoUrl = formData.get('clubLogoUrl') as string
+                      
+                      // Automatically add creator as a member of the club
+                      if (!userClubs.includes(clubName)) {
+                        setUserClubs([...userClubs, clubName])
+                        setHasClubMembership(true)
+                      }
+                      
+                      // Add to available clubs for persistence
+                      const colors = [
+                        "from-[#FF5733] to-[#ff7a59]",
+                        "from-[#8FD6BD] to-[#a8e0cd]",
+                        "from-[#F4E04D] to-[#f7e878]"
+                      ]
+                      const newClub = {
+                        name: clubName,
+                        members: 1,
+                        color: colors[availableClubs.length % 3],
+                        logoUrl: clubLogoUrl || undefined
+                      }
+                      setAvailableClubs([...availableClubs, newClub])
+                      
+                      setShowCreateClubModal(false)
+                    }}>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-base font-medium text-gray-700 mb-2">Club Logo URL (Optional)</label>
+                          <Input 
+                            name="clubLogoUrl"
+                            type="url"
+                            placeholder="https://example.com/logo.png" 
+                            className="text-base" 
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Provide a web URL for your club's logo</p>
+                        </div>
+                        <div>
+                          <label className="block text-base font-medium text-gray-700 mb-2">Club Name *</label>
+                          <Input 
+                            name="clubName"
+                            placeholder="e.g., Coding Club, Robotics Club" 
+                            className="text-base" 
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-base font-medium text-gray-700 mb-2">Club Type</label>
+                          <select className="w-full p-2 border border-gray-300 rounded-lg text-base">
+                            <option>Technical Club</option>
+                            <option>Cultural Club</option>
+                            <option>Sports Club</option>
+                            <option>Arts Club</option>
+                            <option>Social Service</option>
+                            <option>Other</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-base font-medium text-gray-700 mb-2">Description</label>
+                          <textarea 
+                            name="clubDesc"
+                            className="w-full p-3 border border-gray-300 rounded-lg text-base" 
+                            rows={3} 
+                            placeholder="Brief description of your club..."
+                          ></textarea>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                          <Button 
+                            type="button"
+                            variant="outline" 
+                            className="flex-1"
+                            onClick={() => setShowCreateClubModal(false)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button 
+                            type="submit"
+                            className="flex-1 bg-[#21808D] hover:bg-[#1a6570] text-white"
+                          >
+                            Create Club
+                          </Button>
+                        </div>
+                      </div>
+                    </form>
+                  </Card>
+                </div>
+              )}
+            </div>
+          )}
+
+          {currentPage === "settings" && (
+            <div className="max-w-4xl mx-auto space-y-6">
+              {/* Profile Information */}
+              <Card className="bg-white p-6 md:p-8 rounded-2xl">
+                <h2 className="text-2xl md:text-3xl font-bold mb-6">Profile Settings</h2>
+                <form onSubmit={async (e) => {
+                  e.preventDefault()
+                  setIsSavingProfile(true)
+                  
+                  try {
+                    const response = await fetch('/api/profile', {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        name: profileName,
+                        phone: profilePhone,
+                        bio: profileBio,
+                        image: profileImageUrl,
+                        organization: userOrganization || '',
+                      }),
+                    })
+
+                    const data = await response.json()
+
+                    if (data.success) {
+                      // Also save to localStorage as backup
+                      const profile = {
+                        name: profileName,
+                        email: profileEmail,
+                        phone: profilePhone,
+                        bio: profileBio,
+                        imageUrl: profileImageUrl
+                      }
+                      localStorage.setItem('userProfile', JSON.stringify(profile))
+                      
+                      alert('Profile updated successfully in database!')
+                    } else {
+                      alert('Failed to update profile: ' + data.error)
+                    }
+                  } catch (error) {
+                    console.error('Failed to save profile:', error)
+                    alert('Error saving profile. Please try again.')
+                  } finally {
+                    setIsSavingProfile(false)
+                  }
+                }}>
+                  <div className="space-y-6">
+                    {/* Profile Image URL */}
+                    <div>
+                      <label className="block text-base font-medium text-gray-700 mb-2">Profile Image URL</label>
+                      <Input 
+                        type="url"
+                        value={profileImageUrl}
+                        onChange={(e) => setProfileImageUrl(e.target.value)}
+                        placeholder="https://example.com/your-image.jpg" 
+                        className="max-w-md text-base" 
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Enter a web URL for your profile picture</p>
+                      {profileImageUrl && (
+                        <div className="mt-3">
+                          <p className="text-sm text-gray-600 mb-2">Preview:</p>
+                          <Avatar className="w-20 h-20">
+                            <AvatarImage 
+                              src={profileImageUrl} 
+                              alt="Profile preview" 
+                              className="object-cover"
+                            />
+                            <AvatarFallback className="bg-[#21808D] text-white text-2xl">
+                              {profileName ? profileName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Full Name */}
+                    <div>
+                      <label className="block text-base font-medium text-gray-700 mb-2">Full Name *</label>
+                      <Input 
+                        value={profileName}
+                        onChange={(e) => setProfileName(e.target.value)}
+                        className="max-w-md text-base" 
+                        required
+                      />
+                    </div>
+
+                    {/* Email (Read-only) */}
+                    <div>
+                      <label className="block text-base font-medium text-gray-700 mb-2">Email</label>
+                      <Input 
+                        value={profileEmail}
+                        className="max-w-md text-base" 
+                        disabled 
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+                    </div>
+
+                    {/* Phone Number */}
+                    <div>
+                      <label className="block text-base font-medium text-gray-700 mb-2">Phone Number</label>
+                      <Input 
+                        type="tel"
+                        value={profilePhone}
+                        onChange={(e) => setProfilePhone(e.target.value)}
+                        placeholder="+1 234 567 8900"
+                        className="max-w-md text-base" 
+                      />
+                    </div>
+
+                    {/* Bio */}
+                    <div>
+                      <label className="block text-base font-medium text-gray-700 mb-2">Bio</label>
+                      <textarea 
+                        value={profileBio}
+                        onChange={(e) => setProfileBio(e.target.value)}
+                        placeholder="Tell us about yourself..."
+                        className="w-full max-w-2xl p-3 border border-gray-300 rounded-lg text-base" 
+                        rows={4}
+                      />
+                    </div>
+
+                    {/* Organization (Read-only) */}
+                    <div>
+                      <label className="block text-base font-medium text-gray-700 mb-2">Organization</label>
+                      <Input 
+                        value={userOrganization || "Not in any organization"}
+                        className="max-w-md text-base" 
+                        disabled 
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Leave and join a different organization from the Organizations page</p>
+                    </div>
+
+                    <Button 
+                      type="submit"
+                      disabled={isSavingProfile}
+                      className="bg-[#21808D] hover:bg-[#1a6570] text-white text-base px-6 py-2 disabled:opacity-50"
+                    >
+                      {isSavingProfile ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                  </div>
+                </form>
+              </Card>
+
+              {/* Account Actions */}
+              <Card className="bg-white p-6 md:p-8 rounded-2xl">
+                <h2 className="text-xl md:text-2xl font-bold mb-4">Account Actions</h2>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div>
+                      <h3 className="font-semibold text-gray-900">Change Password</h3>
+                      <p className="text-sm text-gray-500">Update your password to keep your account secure</p>
+                    </div>
+                    <Button variant="outline" className="border-[#21808D] text-[#21808D] hover:bg-[#21808D] hover:text-white">
+                      Change
+                    </Button>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-4 border border-red-200 rounded-lg bg-red-50">
+                    <div>
+                      <h3 className="font-semibold text-red-900">Delete Account</h3>
+                      <p className="text-sm text-red-600">Permanently delete your account and all data</p>
+                    </div>
+                    <Button variant="outline" className="border-red-500 text-red-600 hover:bg-red-600 hover:text-white">
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* History Detail Modal */}
+      {showHistoryDetailModal && selectedHistoryItem && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 md:p-4">
+          <Card className="bg-white p-4 md:p-8 rounded-2xl max-w-4xl w-full max-h-[85vh] md:max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between mb-4 md:mb-6">
+              <div className="flex-1 min-w-0 pr-2">
+                <h2 className="text-2xl md:text-3xl font-bold truncate">{selectedHistoryItem.eventName}</h2>
+                <p className="text-xs md:text-sm text-gray-500 mt-1">Generated on {selectedHistoryItem.date}</p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => {
+                setShowHistoryDetailModal(false)
+                setSelectedHistoryItem(null)
+              }}>
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 md:gap-4">
+              <Card className="p-3 md:p-4 bg-gradient-to-br from-[#FF5733] to-[#ff7a59] text-white">
+                <div className="text-2xl md:text-3xl font-bold">{selectedHistoryItem.count}</div>
+                <div className="text-[10px] md:text-sm opacity-90">Generated</div>
+              </Card>
+              <Card className="p-3 md:p-4 bg-gradient-to-br from-[#8FD6BD] to-[#a8e0cd] text-gray-900">
+                <div className="text-2xl md:text-3xl font-bold">{selectedHistoryItem.successRate}%</div>
+                <div className="text-[10px] md:text-sm opacity-80">Success Rate</div>
+              </Card>
+              <Card className="p-3 md:p-4 bg-gradient-to-br from-[#F4E04D] to-[#f7e878] text-gray-900">
+                <div className="text-2xl md:text-3xl font-bold">{selectedHistoryItem.totalSize}</div>
+                <div className="text-[10px] md:text-sm opacity-80">Total Size</div>
+              </Card>
+            </div>
+
+            <div className="mt-6 p-6 bg-gray-50 rounded-lg">
+              <h3 className="text-lg font-bold mb-4 text-gray-900">Generation Summary</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center pb-2 border-b border-gray-200">
+                  <span className="text-gray-600">Event Name</span>
+                  <span className="font-semibold text-gray-900">{selectedHistoryItem.eventName}</span>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b border-gray-200">
+                  <span className="text-gray-600">Club Name</span>
+                  <span className="font-semibold text-gray-900">{selectedHistoryItem.clubName}</span>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b border-gray-200">
+                  <span className="text-gray-600">Date Generated</span>
+                  <span className="font-semibold text-gray-900">{selectedHistoryItem.date}</span>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b border-gray-200">
+                  <span className="text-gray-600">Total Certificates</span>
+                  <span className="font-semibold text-gray-900">{selectedHistoryItem.count}</span>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b border-gray-200">
+                  <span className="text-gray-600">Success Rate</span>
+                  <span className="font-semibold text-green-600">{selectedHistoryItem.successRate}%</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Total Size</span>
+                  <span className="font-semibold text-gray-900">{selectedHistoryItem.totalSize}</span>
+                </div>
+              </div>
+              <p className="mt-4 text-xs text-gray-500 italic">
+                Note: Certificate files are downloaded as ZIP and not stored on server.
+              </p>
+            </div>
+          </Card>
+        </div>
+      )}
+    </div>
+  )
+}
+
