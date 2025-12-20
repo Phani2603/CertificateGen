@@ -24,7 +24,6 @@ export async function GET(request: NextRequest) {
     // Get all clubs for the organization
     const clubs = await Club.find({ organizationId: user.organizationId })
       .populate('members', 'name email')
-      .populate('events')
       .lean()
 
     // Get clubs user is a member of
@@ -38,10 +37,15 @@ export async function GET(request: NextRequest) {
       userClubs: userClubs.map(c => c._id.toString()),
       organization: user.organizationId
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('[Clubs API] GET error:', error)
+    console.error('[Clubs API] Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    })
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch clubs' },
+      { success: false, error: 'Failed to fetch clubs', details: error.message },
       { status: 500 }
     )
   }

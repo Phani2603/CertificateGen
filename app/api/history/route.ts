@@ -27,14 +27,23 @@ export async function GET(request: NextRequest) {
     // Get total count for pagination
     const total = await CertificateHistory.countDocuments({ userId: user._id })
 
-    // Get paginated history
+    // Get paginated history (populate will be null if ref doesn't exist)
     const history = await CertificateHistory.find({ userId: user._id })
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .populate('eventId', 'name date')
-      .populate('clubId', 'name color')
       .lean()
+
+    // Try to populate but don't fail if refs are missing
+    try {
+      await CertificateHistory.populate(history, [
+        { path: 'eventId', select: 'name date' },
+        { path: 'clubId', select: 'name color' }
+      ])
+    } catch (populateError) {
+      console.warn('[History API] Populate warning:', populateError)
+      // Continue without populated data
+    }
 
     const formattedHistory = history.map(item => ({
       id: item._id.toString(),
