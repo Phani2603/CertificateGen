@@ -21,19 +21,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, clubs: [], userClubs: [] })
     }
 
-    // Get all clubs for the organization
+    // Get all clubs for the organization (without populate to avoid errors)
     const clubs = await Club.find({ organizationId: user.organizationId })
-      .populate('members', 'name email')
+      .select('name description color logoUrl organizationId members admins createdAt')
       .lean()
 
-    // Get clubs user is a member of
+    // Get clubs user is a member of (compare ObjectIds directly)
+    const userId = user._id.toString()
     const userClubs = clubs.filter(club => 
-      club.members.some((member: any) => member._id.toString() === user._id.toString())
+      club.members.some((memberId: any) => memberId.toString() === userId)
     )
 
     return NextResponse.json({ 
       success: true, 
-      clubs,
+      clubs: clubs.map(c => ({
+        ...c,
+        _id: c._id.toString(),
+        members: c.members.map((m: any) => m.toString()),
+        admins: c.admins?.map((a: any) => a.toString()) || []
+      })),
       userClubs: userClubs.map(c => c._id.toString()),
       organization: user.organizationId
     })
