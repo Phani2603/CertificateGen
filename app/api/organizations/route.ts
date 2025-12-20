@@ -49,10 +49,15 @@ export async function GET(request: NextRequest) {
       success: true, 
       organization: user.organizationId 
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('[Organizations API] GET error:', error)
+    console.error('[Organizations API] GET error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    })
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch organizations' },
+      { success: false, error: 'Failed to fetch organizations', details: error.message },
       { status: 500 }
     )
   }
@@ -134,10 +139,15 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 })
-  } catch (error) {
+  } catch (error: any) {
     console.error('[Organizations API] POST error:', error)
+    console.error('[Organizations API] Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    })
     return NextResponse.json(
-      { success: false, error: 'Failed to process request' },
+      { success: false, error: 'Failed to process request', details: error.message },
       { status: 500 }
     )
   }
