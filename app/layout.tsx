@@ -1,12 +1,14 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+import {  Roboto } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { getGoogleFontsUrl } from "@/lib/fonts"
+import { AuthProvider } from "@/components/auth-provider"
+import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
 
-const _geist = Geist({ subsets: ["latin"] })
-const _geistMono = Geist_Mono({ subsets: ["latin"] })
+
+const roboto =Roboto({subsets:["cyrillic","latin"], weight:["100","200","800","600","500","300","400","700","900"]})
 
 export const metadata: Metadata = {
   title: "CertificateHash",
@@ -32,8 +34,11 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href={getGoogleFontsUrl()} rel="stylesheet" />
       </head>
-      <body className={`font-sans antialiased`}>
-        {children}
+      <body className={`font-sans ${roboto.className} antialiased`}>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
+        <Toaster position="top-right" richColors />
         <Analytics />
       </body>
     </html>

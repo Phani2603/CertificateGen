@@ -136,7 +136,9 @@ export async function sendCertificateEmail(
   certificateBlob: Blob | Buffer,
   fileName: string,
   provider: EmailProvider = "resend",
-  credentials?: { email: string; appPassword: string }
+  credentials?: { email: string; appPassword: string },
+  verificationId?: string,
+  verificationUrl?: string
 ) {
   try {
     // Handle both Blob and Buffer types
@@ -563,6 +565,8 @@ export async function sendBulkCertificates(
     name: string
     certificateBlob: Blob | Buffer
     fileName: string
+    verificationId?: string
+    verificationUrl?: string
   }>,
   provider: EmailProvider = "resend",
   sendingMode?: "sequential" | "pooled",
@@ -592,7 +596,9 @@ export async function sendBulkCertificates(
       recipient.certificateBlob,
       recipient.fileName,
       provider,
-      credentials
+      credentials,
+      recipient.verificationId,
+      recipient.verificationUrl
     )
     results.push({
       email: recipient.email,

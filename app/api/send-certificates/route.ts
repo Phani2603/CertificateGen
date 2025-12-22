@@ -26,6 +26,8 @@ export async function POST(request: Request) {
       name: recipient.name,
       certificateBlob: Buffer.from(recipient.certificateBase64, "base64"),
       fileName: recipient.fileName,
+      verificationId: recipient.verificationId,
+      verificationUrl: recipient.verificationUrl,
     }))
 
     console.log("[API] Processing", processedRecipients.length, "recipients")

@@ -9,15 +9,20 @@ import { Upload, Download, Loader2, CheckCircle, AlertCircle, Mail } from "lucid
 import JSZip from "jszip"
 import FileSaver from "file-saver"
 import type { CertificateField } from "@/types/certificate"
-import { saveSession, loadSession,  base64ToBlob } from "@/utils/storage"
+import { saveSession, loadSession, clearSession, base64ToBlob } from "@/utils/storage"
 import { useCredentials } from "@/hooks/useCredentials"
 import DevNav from "@/components/DevNav"
+import { toast } from "sonner"
 
 interface CertificateGenerationProps {
   templateImage: string
   fields: CertificateField[]
   onCsvUpload: (data: Array<Record<string, string>>) => void
   onBack: () => void
+  selectedEvent?: {club: string, eventId: string, eventName: string} | null
+  onAddToHistory?: (eventName: string, clubName: string, count: number, totalSizeBytes: number) => void
+  organization?: {id: string, name: string, logoUrl?: string} | null
+  clubs?: Array<{id: string, name: string, members: number, color: string, logoUrl?: string}>
 }
 
 export default function CertificateGeneration({
@@ -25,6 +30,10 @@ export default function CertificateGeneration({
   fields,
   onCsvUpload,
   onBack,
+  selectedEvent,
+  onAddToHistory,
+  organization,
+  clubs,
 }: CertificateGenerationProps) {
   const [csvData, setCsvData] = useState<Array<Record<string, string>>>([])
   const [csvHeaders, setCsvHeaders] = useState<string[]>([])
@@ -39,6 +48,14 @@ export default function CertificateGeneration({
     name: string
     certificateBlob: Blob
     fileName: string
+    verificationId?: string
+    verificationUrl?: string
+  }>>([])
+  const [verificationData, setVerificationData] = useState<Array<{
+    recipientName: string
+    recipientEmail: string
+    verificationId: string
+    verificationUrl: string
   }>>([])
   const [emailStatus, setEmailStatus] = useState<"idle" | "sending" | "success" | "error">("idle")
   const [emailsSent, setEmailsSent] = useState(0)
@@ -61,7 +78,8 @@ export default function CertificateGeneration({
 
   // Restore generated certificates from session on mount
   useEffect(() => {
-    const session = loadSession()
+    const eventId = selectedEvent?.eventId
+    const session = loadSession(eventId)
     
     // Restore CSV data and field mapping
     if (session.csvData && session.csvData.length > 0) {
@@ -93,7 +111,7 @@ export default function CertificateGeneration({
       setGenerationStatus("success")
       setGeneratedCount(restoredCerts.length)
     }
-  }, [])
+  }, [selectedEvent?.eventId])
 
   const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -144,11 +162,12 @@ export default function CertificateGeneration({
       setFieldMapping(autoMapping)
       
       // Save CSV data and headers to session
+      const eventId = selectedEvent?.eventId
       saveSession({ 
         csvData: data, 
         csvHeaders: headers,
         fieldMapping: autoMapping
-      })
+      }, eventId)
       console.log("[Session] Saved CSV data and field mapping to localStorage")
     }
     reader.readAsText(file)
@@ -216,7 +235,7 @@ export default function CertificateGeneration({
     console.log(`[sendEmailsOnly] Starting - isAuthenticated: ${isAuthenticated}, emailProvider: ${emailProvider}`)
     
     if (generatedCertificates.length === 0) {
-      alert("Please generate certificates first")
+      toast.error("Please generate certificates first")
       return
     }
 
@@ -269,6 +288,8 @@ export default function CertificateGeneration({
           name: recipient.name,
           certificateBase64: await blobToBase64(recipient.certificateBlob),
           fileName: recipient.fileName,
+          verificationId: recipient.verificationId,
+          verificationUrl: recipient.verificationUrl,
         }))
       )
       
@@ -314,7 +335,7 @@ export default function CertificateGeneration({
 
   const generateCertificates = async () => {
     if (csvData.length === 0) {
-      alert("Please upload a CSV file first")
+      toast.error("Please upload a CSV file first")
       return
     }
 
@@ -336,49 +357,68 @@ export default function CertificateGeneration({
         fileName: string
       }> = []
 
-      for (let i = 0; i < csvData.length; i++) {
-        const row = csvData[i]
-        const canvas = await createCertificateCanvas(row, scale)
-        const blob = await new Promise<Blob>((resolve, reject) => {
-          canvas.toBlob((blob) => {
-            if (blob) resolve(blob)
-            else reject(new Error("Failed to create blob"))
-          }, "image/png")
-        })
+      // Progressive generation with batching to prevent browser freeze
+      const BATCH_SIZE = 10 // Process 10 certificates at a time
+      const BATCH_DELAY = 50 // 50ms delay between batches to keep UI responsive
+      const totalCertificates = csvData.length
 
-        const filename = `${row.ID || String(i + 1).padStart(3, "0")}_${row.FirstName}_${row.LastName}.png`
+      console.log(`[Batch Processing] Starting generation of ${totalCertificates} certificates in batches of ${BATCH_SIZE}`)
 
-        zip.file(filename, blob)
-
-        // Store certificate for potential email sending (check for email field - case insensitive)
-        const emailField = Object.keys(row).find(key => key.toLowerCase() === 'email')
-        const emailAddress = emailField ? row[emailField] : null
+      for (let batchStart = 0; batchStart < totalCertificates; batchStart += BATCH_SIZE) {
+        const batchEnd = Math.min(batchStart + BATCH_SIZE, totalCertificates)
+        const batchNumber = Math.floor(batchStart / BATCH_SIZE) + 1
+        const totalBatches = Math.ceil(totalCertificates / BATCH_SIZE)
         
-        console.log(`[Row ${i}] Email field:`, emailAddress, "| All fields:", Object.keys(row))
-        
-        if (emailAddress && emailAddress.trim()) {
-          // Try to get first and last name (case insensitive)
-          const firstNameField = Object.keys(row).find(key => key.toLowerCase() === 'firstname')
-          const lastNameField = Object.keys(row).find(key => key.toLowerCase() === 'lastname')
-          
-          const firstName = firstNameField ? row[firstNameField] : ""
-          const lastName = lastNameField ? row[lastNameField] : ""
-          const recipientName = `${firstName} ${lastName}`.trim() || "Recipient"
+        console.log(`[Batch ${batchNumber}/${totalBatches}] Processing certificates ${batchStart + 1} to ${batchEnd}`)
 
-          emailRecipients.push({
-            email: emailAddress.trim(),
-            name: recipientName,
-            certificateBlob: blob,
-            fileName: filename,
+        // Process current batch
+        for (let i = batchStart; i < batchEnd; i++) {
+          const row = csvData[i]
+          const canvas = await createCertificateCanvas(row, scale)
+          const blob = await new Promise<Blob>((resolve, reject) => {
+            canvas.toBlob((blob) => {
+              if (blob) resolve(blob)
+              else reject(new Error("Failed to create blob"))
+            }, "image/png")
           })
+
+          const filename = `${row.ID || String(i + 1).padStart(3, "0")}_${row.FirstName}_${row.LastName}.png`
+
+          // Don't add to zip yet - we'll add them to organized folders later
+          // zip.file(filename, blob)
+
+          // Store certificate for potential email sending (check for email field - case insensitive)
+          const emailField = Object.keys(row).find(key => key.toLowerCase() === 'email')
+          const emailAddress = emailField ? row[emailField] : null
           
-          console.log(`[Row ${i}] Added to email list:`, emailAddress, recipientName)
-        } else {
-          console.warn(`[Row ${i}] No email found in row, skipping email for this certificate`)
+          if (emailAddress && emailAddress.trim()) {
+            // Try to get first and last name (case insensitive)
+            const firstNameField = Object.keys(row).find(key => key.toLowerCase() === 'firstname')
+            const lastNameField = Object.keys(row).find(key => key.toLowerCase() === 'lastname')
+            
+            const firstName = firstNameField ? row[firstNameField] : ""
+            const lastName = lastNameField ? row[lastNameField] : ""
+            const recipientName = `${firstName} ${lastName}`.trim() || "Recipient"
+
+            emailRecipients.push({
+              email: emailAddress.trim(),
+              name: recipientName,
+              certificateBlob: blob,
+              fileName: filename,
+            })
+          }
+
+          // Update progress for each certificate
+          setGeneratedCount(i + 1)
         }
 
-        setGeneratedCount(i + 1)
+        // Small delay between batches to keep UI responsive
+        if (batchEnd < totalCertificates) {
+          await new Promise(resolve => setTimeout(resolve, BATCH_DELAY))
+        }
       }
+
+      console.log(`[Batch Processing] Completed! Generated ${totalCertificates} certificates`)
 
       // Store generated certificates for later email sending
       setGeneratedCertificates(emailRecipients)
@@ -395,19 +435,375 @@ export default function CertificateGeneration({
           fileName: cert.fileName,
         }))
       )
-      saveSession({ generatedCertificates: certificatesForStorage })
+      const eventId = selectedEvent?.eventId
+      saveSession({ generatedCertificates: certificatesForStorage }, eventId)
       console.log("[Session] Saved generated certificates to localStorage")
 
+      // Register certificates in database FIRST to get verification IDs
+      let registeredVerificationData: any[] = []
+      if (selectedEvent && emailRecipients.length > 0) {
+        try {
+          console.log("[Certificate Registration] Registering certificates in database...")
+          const batchId = `batch-${Date.now()}`
+          
+          // Get club name from clubs array using club ID from selectedEvent
+          const selectedClub = clubs?.find(c => c.id === selectedEvent.club)
+          const clubName = selectedClub?.name || 'Unknown Club'
+          const organizationName = organization?.name || 'Unknown Organization'
+          
+          const certificatesToRegister = emailRecipients.map(recipient => ({
+            recipientName: recipient.name,
+            recipientEmail: recipient.email,
+            eventName: selectedEvent.eventName,
+            eventDate: new Date().toISOString().split('T')[0],
+            organizationName: organizationName,
+            clubName: clubName,
+          }))
+
+          const response = await fetch('/api/certificates/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              certificates: certificatesToRegister,
+              batchId,
+              generatedBy: localStorage.getItem('profileEmail') || 'anonymous',
+            }),
+          })
+
+          const result = await response.json()
+          
+          if (result.success && result.certificates) {
+            console.log(`[Certificate Registration] Successfully registered ${result.registered}/${result.total} certificates`)
+            registeredVerificationData = result.certificates
+            setVerificationData(result.certificates)
+            
+            // Map verification IDs to generated certificates for email inclusion
+            const updatedCertificates = generatedCertificates.map(genCert => {
+              const verificationInfo = result.certificates.find(
+                (vc: any) => vc.recipientEmail === genCert.email
+              )
+              return {
+                ...genCert,
+                verificationId: verificationInfo?.verificationId,
+                verificationUrl: verificationInfo?.verificationUrl,
+              }
+            })
+            setGeneratedCertificates(updatedCertificates)
+            console.log("[Certificate Registration] Verification data ready for ZIP creation")
+          } else {
+            console.warn("[Certificate Registration] Registration failed:", result.error)
+          }
+        } catch (error) {
+          console.error("[Certificate Registration] Error registering certificates:", error)
+        }
+      }
+
+      // NOW create organized folder structure with verification data
+      const certificatesRootFolder = zip.folder("certificates")
+      
+      if (certificatesRootFolder && registeredVerificationData.length > 0) {
+        console.log("[ZIP Creation] Creating organized folder structure...")
+        // Add each certificate in its own folder with verification file
+        for (let i = 0; i < emailRecipients.length; i++) {
+          const recipient = emailRecipients[i]
+          const verificationInfo = registeredVerificationData.find(
+            v => v.recipientEmail === recipient.email
+          )
+          
+          if (recipient.certificateBlob && verificationInfo) {
+            // Create folder name: email_prefix_Name (e.g., 2320030111_Venkat_manoj)
+            const emailPrefix = verificationInfo.recipientEmail.split('@')[0]
+            const namePart = verificationInfo.recipientName.toLowerCase().replace(/\s+/g, '_')
+            const folderName = `${emailPrefix}_${namePart}`
+            
+            // Create individual folder for this recipient
+            const recipientFolder = certificatesRootFolder.folder(folderName)
+            
+            if (recipientFolder) {
+              // Add certificate to the folder
+              const certArrayBuffer = await recipient.certificateBlob.arrayBuffer()
+              const certFileName = `${folderName}.${outputFormat}`
+              recipientFolder.file(certFileName, certArrayBuffer)
+              
+              // Create verification.txt in the same folder
+              const selectedClub = clubs?.find(c => c.id === selectedEvent?.club)
+              const clubName = selectedClub?.name || 'Unknown Club'
+              const organizationName = organization?.name || 'Unknown Organization'
+              
+              const individualVerificationContent = `
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                     CERTIFICATE VERIFICATION INFORMATION                       ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+CERTIFICATE FOR: ${verificationInfo.recipientName}
+EMAIL: ${verificationInfo.recipientEmail}
+
+${'-'.repeat(80)}
+VERIFICATION DETAILS
+${'-'.repeat(80)}
+
+Event Name: ${selectedEvent?.eventName || 'Unknown Event'}
+Organization: ${organizationName}
+Club: ${clubName}
+Generated: ${new Date().toLocaleString()}
+
+${'-'.repeat(80)}
+VERIFICATION ID & URL
+${'-'.repeat(80)}
+
+🔐 Verification ID:
+   ${verificationInfo.verificationId}
+
+🌐 Verification URL:
+   ${verificationInfo.verificationUrl}
+
+${'-'.repeat(80)}
+HOW TO VERIFY THIS CERTIFICATE
+${'-'.repeat(80)}
+
+1. ONLINE VERIFICATION (Recommended):
+   • Visit: ${verificationInfo.verificationUrl}
+   • Or go to: ${window.location.origin}/verify
+   • Enter the Verification ID shown above
+
+2. SHARE WITH EMPLOYERS/INSTITUTIONS:
+   • Provide the Verification URL above
+   • They can verify authenticity independently
+   • No account or login required
+
+3. QR CODE VERIFICATION (if available):
+   • Scan the QR code on your certificate
+   • Instant verification on mobile devices
+
+${'-'.repeat(80)}
+IMPORTANT NOTES
+${'-'.repeat(80)}
+
+✓ This Verification ID is unique and permanent
+✓ Cannot be tampered with or modified
+✓ Protected by SHA-256 cryptographic hash
+✓ Verified against secure database records
+✓ Accepted as proof of authenticity worldwide
+
+${'-'.repeat(80)}
+WHAT VERIFICATION CONFIRMS
+${'-'.repeat(80)}
+
+• Certificate was issued by authorized organization
+• Recipient information is accurate and unmodified
+• Event details are authentic and verified
+• Issue date and time are officially recorded
+• Certificate has not been revoked
+
+${'-'.repeat(80)}
+SUPPORT & ASSISTANCE
+${'-'.repeat(80)}
+
+If you have any questions or need help with verification:
+• Contact: ${localStorage.getItem('profileEmail') || 'certificate issuer'}
+• Keep this file safe for future reference
+• Do not share your Verification ID publicly (unless verifying)
+
+${'-'.repeat(80)}
+
+Generated by Certificate Generation System
+Powered by getcertificates.senement.com
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  This is an official verification document. Keep it safe with your certificate ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+`
+              
+              recipientFolder.file("verification.txt", individualVerificationContent)
+              console.log(`[Verification] Created folder: ${folderName}`)
+            }
+          }
+        }
+        
+        // Create master verification manifest
+        const masterVerificationContent = `
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                   MASTER VERIFICATION INFORMATION - ALL CERTIFICATES            ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+Generated: ${new Date().toLocaleString()}
+Event: ${selectedEvent?.eventName || 'Unknown Event'}
+Organization: ${localStorage.getItem('userOrganization') || 'Unknown Organization'}
+Club: ${selectedEvent?.club || 'Unknown Club'}
+Total Certificates: ${registeredVerificationData.length}
+
+${'='.repeat(80)}
+ALL VERIFICATION IDs
+${'='.repeat(80)}
+
+${registeredVerificationData.map((cert, idx) => {
+  const emailPrefix = cert.recipientEmail.split('@')[0]
+  const namePart = cert.recipientName.toLowerCase().replace(/\s+/g, '_')
+  const folderName = `${emailPrefix}_${namePart}`
+  return `
+${idx + 1}. ${cert.recipientName}
+   Email: ${cert.recipientEmail}
+   Verification ID: ${cert.verificationId}
+   Verification URL: ${cert.verificationUrl}
+   Folder: certificates/${folderName}/
+`}).join('\n' + '-'.repeat(80) + '\n')}
+
+${'='.repeat(80)}
+BULK VERIFICATION GUIDE
+${'='.repeat(80)}
+
+For HR departments or institutions verifying multiple certificates:
+
+1. Each recipient has their own folder in 'certificates/' directory
+2. Each folder contains: certificate image + verification.txt
+3. Use the Verification URLs above for instant online verification
+4. Import 'verification_manifest.json' for automated verification systems
+5. Contact issuing organization for any discrepancies
+
+${'='.repeat(80)}
+`
+        
+        zip.file("MASTER_VERIFICATION_INFO.txt", masterVerificationContent)
+        
+        // Also add JSON manifest for programmatic access
+        const verificationManifest = {
+          generatedDate: new Date().toISOString(),
+          eventName: selectedEvent?.eventName || 'Unknown Event',
+          organizationName: localStorage.getItem('userOrganization') || 'Unknown Organization',
+          clubName: selectedEvent?.club || 'Unknown Club',
+          totalCertificates: registeredVerificationData.length,
+          certificates: registeredVerificationData.map(cert => {
+            const emailPrefix = cert.recipientEmail.split('@')[0]
+            const namePart = cert.recipientName.toLowerCase().replace(/\s+/g, '_')
+            const folderName = `${emailPrefix}_${namePart}`
+            return {
+              recipientName: cert.recipientName,
+              recipientEmail: cert.recipientEmail,
+              verificationId: cert.verificationId,
+              verificationUrl: cert.verificationUrl,
+              folderPath: `certificates/${folderName}/`,
+              certificateFile: `certificates/${folderName}/${folderName}.${outputFormat}`,
+              verificationFile: `certificates/${folderName}/verification.txt`
+            }
+          })
+        }
+        
+        zip.file("verification_manifest.json", JSON.stringify(verificationManifest, null, 2))
+        
+        // Add README for users
+        const readmeContent = `
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                         CERTIFICATE PACKAGE - README                           ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+Thank you for using our Certificate Generation System!
+
+${'='.repeat(80)}
+FOLDER STRUCTURE
+${'='.repeat(80)}
+
+certificates_${new Date().toISOString().split('T')[0]}.zip
+├── certificates/
+│   ├── 2320030111_venkat_manoj/
+│   │   ├── 2320030111_venkat_manoj.${outputFormat}
+│   │   └── verification.txt
+│   │
+│   ├── 2320030222_john_doe/
+│   │   ├── 2320030222_john_doe.${outputFormat}
+│   │   └── verification.txt
+│   │
+│   └── ... (one folder per recipient)
+│
+├── MASTER_VERIFICATION_INFO.txt     ← All verification IDs in one place
+├── verification_manifest.json       ← Machine-readable format
+└── README.txt                       ← This file
+
+${'='.repeat(80)}
+FOR CERTIFICATE RECIPIENTS
+${'='.repeat(80)}
+
+1. Find your folder in 'certificates/' (named with your email and name)
+2. Inside your folder you'll find:
+   • Your certificate image/PDF
+   • verification.txt with your unique Verification ID
+3. Open verification.txt to get your Verification ID and URL
+4. Use the URL to verify your certificate online
+
+${'='.repeat(80)}
+FOR BULK DISTRIBUTION
+${'='.repeat(80)}
+
+• Share individual folders with each recipient (everything in one place!)
+• Or share entire ZIP and let recipients find their folder
+• Use MASTER_VERIFICATION_INFO.txt for all IDs at once
+• Use verification_manifest.json for automated systems
+
+${'='.repeat(80)}
+VERIFICATION METHODS
+${'='.repeat(80)}
+
+1. Click the URL in your verification.txt file (easiest)
+2. Visit ${window.location.origin}/verify and enter your ID
+3. Scan QR code on certificate (if present)
+
+${'='.repeat(80)}
+FOLDER NAMING CONVENTION
+${'='.repeat(80)}
+
+Folders are named: {email_prefix}_{recipient_name}
+Example: 2320030111_venkat_manoj
+
+This makes it easy to:
+• Identify recipients by email or name
+• Share specific folders quickly
+• Organize certificates systematically
+
+${'='.repeat(80)}
+SUPPORT
+${'='.repeat(80)}
+
+Questions? Contact the certificate issuing organization.
+System powered by: getcertificates.senement.com
+
+Generated: ${new Date().toLocaleString()}
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║              Each folder is a complete, self-contained package! 🎓             ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+`
+        zip.file("README.txt", readmeContent)
+        
+        console.log("[Verification] Created organized folder structure with individual folders per recipient")
+      } else {
+        console.warn("[ZIP Creation] No verification data available - certificates not organized into folders")
+      }
+
+      // Generate and download the ZIP
       const zipBlob = await zip.generateAsync({ type: "blob" })
       const timestamp = new Date().toISOString().split("T")[0]
       const zipFilename = `certificates_${timestamp}.zip`
       FileSaver.saveAs(zipBlob, zipFilename)
+      console.log("[ZIP Creation] ZIP file downloaded successfully")
+
+      // Add to history with proper club name
+      if (onAddToHistory && selectedEvent) {
+        // Get club name from clubs array using club ID
+        const selectedClub = clubs?.find(c => c.id === selectedEvent.club)
+        const clubName = selectedClub?.name || 'Unknown Club'
+        
+        onAddToHistory(
+          selectedEvent.eventName,
+          clubName,
+          csvData.length,
+          zipBlob.size
+        )
+      }
 
       setGenerationStatus("success")
     } catch (error) {
       console.error("Error generating certificates:", error)
       setGenerationStatus("error")
-      alert("Error generating certificates. Please try again.")
+      toast.error("Error generating certificates. Please try again.")
     } finally {
       setIsGenerating(false)
     }
@@ -678,6 +1074,65 @@ export default function CertificateGeneration({
                 </Card>
               )}
 
+              {verificationData.length > 0 && (
+                <Card className="p-4 bg-purple-50 border-purple-200">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-purple-600 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="font-semibold text-purple-900">Verification IDs Generated</p>
+                      <p className="text-sm text-purple-700 mt-1">
+                        {verificationData.length} certificates registered with unique verification IDs
+                      </p>
+                      <details className="mt-3">
+                        <summary className="text-sm font-medium text-purple-800 cursor-pointer hover:underline">
+                          View Verification IDs & URLs
+                        </summary>
+                        <div className="mt-3 space-y-2 max-h-64 overflow-y-auto">
+                          {verificationData.map((cert, idx) => (
+                            <div key={idx} className="p-3 bg-white rounded border border-purple-200 text-xs">
+                              <p className="font-semibold text-gray-900">{cert.recipientName}</p>
+                              <p className="text-gray-600">{cert.recipientEmail}</p>
+                              <div className="mt-2 space-y-1">
+                                <div>
+                                  <span className="font-medium text-purple-700">ID:</span>
+                                  <code className="ml-2 px-2 py-1 bg-purple-100 rounded text-purple-900 select-all">
+                                    {cert.verificationId}
+                                  </code>
+                                </div>
+                                <div>
+                                  <span className="font-medium text-purple-700">URL:</span>
+                                  <a 
+                                    href={cert.verificationUrl} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="ml-2 text-blue-600 hover:underline break-all"
+                                  >
+                                    {cert.verificationUrl}
+                                  </a>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <Button
+                          onClick={() => {
+                            const text = verificationData.map(cert => 
+                              `${cert.recipientName} (${cert.recipientEmail}):\nID: ${cert.verificationId}\nURL: ${cert.verificationUrl}\n`
+                            ).join('\n')
+                            navigator.clipboard.writeText(text)
+                            toast.success('Verification data copied to clipboard!')
+                          }}
+                          variant="outline"
+                          className="w-full mt-3 text-xs"
+                        >
+                          Copy All Verification Data
+                        </Button>
+                      </details>
+                    </div>
+                  </div>
+                </Card>
+              )}
+
               {emailStatus === "error" && (
                 <Card className="p-4 bg-red-50 border-red-200">
                   <div className="flex items-start gap-3">
@@ -787,6 +1242,28 @@ export default function CertificateGeneration({
         <Button onClick={onBack} variant="outline" className="flex-1 bg-transparent">
           Back
         </Button>
+        {(generatedCertificates.length > 0 || csvData.length > 0) && (
+          <Button
+            onClick={() => {
+              if (confirm('Clear all session data for this event? This will remove uploaded CSV, generated certificates, and field mappings.')) {
+                const eventId = selectedEvent?.eventId
+                clearSession(eventId)
+                setCsvData([])
+                setCsvHeaders([])
+                setFieldMapping({})
+                setGeneratedCertificates([])
+                setGenerationStatus('idle')
+                setGeneratedCount(0)
+                setVerificationData([])
+                toast.success('Session cleared successfully!')
+              }
+            }}
+            variant="outline"
+            className="border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400"
+          >
+            Clear Session
+          </Button>
+        )}
         <Button
           onClick={generateCertificates}
           disabled={csvData.length === 0 || isGenerating}
