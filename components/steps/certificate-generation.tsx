@@ -12,6 +12,7 @@ import type { CertificateField } from "@/types/certificate"
 import { saveSession, loadSession, clearSession, base64ToBlob } from "@/utils/storage"
 import { useCredentials } from "@/hooks/useCredentials"
 import DevNav from "@/components/DevNav"
+import { toast } from "sonner"
 
 interface CertificateGenerationProps {
   templateImage: string
@@ -234,7 +235,7 @@ export default function CertificateGeneration({
     console.log(`[sendEmailsOnly] Starting - isAuthenticated: ${isAuthenticated}, emailProvider: ${emailProvider}`)
     
     if (generatedCertificates.length === 0) {
-      alert("Please generate certificates first")
+      toast.error("Please generate certificates first")
       return
     }
 
@@ -334,7 +335,7 @@ export default function CertificateGeneration({
 
   const generateCertificates = async () => {
     if (csvData.length === 0) {
-      alert("Please upload a CSV file first")
+      toast.error("Please upload a CSV file first")
       return
     }
 
@@ -802,7 +803,7 @@ Generated: ${new Date().toLocaleString()}
     } catch (error) {
       console.error("Error generating certificates:", error)
       setGenerationStatus("error")
-      alert("Error generating certificates. Please try again.")
+      toast.error("Error generating certificates. Please try again.")
     } finally {
       setIsGenerating(false)
     }
@@ -1119,7 +1120,7 @@ Generated: ${new Date().toLocaleString()}
                               `${cert.recipientName} (${cert.recipientEmail}):\nID: ${cert.verificationId}\nURL: ${cert.verificationUrl}\n`
                             ).join('\n')
                             navigator.clipboard.writeText(text)
-                            alert('Verification data copied to clipboard!')
+                            toast.success('Verification data copied to clipboard!')
                           }}
                           variant="outline"
                           className="w-full mt-3 text-xs"
@@ -1254,7 +1255,7 @@ Generated: ${new Date().toLocaleString()}
                 setGenerationStatus('idle')
                 setGeneratedCount(0)
                 setVerificationData([])
-                alert('Session cleared successfully!')
+                toast.success('Session cleared successfully!')
               }
             }}
             variant="outline"

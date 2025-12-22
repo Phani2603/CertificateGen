@@ -1,9 +1,37 @@
+"use client"
+
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Award, Users, Zap } from "lucide-react"
 import Image from "next/image"
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
+import { useEffect } from "react"
 
 export default function LandingPage() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
+
+  // Redirect authenticated users to dashboard
+  useEffect(() => {
+    if (status === "authenticated" && session?.user) {
+      router.push("/dashboard")
+    }
+  }, [status, session, router])
+
+  // Show loading while checking auth
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#21808D]"></div>
+      </div>
+    )
+  }
+
+  // Don't render content if user is authenticated (will redirect)
+  if (status === "authenticated") {
+    return null
+  }
   return (
     <div className="min-h-screen bg-[#f6f6f6]">
       {/* Header */}
@@ -95,8 +123,14 @@ export default function LandingPage() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
             <div className="p-6 md:p-8 bg-[#f6f6f6] rounded-2xl hover:shadow-lg transition">
-              <div className="w-12 h-12 md:w-16 md:h-16 bg-[#21808D] rounded-full flex items-center justify-center mb-4 md:mb-6">
-                <Zap className="h-6 w-6 md:h-8 md:w-8 text-white" />
+              <div className="w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center mb-4 md:mb-6">
+                <Image
+                src="/8.svg"
+                alt="Verified Certificates Icon"
+                width={64}
+                height={64}
+
+                />
               </div>
               <h3 className="text-lg md:text-2xl lg:text-3xl font-bold mb-3 md:mb-4">Bulk Generation</h3>
               <p className="text-gray-600 text-lg md:text-lg lg:text-xl">
@@ -105,8 +139,14 @@ export default function LandingPage() {
             </div>
 
             <div className="p-6 md:p-8 bg-[#f6f6f6] rounded-2xl hover:shadow-lg transition">
-              <div className="w-12 h-12 md:w-16 md:h-16 bg-[#21808D] rounded-full flex items-center justify-center mb-4 md:mb-6">
-                <Award className="h-6 w-6 md:h-8 md:w-8 text-white" />
+              <div className="w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center mb-4 md:mb-6">
+                <Image
+                src="/9.svg"
+                alt="Verified Certificates Icon"
+                width={64}
+                height={64}
+
+                />
               </div>
               <h3 className="text-lg md:text-2xl lg:text-3xl font-bold mb-3 md:mb-4">Verified Certificates</h3>
               <p className="text-gray-600 text-lg md:text-lg lg:text-xl">
@@ -115,8 +155,14 @@ export default function LandingPage() {
             </div>
 
             <div className="p-6 md:p-8 bg-[#f6f6f6] rounded-2xl hover:shadow-lg transition">
-              <div className="w-12 h-12 md:w-16 md:h-16 bg-[#21808D] rounded-full flex items-center justify-center mb-4 md:mb-6">
-                <Users className="h-6 w-6 md:h-8 md:w-8 text-white" />
+              <div className="w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center mb-4 md:mb-6">
+                <Image
+                src="/10.svg"
+                alt="Verified Certificates Icon"
+                width={64}
+                height={64}
+
+                />
               </div>
               <h3 className="text-lg md:text-2xl lg:text-3xl font-bold mb-3 md:mb-4">Team Collaboration</h3>
               <p className="text-gray-600 text-lg md:text-lg lg:text-xl">

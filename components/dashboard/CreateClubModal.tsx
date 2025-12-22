@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Users, X } from "lucide-react"
+import { toast } from "sonner"
 
 interface CreateClubModalProps {
   showCreateClubModal: boolean
@@ -50,16 +51,16 @@ export function CreateClubModal({
               
               if (result.success) {
                 setShowCreateClubModal(false)
-                alert('Club created successfully!')
+                toast.success(`Club "${clubName}" created successfully!`)
               } else {
-                alert(result.error || 'Failed to create club')
+                toast.error(result.error || 'Failed to create club')
               }
             } catch (error) {
               console.error('Failed to create club:', error)
-              alert('Failed to create club. Please try again.')
+              toast.error('Failed to create club. Please try again.')
             }
           } else {
-            alert('Create club functionality not available')
+            toast.error('Create club functionality not available')
           }
         }}>
           <div className="space-y-4">

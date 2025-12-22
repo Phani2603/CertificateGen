@@ -4,6 +4,7 @@ import {  Roboto } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { getGoogleFontsUrl } from "@/lib/fonts"
 import { AuthProvider } from "@/components/auth-provider"
+import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
 
 
@@ -37,6 +38,7 @@ export default function RootLayout({
         <AuthProvider>
           {children}
         </AuthProvider>
+        <Toaster position="top-right" richColors />
         <Analytics />
       </body>
     </html>

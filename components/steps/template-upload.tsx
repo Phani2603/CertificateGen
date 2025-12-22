@@ -5,6 +5,7 @@ import type React from "react"
 import { useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Upload } from "lucide-react"
+import { toast } from "sonner"
 
 interface TemplateUploadProps {
   onUpload: (image: string) => void
@@ -16,12 +17,12 @@ export default function TemplateUpload({ onUpload }: TemplateUploadProps) {
 
   const handleFile = useCallback((file: File) => {
     if (!file.type.startsWith("image/")) {
-      alert("Please upload an image file (PNG or JPG)")
+      toast.error("Please upload an image file (PNG or JPG)")
       return
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      alert("File size must be less than 5MB")
+      toast.error("File size must be less than 5MB")
       return
     }
 

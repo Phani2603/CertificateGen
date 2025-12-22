@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 
 export function useDashboardData() {
+  const { data: session, status } = useSession()
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<any>(null)
   const [organization, setOrganization] = useState<any>(null)
@@ -114,6 +116,9 @@ export function useDashboardData() {
           logoUrl: data.organization.logoUrl,
         }
         setOrganization(normalizedOrg)
+        // Refresh clubs and events after creating organization
+        await fetchClubs()
+        await fetchAllClubEvents()
       }
       return data
     } catch (error) {
@@ -138,6 +143,9 @@ export function useDashboardData() {
           logoUrl: data.organization.logoUrl,
         }
         setOrganization(normalizedOrg)
+        // Refresh clubs and events after joining organization
+        await fetchClubs()
+        await fetchAllClubEvents()
       }
       return data
     } catch (error) {
@@ -270,16 +278,31 @@ export function useDashboardData() {
   }
   useEffect(() => {
     const loadData = async () => {
+      // Only load data if user is authenticated
+      if (status !== 'authenticated') {
+        setLoading(false)
+        return
+      }
+
       setLoading(true)
-      await fetchProfile()
-      await fetchClubs()
-      await fetchAllClubEvents() // Fetch events for all clubs in organization
-      await fetchHistory()
-      setLoading(false)
+      try {
+        // Fetch all data in parallel for faster loading
+        await Promise.all([
+          fetchProfile(),
+          fetchClubs(),
+          fetchHistory()
+        ])
+        // Fetch events after clubs are loaded
+        await fetchAllClubEvents()
+      } catch (error) {
+        console.error('[useDashboardData] Error loading data:', error)
+      } finally {
+        setLoading(false)
+      }
     }
 
     loadData()
-  }, [])
+  }, [status]) // Re-run when authentication status changes
 
   return {
     loading,

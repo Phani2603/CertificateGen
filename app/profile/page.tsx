@@ -9,9 +9,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ArrowLeft, User, Mail, Phone, Building2, Camera, Loader2, Trash2 } from "lucide-react"
+import { ArrowLeft, User, Mail, Phone, Camera, Loader2, Trash2 } from "lucide-react"
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
+import Image from "next/image"
 
 export default function ProfilePage() {
   const { data: session, status, update } = useSession()
@@ -265,7 +266,12 @@ export default function ProfilePage() {
             {/* Organization */}
             <div>
               <Label htmlFor="organization">
-                <Building2 className="inline h-4 w-4 mr-2" />
+                <Image
+                src="/11.svg"
+                alt="Organization Icon"
+                width={64}
+                height={64}
+                />
                 Organization
               </Label>
               <Input

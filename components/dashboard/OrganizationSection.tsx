@@ -4,8 +4,20 @@ import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Building2, Search, Settings, LogOut, X } from "lucide-react"
+import { Search, Settings, LogOut, X, AlertTriangle } from "lucide-react"
 import Image from "next/image"
+import { toast } from "sonner"
+import {
+  FamilyDrawerRoot,
+  FamilyDrawerTrigger,
+  FamilyDrawerContent,
+  FamilyDrawerAnimatedWrapper,
+  FamilyDrawerAnimatedContent,
+  FamilyDrawerViewContent,
+  FamilyDrawerOverlay,
+  FamilyDrawerPortal,
+  useFamilyDrawer,
+} from "@/components/ui/family-drawer"
 
 interface Organization {
   id: string
@@ -74,6 +86,161 @@ export function OrganizationSection({
   const [isCreating, setIsCreating] = useState(false)
   const [isJoining, setIsJoining] = useState(false)
   const [colleges, setColleges] = useState<Organization[]>([])
+  const [showLeaveDrawer, setShowLeaveDrawer] = useState(false)
+
+  const handleLeaveOrganization = async () => {
+    if (leaveOrganization) {
+      const result = await leaveOrganization()
+      if (result.success) {
+        toast.success('Successfully left the organization')
+        setShowLeaveDrawer(false)
+      } else {
+        toast.error(result.error || 'Failed to leave organization')
+      }
+    }
+  }
+
+  // Leave Organization Drawer Views
+  const LeaveWarningView = () => {
+    const { setView } = useFamilyDrawer()
+    
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold">Leave Organization</h2>
+          <button
+            onClick={() => setShowLeaveDrawer(false)}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        
+        <p className="text-gray-600 mb-6">
+          This action cannot be undone
+        </p>
+
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-semibold text-red-900 mb-2">Warning: This is a destructive action</p>
+              <p className="text-sm text-red-800">
+                Leaving <strong>{userOrganization}</strong> will permanently remove you from the organization. 
+                This action cannot be reversed.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-3 mb-6">
+          <div className="flex items-start gap-3">
+            <div className="w-5 h-5 rounded-full border-2 border-red-500 flex items-center justify-center mt-0.5 flex-shrink-0">
+              <X className="h-3 w-3 text-red-500" />
+            </div>
+            <p className="text-sm text-gray-700">You will be removed from all clubs in this organization</p>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="w-5 h-5 rounded-full border-2 border-red-500 flex items-center justify-center mt-0.5 flex-shrink-0">
+              <X className="h-3 w-3 text-red-500" />
+            </div>
+            <p className="text-sm text-gray-700">Your event history will be lost</p>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="w-5 h-5 rounded-full border-2 border-red-500 flex items-center justify-center mt-0.5 flex-shrink-0">
+              <X className="h-3 w-3 text-red-500" />
+            </div>
+            <p className="text-sm text-gray-700">You won't be able to access organization resources</p>
+          </div>
+        </div>
+
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={() => setShowLeaveDrawer(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+            onClick={() => setView("confirm")}
+          >
+            Continue
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  const LeaveConfirmView = () => {
+    const { setView } = useFamilyDrawer()
+    const [deleteConfirmText, setDeleteConfirmText] = useState("")
+    const isValid = deleteConfirmText === "LEAVE"
+    
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold">Confirm Leaving</h2>
+          <button
+            onClick={() => setShowLeaveDrawer(false)}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <p className="text-gray-600 mb-4">
+          Type <strong>LEAVE</strong> to confirm this action
+        </p>
+
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <p className="font-semibold text-red-900 mb-1">This action is permanent</p>
+          <p className="text-sm text-red-800">
+            To confirm, please type <strong>LEAVE</strong> in the field below.
+          </p>
+        </div>
+
+        <div className="mb-6">
+          <label className="block text-sm font-medium mb-2">Type LEAVE to confirm</label>
+          <Input
+            value={deleteConfirmText}
+            onChange={(e) => setDeleteConfirmText(e.target.value.toUpperCase())}
+            placeholder="LEAVE"
+            className="font-mono"
+          />
+        </div>
+
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={() => setView("default")}
+          >
+            <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back
+          </Button>
+          <Button
+            disabled={!isValid}
+            className="flex-1 bg-red-500 hover:bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleLeaveOrganization}
+          >
+            Leave Organization
+            <svg className="w-4 h-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  const leaveDrawerViews = {
+    default: LeaveWarningView,
+    confirm: LeaveConfirmView,
+  }
 
   // Fetch organizations from database when search modal opens
   useEffect(() => {
@@ -146,8 +313,14 @@ export function OrganizationSection({
           <div className="grid md:grid-cols-2 gap-4 md:gap-6 max-w-3xl mx-auto">
             {/* Step 4: Join Existing Organization */}
             <Card className="p-6 md:p-8 bg-white rounded-2xl shadow-lg border-2 border-transparent hover:border-[#21808D] transition-all cursor-pointer" onClick={() => setShowJoinOrgModal(true)}>
-              <div className="w-14 h-14 md:w-16 md:h-16 mx-auto mb-3 md:mb-4 bg-gradient-to-br from-[#8FD6BD] to-[#a8e0cd] rounded-xl md:rounded-2xl flex items-center justify-center">
-                <Search className="h-7 w-7 md:h-8 md:w-8 text-gray-900" />
+              <div className="w-14 h-14 md:w-16 md:h-16 mx-auto mb-3 md:mb-4  flex items-center justify-center">
+                <Image
+                src="/12.svg"
+                alt="Join Organization Icon"
+                width={64}
+                height={64}
+
+                />
               </div>
               <h3 className="text-xl md:text-2xl font-bold mb-2">Join Organization</h3>
               <p className="text-lg md:text-lg lg:text-xl text-gray-600 mb-4">Search and join your college, university, or company</p>
@@ -158,8 +331,13 @@ export function OrganizationSection({
 
             {/* Step 4: Create New Organization */}
             <Card className="p-6 md:p-8 bg-white rounded-2xl shadow-lg border-2 border-transparent hover:border-[#21808D] transition-all cursor-pointer" onClick={() => setShowCreateOrgModal(true)}>
-              <div className="w-14 h-14 md:w-16 md:h-16 mx-auto mb-3 md:mb-4 bg-gradient-to-br from-[#FF5733] to-[#ff7a59] rounded-xl md:rounded-2xl flex items-center justify-center">
-                <Building2 className="h-7 w-7 md:h-8 md:w-8 text-white" />
+              <div className="w-14 h-14 md:w-16 md:h-16 mx-auto mb-3 md:mb-4 flex items-center justify-center">
+                <Image
+                src="/11.svg"
+                alt="Create Organization Icon"
+                width={64}
+                height={64}
+                />
               </div>
               <h3 className="text-xl md:text-2xl font-bold mb-2">Create Organization</h3>
               <p className="text-sm md:text-base text-gray-600 mb-4">Create a new organization if yours doesn't exist</p>
@@ -184,7 +362,13 @@ export function OrganizationSection({
                   </div>
                 ) : (
                   <div className="w-14 h-14 md:w-20 md:h-20 bg-gradient-to-br from-[#21808D] to-[#1a6570] rounded-2xl flex items-center justify-center shrink-0">
-                    <Building2 className="h-7 w-7 md:h-10 md:w-10 text-white" />
+                    <Image
+                    src="/11.svg"
+                    alt="Organization Icon"
+                    width={64}
+                    height={64}
+                    />
+
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
@@ -202,18 +386,7 @@ export function OrganizationSection({
                 </button>
                 <button
                   className="p-2 md:p-3 hover:bg-red-50 rounded-lg transition-colors group shrink-0"
-                  onClick={async () => {
-                    if (confirm(`Are you sure you want to leave ${userOrganization}? This will remove you from all clubs and events.`)) {
-                      if (leaveOrganization) {
-                        const result = await leaveOrganization()
-                        if (result.success) {
-                          alert('Successfully left the organization')
-                        } else {
-                          alert(result.error || 'Failed to leave organization')
-                        }
-                      }
-                    }
-                  }}
+                  onClick={() => setShowLeaveDrawer(true)}
                   title="Leave Organization"
                 >
                   <LogOut className="h-5 w-5 md:h-6 md:w-6 text-red-500 group-hover:text-red-600" />
@@ -293,8 +466,13 @@ export function OrganizationSection({
                       }} />
                     </div>
                   ) : (
-                    <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-[#21808D] to-[#1a6570] rounded-lg flex items-center justify-center shrink-0">
-                      <Building2 className="h-5 w-5 md:h-6 md:w-6 text-white" />
+                    <div className="w-10 h-10 md:w-12 md:h-12  flex items-center justify-center shrink-0">
+                      <Image
+                      src="/11.svg"
+                      alt="Organization Icon"
+                      width={64}
+                      height={64}
+                     />
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
@@ -355,12 +533,12 @@ export function OrganizationSection({
                               setShowJoinOrgModal(false)
                               setCollegeSearch("")
                             } else {
-                              alert(result.error || 'Failed to join organization')
+                              toast.error(result.error || 'Failed to join organization')
                             }
                           }
                         } catch (error) {
                           console.error('Failed to join organization:', error)
-                          alert('Failed to join organization. Please try again.')
+                          toast.error('Failed to join organization. Please try again.')
                         } finally {
                           setIsJoining(false)
                         }
@@ -380,7 +558,7 @@ export function OrganizationSection({
                   && college.name !== userOrganization
                 ).length === 0 && (
                 <div className="text-center py-12">
-                  <Building2 className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                  <Image src="/11.svg" alt="No colleges found" width={64} height={64} className="mx-auto mb-3 text-gray-300" />
                   <p className="text-gray-500 mb-2">No colleges found</p>
                   <p className="text-sm text-gray-400">Try a different search term or create your organization</p>
                 </div>
@@ -442,11 +620,11 @@ export function OrganizationSection({
                     setShowCreateOrgModal(false)
                     form.reset()
                   } else {
-                    alert(result.error || 'Failed to create organization')
+                    toast.error(result.error || 'Failed to create organization')
                   }
                 } catch (error) {
                   console.error('Failed to create organization:', error)
-                  alert('Failed to create organization. Please try again.')
+                  toast.error('Failed to create organization. Please try again.')
                 } finally {
                   setIsCreating(false)
                 }
@@ -557,15 +735,42 @@ export function OrganizationSection({
               setIsCreating(true)
               const formData = new FormData(e.currentTarget)
               try {
-                const updatedName = formData.get('orgName') as string || userOrganization
+                const updatedName = formData.get('orgName') as string
                 const updatedLogo = formData.get('orgLogo') as string
                 
-                // TODO: Implement update organization API endpoint
-                alert('Edit organization functionality will be implemented with API endpoint')
-                setShowEditOrgModal(false)
+                // Get organization ID from the database
+                const profileRes = await fetch('/api/profile')
+                const profileData = await profileRes.json()
+                const organizationId = profileData.user?.organization?.id
+                
+                if (!organizationId) {
+                  toast.error('Organization ID not found')
+                  return
+                }
+                
+                const response = await fetch('/api/organizations', {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    organizationId,
+                    name: updatedName,
+                    logoUrl: updatedLogo || undefined,
+                  }),
+                })
+                
+                const result = await response.json()
+                
+                if (result.success) {
+                  toast.success('Organization updated successfully!')
+                  setShowEditOrgModal(false)
+                  // Refresh the page to show updated data
+                  window.location.reload()
+                } else {
+                  toast.error(result.error || 'Failed to update organization')
+                }
               } catch (error) {
                 console.error('Failed to update organization:', error)
-                alert('Failed to update organization. Please try again.')
+                toast.error('Failed to update organization. Please try again.')
               } finally {
                 setIsCreating(false)
               }
@@ -621,6 +826,24 @@ export function OrganizationSection({
           </Card>
         </div>
       )}
+
+      {/* Leave Organization Family Drawer */}
+      <FamilyDrawerRoot
+        views={leaveDrawerViews}
+        open={showLeaveDrawer}
+        onOpenChange={setShowLeaveDrawer}
+      >
+        <FamilyDrawerPortal>
+          <FamilyDrawerOverlay />
+          <FamilyDrawerContent>
+            <FamilyDrawerAnimatedWrapper>
+              <FamilyDrawerAnimatedContent>
+                <FamilyDrawerViewContent />
+              </FamilyDrawerAnimatedContent>
+            </FamilyDrawerAnimatedWrapper>
+          </FamilyDrawerContent>
+        </FamilyDrawerPortal>
+      </FamilyDrawerRoot>
     </div>
   )
 }

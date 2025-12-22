@@ -2,8 +2,9 @@
 
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Users, X, ChevronRight, Building2 } from "lucide-react"
+import { ChevronRight} from "lucide-react"
+import { toast } from "sonner"
+import Image from "next/image"
 
 interface Club {
   id: string
@@ -11,6 +12,13 @@ interface Club {
   members: number
   color: string
   logoUrl?: string
+  description?: string
+  createdBy?: {
+    _id?: string
+    name?: string
+    email?: string
+  }
+  createdAt?: string
 }
 
 interface ClubsSectionProps {
@@ -44,7 +52,7 @@ export function ClubsSection({
         </div>
         {userClubs.length === 0 ? (
           <div className="text-center py-6 md:py-8">
-            <Users className="h-10 w-10 md:h-12 md:w-12 mx-auto mb-3 text-gray-300" />
+            <Image src="/14.svg" alt="Clubs" width={48} height={48}  />
             <p className="text-gray-500 mb-2 text-sm md:text-base">No club memberships yet</p>
             <p className="text-xs md:text-sm text-gray-400 mb-4">Browse available clubs or create your own</p>
             <Button 
@@ -81,8 +89,8 @@ export function ClubsSection({
                         <img src={clubData.logoUrl} alt={club} className="w-full h-full object-contain" />
                       </div>
                     ) : (
-                      <div className={`w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br ${clubData?.color || colors[i % 3]} rounded-lg flex items-center justify-center shrink-0`}>
-                        <Users className="h-5 w-5 md:h-6 md:w-6 text-white" />
+                      <div className={`w-12 h-12 md:w-12 md:h-12 flex items-center justify-center shrink-0`}>
+                        <Image src="/14.svg" alt="Club" width={32} height={32}  />
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
@@ -114,7 +122,7 @@ export function ClubsSection({
         </div>
         {availableClubs.filter(club => !userClubs.includes(club.name)).length === 0 ? (
           <div className="text-center py-6 md:py-8">
-            <Building2 className="h-10 w-10 md:h-12 md:w-12 mx-auto mb-3 text-gray-300" />
+            <Image src="/11.svg" alt="No clubs available" width={64} height={64} className="mx-auto mb-3 text-gray-300" />
             <p className="text-gray-500 mb-2 text-sm md:text-base">No clubs available</p>
             <p className="text-xs md:text-sm text-gray-400">Be the first to create a club!</p>
           </div>
@@ -129,7 +137,7 @@ export function ClubsSection({
                     </div>
                   ) : (
                     <div className={`w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br ${club.color} rounded-lg flex items-center justify-center shrink-0`}>
-                      <Users className="h-5 w-5 md:h-6 md:w-6 text-white" />
+                      <Image src="/14.svg" alt="Club" width={32} height={32}  />
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
@@ -145,11 +153,13 @@ export function ClubsSection({
                       try {
                         const result = await joinClub(club.id)
                         if (!result.success) {
-                          alert(result.error || 'Failed to join club')
+                          toast.error(result.error || 'Failed to join club')
+                        } else {
+                          toast.success(`Successfully joined ${club.name}`)
                         }
                       } catch (error) {
                         console.error('Failed to join club:', error)
-                        alert('Failed to join club. Please try again.')
+                        toast.error('Failed to join club. Please try again.')
                       }
                     }
                   }}

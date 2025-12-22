@@ -2,7 +2,9 @@
 
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { FileText, ChevronRight, X } from "lucide-react"
+import { ChevronRight, X, Download } from "lucide-react"
+import { toast } from "sonner"
+import Image from "next/image"
 
 interface HistoryItem {
   id: string
@@ -36,6 +38,40 @@ export function HistorySection({
     "from-[#F4E04D] to-[#f7e878]"
   ]
 
+  const exportToCSV = () => {
+    if (generationHistory.length === 0) {
+      toast.error('No history data to export')
+      return
+    }
+
+    // Create CSV content
+    const headers = ['Event Name', 'Club Name', 'Certificates Count', 'Date', 'Success Rate', 'Total Size']
+    const csvContent = [
+      headers.join(','),
+      ...generationHistory.map(item => [
+        `"${item.eventName}"`,
+        `"${item.clubName}"`,
+        item.count,
+        `"${item.date}"`,
+        `${item.successRate}%`,
+        `"${item.totalSize}"`
+      ].join(','))
+    ].join('\n')
+
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `generation-history-${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    toast.success('History exported successfully!')
+  }
+
   return (
     <>
       <div className="max-w-6xl mx-auto">
@@ -43,8 +79,13 @@ export function HistorySection({
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 md:mb-6 gap-3">
             <h2 className="text-xl md:text-2xl lg:text-3xl font-bold">Generation History</h2>
             {generationHistory.length > 0 && (
-              <Button variant="outline" className="border-[#21808D] text-[#21808D] hover:bg-[#21808D] hover:text-white text-sm md:text-base w-full sm:w-auto">
-                Export All
+              <Button 
+                variant="outline" 
+                className="border-[#21808D] text-[#21808D] hover:bg-[#21808D] hover:text-white text-sm md:text-base w-full sm:w-auto"
+                onClick={exportToCSV}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
               </Button>
             )}
           </div>
@@ -52,7 +93,7 @@ export function HistorySection({
           {/* History Items */}
           {generationHistory.length === 0 ? (
             <div className="text-center py-12">
-              <FileText className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+              <Image src="/13.svg" alt="History" width={64} height={64} className="mx-auto mb-4 opacity-30" />
               <p className="text-gray-500 mb-2">No generation history yet</p>
               <p className="text-sm text-gray-400">Generate certificates for events to see them here</p>
             </div>
@@ -65,7 +106,7 @@ export function HistorySection({
                 >
                   <div className="flex items-center gap-3 md:gap-4 w-full sm:w-auto">
                     <div className={`w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br ${colors[i % 3]} rounded-lg flex items-center justify-center shrink-0`}>
-                      <FileText className="h-6 w-6 md:h-7 md:w-7 text-white" />
+                      <Image src="/13.svg" alt="Event" width={32} height={32}  />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-base md:text-lg text-gray-900 truncate">{item.eventName}</h3>

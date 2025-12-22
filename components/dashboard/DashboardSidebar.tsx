@@ -3,7 +3,7 @@
 import { signOut } from "next-auth/react"
 import Image from "next/image"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Award, History, Settings, LogOut, Menu, X, Building2 } from "lucide-react"
+import { Award, History, Settings, LogOut, Menu, X } from "lucide-react"
 
 type Page = "generate" | "history" | "settings" | "organizations"
 
@@ -34,7 +34,7 @@ export function DashboardSidebar({
       { id: "generate" as Page, label: "Generate Certificates", icon: Award },
       { id: "history" as Page, label: "History", icon: History },
     ] : []),
-    { id: "organizations" as Page, label: "Organizations", icon: Building2 },
+    { id: "organizations" as Page, label: "Organizations", icon: null, imageSrc: "/11.svg" },
     { id: "settings" as Page, label: "Settings", icon: Settings },
   ]
 
@@ -86,7 +86,11 @@ export function DashboardSidebar({
                         : "text-gray-700 hover:bg-gray-100"
                     }`}
                   >
-                    <Icon className="h-6 w-6 shrink-0" />
+                    {item.imageSrc ? (
+                      <Image src={item.imageSrc} alt={item.label} width={24} height={24} className="shrink-0" />
+                    ) : Icon ? (
+                      <Icon className="h-6 w-6 shrink-0" />
+                    ) : null}
                     {sidebarOpen && <span className="font-medium sm:text-base md:text-lg lg:text-xl">{item.label}</span>}
                   </button>
                 </li>
@@ -109,7 +113,6 @@ export function DashboardSidebar({
             {sidebarOpen && (
               <div className="flex-1 text-left">
                 <p className="text-base font-medium text-gray-900">{userName || "User"}</p>
-                <p className="text-sm text-gray-600">{userEmail}</p>
               </div>
             )}
           </button>

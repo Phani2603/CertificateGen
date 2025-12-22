@@ -21,9 +21,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, clubs: [], userClubs: [] })
     }
 
-    // Get all clubs for the organization (without populate to avoid errors)
+    // Get all clubs for the organization and populate creator info
     const clubs = await Club.find({ organizationId: user.organizationId })
-      .select('name description color logoUrl organizationId members admins createdAt')
+      .select('name description color logoUrl organizationId members admins createdAt createdBy')
+      .populate('createdBy', 'name email')
       .lean()
 
     // Get clubs user is a member of (compare ObjectIds directly)
@@ -38,7 +39,12 @@ export async function GET(request: NextRequest) {
         ...c,
         _id: c._id.toString(),
         members: c.members.map((m: any) => m.toString()),
-        admins: c.admins?.map((a: any) => a.toString()) || []
+        admins: c.admins?.map((a: any) => a.toString()) || [],
+        createdBy: c.createdBy ? {
+          _id: (c.createdBy as any)._id?.toString(),
+          name: (c.createdBy as any).name,
+          email: (c.createdBy as any).email
+        } : null
       })),
       userClubs: userClubs.map(c => c._id.toString()),
       organization: user.organizationId

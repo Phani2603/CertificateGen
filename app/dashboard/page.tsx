@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Menu } from "lucide-react"
 import { saveSession, loadSession, clearSession, hasValidSession } from "@/utils/storage"
 import { useDashboardData } from "@/hooks/useDashboardData"
+import { toast } from "sonner"
 import {
   DashboardSidebar,
   OrganizationSection,
@@ -100,7 +101,10 @@ export default function DashboardPage() {
     name: c.name,
     members: c.members?.length || 0,
     color: c.color || '#3B82F6',
-    logoUrl: c.logoUrl
+    logoUrl: c.logoUrl,
+    description: c.description,
+    createdBy: c.createdBy,
+    createdAt: c.createdAt
   }))
   const clubEvents = events
   
@@ -234,13 +238,13 @@ export default function DashboardPage() {
       const data = await response.json()
 
       if (data.success) {
-        alert('Profile updated successfully!')
+        toast.success('Profile updated successfully!')
       } else {
-        alert('Failed to update profile. Please try again.')
+        toast.error('Failed to update profile. Please try again.')
       }
     } catch (error) {
       console.error('Failed to save profile:', error)
-      alert('Error saving profile. Please try again.')
+      toast.error('Error saving profile. Please try again.')
     }
   }
 
@@ -251,10 +255,10 @@ export default function DashboardPage() {
         className="absolute inset-0 z-0 pointer-events-none"
         style={{
           backgroundImage: `
-            repeating-linear-gradient(22.5deg, transparent, transparent 2px, rgba(75, 85, 99, 0.06) 2px, rgba(75, 85, 99, 0.06) 3px, transparent 3px, transparent 8px),
-            repeating-linear-gradient(67.5deg, transparent, transparent 2px, rgba(107, 114, 128, 0.05) 2px, rgba(107, 114, 128, 0.05) 3px, transparent 3px, transparent 8px),
-            repeating-linear-gradient(112.5deg, transparent, transparent 2px, rgba(55, 65, 81, 0.04) 2px, rgba(55, 65, 81, 0.04) 3px, transparent 3px, transparent 8px),
-            repeating-linear-gradient(157.5deg, transparent, transparent 2px, rgba(31, 41, 55, 0.03) 2px, rgba(31, 41, 55, 0.03) 3px, transparent 3px, transparent 8px)
+            repeating-linear-gradient(22.5deg, transparent, transparent 2px, rgba(75, 85, 99, 0.15) 2px, rgba(75, 85, 99, 0.15) 3px, transparent 3px, transparent 8px),
+            repeating-linear-gradient(67.5deg, transparent, transparent 2px, rgba(107, 114, 128, 0.12) 2px, rgba(107, 114, 128, 0.12) 3px, transparent 3px, transparent 8px),
+            repeating-linear-gradient(112.5deg, transparent, transparent 2px, rgba(55, 65, 81, 0.10) 2px, rgba(55, 65, 81, 0.10) 3px, transparent 3px, transparent 8px),
+            repeating-linear-gradient(157.5deg, transparent, transparent 2px, rgba(31, 41, 55, 0.08) 2px, rgba(31, 41, 55, 0.08) 3px, transparent 3px, transparent 8px)
           `,
         }}
       />
