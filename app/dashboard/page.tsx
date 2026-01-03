@@ -61,6 +61,8 @@ export default function DashboardPage() {
     createClub,
     joinClub,
     createEvent,
+    deleteEvent,
+    refreshClubEvents,
     addHistoryEntry,
     updateProfile,
     leaveOrganization,
@@ -429,6 +431,8 @@ export default function DashboardPage() {
         setEventDate={setEventDate}
         leaveClub={leaveClub}
         createEvent={createEvent}
+        deleteEvent={deleteEvent}
+        refreshClubEvents={refreshClubEvents}
       />
 
       {/* Create Club Modal */}

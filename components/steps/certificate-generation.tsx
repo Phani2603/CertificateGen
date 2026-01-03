@@ -16,6 +16,7 @@ import { toast } from "sonner"
 
 interface CertificateGenerationProps {
   templateImage: string
+  templateS3Key?: string // NEW: S3 key for template
   fields: CertificateField[]
   onCsvUpload: (data: Array<Record<string, string>>) => void
   onBack: () => void
@@ -27,6 +28,7 @@ interface CertificateGenerationProps {
 
 export default function CertificateGeneration({
   templateImage,
+  templateS3Key, // NEW
   fields,
   onCsvUpload,
   onBack,
@@ -43,6 +45,7 @@ export default function CertificateGeneration({
   const [quality, setQuality] = useState<"standard" | "high">("standard")
   const [generationStatus, setGenerationStatus] = useState<"idle" | "success" | "error">("idle")
   const [generatedCount, setGeneratedCount] = useState(0)
+  const [cachedTemplateUrl, setCachedTemplateUrl] = useState<string | null>(null) // NEW: Cache S3 template URL
   const [generatedCertificates, setGeneratedCertificates] = useState<Array<{
     email: string
     name: string
@@ -75,6 +78,33 @@ export default function CertificateGeneration({
   useEffect(() => {
     console.log('[CertGen] useCredentials state changed:', credentialsData)
   }, [credentialsData])
+
+  // Helper function to get template URL (S3 or base64) with CORS proxy
+  const getTemplateUrl = async (): Promise<string> => {
+    // If we have a cached S3 URL, use it
+    if (cachedTemplateUrl) {
+      console.log('[CertGen] Using cached template URL')
+      return cachedTemplateUrl
+    }
+
+    // If templateImage is already a URL (http/https), proxy it to avoid CORS
+    if (templateImage.startsWith('http://') || templateImage.startsWith('https://')) {
+      console.log('[CertGen] Template is a URL, using proxy to avoid CORS')
+      const proxiedUrl = `/api/templates/proxy?url=${encodeURIComponent(templateImage)}`
+      setCachedTemplateUrl(proxiedUrl)
+      return proxiedUrl
+    }
+
+    // If templateImage starts with data:, it's base64
+    if (templateImage.startsWith('data:')) {
+      console.log('[CertGen] Template is base64 data URI')
+      return templateImage
+    }
+
+    // Otherwise, assume it's a base64 string without prefix
+    console.log('[CertGen] Template is base64 string, adding data URI prefix')
+    return `data:image/png;base64,${templateImage}`
+  }
 
   // Restore generated certificates from session on mount
   useEffect(() => {
@@ -215,8 +245,15 @@ export default function CertificateGeneration({
         ctx.fillText(text, x, field.y, field.maxWidth)
       })
     }
-    img.src = templateImage
-  }, [csvData, fieldMapping, fields, templateImage])
+    
+    // Use getTemplateUrl to handle both S3 and base64
+    getTemplateUrl().then(url => {
+      img.src = url
+    }).catch(err => {
+      console.error('[CertGen] Error loading template:', err)
+      img.src = templateImage // Fallback to original
+    })
+  }, [csvData, fieldMapping, fields, templateImage, cachedTemplateUrl])
 
   // Helper function to convert Blob to base64
   const blobToBase64 = (blob: Blob): Promise<string> => {
@@ -467,6 +504,9 @@ export default function CertificateGeneration({
               certificates: certificatesToRegister,
               batchId,
               generatedBy: localStorage.getItem('profileEmail') || 'anonymous',
+              eventId: selectedEvent.eventId, // NEW: Pass eventId for Event reference
+              fieldConfiguration: fields, // NEW: Pass field configuration to save in Event model
+              templateS3Key: templateS3Key, // NEW: Pass template S3 key (for reused templates)
             }),
           })
 
@@ -810,7 +850,7 @@ Generated: ${new Date().toLocaleString()}
   }
 
   const createCertificateCanvas = (data: Record<string, string>, scale: number): Promise<HTMLCanvasElement> => {
-    return new Promise((resolve) => {
+    return new Promise(async (resolve) => {
       const img = new Image()
       img.crossOrigin = "anonymous"
       img.onload = () => {
@@ -849,7 +889,14 @@ Generated: ${new Date().toLocaleString()}
 
         resolve(canvas)
       }
-      img.src = templateImage
+      
+      // Use getTemplateUrl to handle both S3 and base64
+      getTemplateUrl().then(url => {
+        img.src = url
+      }).catch(err => {
+        console.error('[CertGen] Error loading template for canvas:', err)
+        img.src = templateImage // Fallback
+      })
     })
   }
 

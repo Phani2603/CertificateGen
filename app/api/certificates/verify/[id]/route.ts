@@ -90,6 +90,7 @@ export async function GET(
         clubName: certificate.clubName,
         issueDate: certificate.issueDate,
         verificationCode: `CERT-${certificate.verificationId.substring(0, 8).toUpperCase()}`,
+        eventId: certificate.eventId, // NEW: Return eventId for fetching template
       },
     })
   } catch (error) {

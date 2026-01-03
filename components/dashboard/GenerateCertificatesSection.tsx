@@ -10,6 +10,7 @@ type Step = "upload" | "configure" | "generate"
 
 interface AppState {
   templateImage: string | null
+  templateS3Key?: string // NEW: S3 key for template (optional, undefined if not set)
   fields: CertificateField[]
   csvData: Array<Record<string, string>>
 }
@@ -35,8 +36,13 @@ export function GenerateCertificatesSection({
   organization,
   clubs,
 }: GenerateCertificatesSectionProps) {
-  const handleTemplateUpload = (image: string) => {
-    setAppState((prev) => ({ ...prev, templateImage: image }))
+  const handleTemplateUpload = (data: { image: string; s3Key?: string }) => {
+    console.log('[GenerateCertificatesSection] Template uploaded:', data)
+    setAppState((prev) => ({
+      ...prev,
+      templateImage: data.image,
+      templateS3Key: data.s3Key || undefined, // Ensure it's undefined instead of falsy
+    }))
     setCurrentStep("configure")
   }
 
@@ -82,7 +88,13 @@ export function GenerateCertificatesSection({
 
       {/* Step Content */}
       <Card className="bg-white shadow-lg">
-        {currentStep === "upload" && <TemplateUpload onUpload={handleTemplateUpload} />}
+        {currentStep === "upload" && (
+          <TemplateUpload 
+            onUpload={handleTemplateUpload}
+            selectedEvent={selectedEvent}
+            organization={organization}
+          />
+        )}
         {currentStep === "configure" && appState.templateImage && (
           <FieldConfiguration
             templateImage={appState.templateImage}
@@ -95,6 +107,7 @@ export function GenerateCertificatesSection({
         {currentStep === "generate" && (
           <CertificateGeneration
             templateImage={appState.templateImage!}
+            templateS3Key={appState.templateS3Key}
             fields={appState.fields}
             onCsvUpload={handleCsvUpload}
             onBack={handleBack}

@@ -2,9 +2,10 @@
 
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ChevronRight, X, Download } from "lucide-react"
+import { ChevronRight, X, Download, ChevronLeft } from "lucide-react"
 import { toast } from "sonner"
 import Image from "next/image"
+import { useState } from "react"
 
 interface HistoryItem {
   id: string
@@ -32,11 +33,25 @@ export function HistorySection({
   selectedHistoryItem,
   setSelectedHistoryItem,
 }: HistorySectionProps) {
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 5
+  
   const colors = [
     "from-[#FF5733] to-[#ff7a59]",
     "from-[#8FD6BD] to-[#a8e0cd]",
     "from-[#F4E04D] to-[#f7e878]"
   ]
+
+  // Calculate pagination
+  const totalPages = Math.ceil(generationHistory.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentItems = generationHistory.slice(startIndex, endIndex)
+
+  // Reset to page 1 if current page exceeds total pages
+  if (currentPage > totalPages && totalPages > 0) {
+    setCurrentPage(1)
+  }
 
   const exportToCSV = () => {
     if (generationHistory.length === 0) {
@@ -98,37 +113,102 @@ export function HistorySection({
               <p className="text-sm text-gray-400">Generate certificates for events to see them here</p>
             </div>
           ) : (
-            <div className="space-y-3 md:space-y-4">
-              {generationHistory.map((item, i) => (
-                <div
-                  key={item.id}
-                  className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 md:p-4 border-2 border-gray-100 rounded-lg hover:shadow-md transition-all bg-white gap-3"
-                >
-                  <div className="flex items-center gap-3 md:gap-4 w-full sm:w-auto">
-                    <div className={`w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br ${colors[i % 3]} rounded-lg flex items-center justify-center shrink-0`}>
-                      <Image src="/13.svg" alt="Event" width={32} height={32}  />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-base md:text-lg text-gray-900 truncate">{item.eventName}</h3>
-                      <p className="text-sm md:text-base text-gray-500 truncate">{item.count} certificates • {item.date}</p>
-                      <p className="text-xs text-gray-400">{item.clubName}</p>
-                    </div>
-                  </div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-[#21808D] hover:bg-[#21808D]/10 w-full sm:w-auto text-sm md:text-base"
-                    onClick={() => {
-                      setSelectedHistoryItem(item)
-                      setShowHistoryDetailModal(true)
-                    }}
+            <>
+              <div className="space-y-3 md:space-y-4">
+                {currentItems.map((item, i) => (
+                  <div
+                    key={item.id}
+                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 md:p-4 border-2 border-gray-100 rounded-lg hover:shadow-md transition-all bg-white gap-3"
                   >
-                    View Details
-                    <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
+                    <div className="flex items-center gap-3 md:gap-4 w-full sm:w-auto">
+                      <div className={`w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br ${colors[(startIndex + i) % 3]} rounded-lg flex items-center justify-center shrink-0`}>
+                        <Image src="/13.svg" alt="Event" width={32} height={32}  />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-base md:text-lg text-gray-900 truncate">{item.eventName}</h3>
+                        <p className="text-sm md:text-base text-gray-500 truncate">{item.count} certificates • {item.date}</p>
+                        <p className="text-xs text-gray-400">{item.clubName}</p>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-[#21808D] hover:bg-[#21808D]/10 w-full sm:w-auto text-sm md:text-base"
+                      onClick={() => {
+                        setSelectedHistoryItem(item)
+                        setShowHistoryDetailModal(true)
+                      }}
+                    >
+                      View Details
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+                  <div className="text-sm text-gray-600">
+                    Showing {startIndex + 1}-{Math.min(endIndex, generationHistory.length)} of {generationHistory.length}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="h-8 w-8 p-0"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+                        // Show first page, last page, current page, and pages around current
+                        if (
+                          page === 1 ||
+                          page === totalPages ||
+                          (page >= currentPage - 1 && page <= currentPage + 1)
+                        ) {
+                          return (
+                            <Button
+                              key={page}
+                              variant={currentPage === page ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setCurrentPage(page)}
+                              className={`h-8 w-8 p-0 ${
+                                currentPage === page 
+                                  ? "bg-[#21808D] hover:bg-[#1a6570] text-white" 
+                                  : ""
+                              }`}
+                            >
+                              {page}
+                            </Button>
+                          )
+                        } else if (
+                          page === currentPage - 2 ||
+                          page === currentPage + 2
+                        ) {
+                          return <span key={page} className="px-1 text-gray-400">...</span>
+                        }
+                        return null
+                      })}
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="h-8 w-8 p-0"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </Card>
       </div>

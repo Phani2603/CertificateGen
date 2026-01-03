@@ -208,6 +208,30 @@ export function useDashboardData() {
     }
   }
 
+  const deleteEvent = async (eventId: string) => {
+    try {
+      const res = await fetch(`/api/events/${eventId}/delete`, {
+        method: 'DELETE',
+      })
+      const data = await res.json()
+      if (data.success) {
+        await fetchAllClubEvents() // Refresh all club events
+      }
+      return data
+    } catch (error) {
+      console.error('Failed to delete event:', error)
+      return { success: false, error: 'Failed to delete event' }
+    }
+  }
+
+  const refreshClubEvents = async (clubId: string) => {
+    try {
+      await fetchAllClubEvents()
+    } catch (error) {
+      console.error('Failed to refresh club events:', error)
+    }
+  }
+
   const addHistoryEntry = async (historyData: any) => {
     try {
       const res = await fetch('/api/history', {
@@ -323,6 +347,8 @@ export function useDashboardData() {
     createClub,
     joinClub,
     createEvent,
+    deleteEvent,
+    refreshClubEvents,
     addHistoryEntry,
     updateProfile,
     leaveOrganization,
