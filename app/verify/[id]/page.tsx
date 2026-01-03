@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { toast } from "sonner"
 import { 
   CheckCircle2, 
   XCircle, 
@@ -32,6 +33,18 @@ interface CertificateData {
   certificateUrl: string
   isValid: boolean
   verificationCode: string
+  eventId?: string // NEW: MongoDB ObjectId reference
+}
+
+interface FieldConfig {
+  id: string
+  name: string
+  x: number
+  y: number
+  fontSize: number
+  fontFamily: string
+  color: string
+  align: string
 }
 
 export default function VerificationPage() {
@@ -40,6 +53,10 @@ export default function VerificationPage() {
   const [certificate, setCertificate] = useState<CertificateData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [templateUrl, setTemplateUrl] = useState<string | null>(null)
+  const [fieldConfig, setFieldConfig] = useState<FieldConfig[]>([])
+  const [certificateGenerated, setCertificateGenerated] = useState(false)
 
   useEffect(() => {
     const verifyCertificate = async () => {
@@ -85,7 +102,55 @@ export default function VerificationPage() {
           isValid: true,
         })
         
-        console.log("[Verification] Certificate verified successfully")
+        console.log("[Verification] Certificate verified successfully:", result.certificate)
+        
+        // NEW: If certificate has eventId, fetch Event to get template and field config
+        if (result.certificate.eventId) {
+          console.log("[Verification] Fetching event template:", result.certificate.eventId)
+          try {
+            const eventResponse = await fetch(`/api/events/${result.certificate.eventId}`)
+            const eventData = await eventResponse.json()
+            
+            console.log("[Verification] Event response:", eventData)
+            
+            if (eventData.success && eventData.event) {
+              console.log("[Verification] Event data:", {
+                hasTemplateS3Key: !!eventData.event.templateS3Key,
+                templateS3Key: eventData.event.templateS3Key,
+                hasFieldConfig: !!eventData.event.fieldConfiguration,
+                fieldConfigCount: eventData.event.fieldConfiguration?.length || 0
+              })
+              
+              // Get signed URL for template
+              if (eventData.event.templateS3Key) {
+                console.log("[Verification] Requesting signed URL for key:", eventData.event.templateS3Key)
+                const templateResponse = await fetch(
+                  `/api/templates/signed-url?key=${encodeURIComponent(eventData.event.templateS3Key)}`
+                )
+                const templateData = await templateResponse.json()
+                
+                console.log("[Verification] Signed URL response:", templateData)
+                
+                if (templateData.success && templateData.signedUrl) {
+                  console.log("[Verification] ✅ Got signed URL for template")
+                  setTemplateUrl(templateData.signedUrl)
+                  setFieldConfig(eventData.event.fieldConfiguration || [])
+                } else {
+                  console.warn("[Verification] ⚠️ Failed to get signed URL:", templateData.error)
+                }
+              } else {
+                console.warn("[Verification] ⚠️ No templateS3Key in event data")
+              }
+            } else {
+              console.warn("[Verification] ⚠️ Event API response not successful:", eventData)
+            }
+          } catch (err) {
+            console.error("[Verification] ❌ Error fetching event template:", err)
+          }
+        } else {
+          console.log("[Verification] No eventId in certificate, showing metadata only")
+        }
+        
       } catch (err) {
         console.error("[Verification] Error:", err)
         setError("Failed to verify certificate. Please try again.")
@@ -98,6 +163,173 @@ export default function VerificationPage() {
       verifyCertificate()
     }
   }, [params.id])
+
+  // NEW: Render certificate on canvas when template is available
+  useEffect(() => {
+    if (!templateUrl || !certificate || !canvasRef.current) {
+      console.log('[Verification] Waiting for data:', { templateUrl: !!templateUrl, certificate: !!certificate, canvas: !!canvasRef.current })
+      return
+    }
+
+    const renderCertificate = async () => {
+      console.log("[Verification] Rendering certificate on canvas...")
+      console.log("[Verification] Template URL:", templateUrl)
+      const canvas = canvasRef.current!
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        console.error("[Verification] ❌ Failed to get canvas context")
+        return
+      }
+
+      try {
+        // Load template image via proxy to avoid CORS
+        const img = new window.Image()
+        // Use proxy endpoint to bypass CORS issues
+        const proxyUrl = `/api/templates/proxy?url=${encodeURIComponent(templateUrl)}`
+        
+        console.log("[Verification] Loading image via proxy...")
+        
+        await new Promise((resolve, reject) => {
+          img.onload = () => {
+            console.log("[Verification] ✅ Image loaded successfully:", {
+              width: img.width,
+              height: img.height
+            })
+            resolve(null)
+          }
+          img.onerror = (error) => {
+            console.error("[Verification] ❌ Image load failed:", error)
+            console.error("[Verification] Proxy URL:", proxyUrl)
+            reject(new Error('Failed to load template image via proxy'))
+          }
+          img.src = proxyUrl
+        })
+
+        // Set canvas size to match template
+        canvas.width = img.width
+        canvas.height = img.height
+
+        // Draw template
+        ctx.drawImage(img, 0, 0)
+
+        // Create mapping of recipient data with multiple aliases
+        const recipientData: Record<string, string> = {
+          // Direct mappings
+          recipientName: certificate.recipientName,
+          recipientEmail: certificate.recipientEmail,
+          eventName: certificate.eventName,
+          eventDate: certificate.eventDate,
+          organizationName: certificate.organizationName,
+          clubName: certificate.clubName,
+          issueDate: new Date(certificate.issueDate).toLocaleDateString(),
+          // Common aliases (case-insensitive)
+          name: certificate.recipientName,
+          Name: certificate.recipientName,
+          email: certificate.recipientEmail,
+          Email: certificate.recipientEmail,
+          event: certificate.eventName,
+          Event: certificate.eventName,
+          date: certificate.eventDate,
+          Date: certificate.eventDate,
+          organization: certificate.organizationName,
+          Organization: certificate.organizationName,
+          club: certificate.clubName,
+          Club: certificate.clubName,
+        }
+
+        console.log('[Verification] Field configuration:', fieldConfig)
+        console.log('[Verification] Certificate data:', certificate)
+
+        // Render each field with recipient data (if field config exists)
+        if (fieldConfig && fieldConfig.length > 0) {
+          fieldConfig.forEach((field) => {
+            // Try exact match first, then case-insensitive search
+            let value = recipientData[field.name]
+            
+            if (!value) {
+              // Try to find case-insensitive match
+              const matchingKey = Object.keys(recipientData).find(
+                key => key.toLowerCase() === field.name.toLowerCase()
+              )
+              value = matchingKey ? recipientData[matchingKey] : field.name
+            }
+            
+            console.log('[Verification] Rendering field:', { 
+              fieldName: field.name, 
+              value, 
+              x: field.x, 
+              y: field.y,
+              alignment: field.alignment || field.align
+            })
+            
+            // Set font style (match generation)
+            const fontWeight = field.fontWeight || 400
+            const fontString = `${fontWeight} ${field.fontSize}px "${field.fontFamily}", serif`
+            ctx.font = fontString
+            ctx.fillStyle = field.color
+            
+            // Handle alignment (match generation logic)
+            const alignment = (field.alignment || field.align || 'left') as CanvasTextAlign
+            ctx.textAlign = alignment
+            ctx.textBaseline = 'top'
+            
+            // Adjust x position based on alignment (match generation)
+            const x = alignment === 'center' 
+              ? field.x 
+              : alignment === 'right' 
+              ? field.x + (field.maxWidth || 0) 
+              : field.x
+
+            // Draw text with maxWidth if available
+            if (field.maxWidth) {
+              ctx.fillText(value, x, field.y, field.maxWidth)
+            } else {
+              ctx.fillText(value, x, field.y)
+            }
+          })
+        } else {
+          console.log('[Verification] No field configuration, showing template only')
+        }
+
+        setCertificateGenerated(true)
+        console.log("[Verification] ✅ Certificate rendered successfully")
+      } catch (err) {
+        console.error("[Verification] ❌ Error rendering certificate:", err)
+        console.error("[Verification] Error details:", err instanceof Error ? err.message : 'Unknown error')
+        
+        // Show error to user
+        if (err instanceof Error && err.message.includes('CORS')) {
+          toast.error('Cannot load certificate template. Please check S3 CORS configuration.')
+        } else {
+          toast.error('Failed to render certificate preview')
+        }
+      }
+    }
+
+    renderCertificate()
+  }, [templateUrl, certificate, fieldConfig])
+
+  const downloadCertificate = () => {
+    if (!canvasRef.current || !certificateGenerated) {
+      console.warn("[Verification] Canvas not ready for download")
+      return
+    }
+
+    canvasRef.current.toBlob((blob) => {
+      if (!blob) return
+      
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `certificate-${certificate?.recipientName || 'verification'}.png`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+      
+      console.log("[Verification] ✅ Certificate downloaded")
+    }, 'image/png')
+  }
 
   if (loading) {
     return (
@@ -208,15 +440,44 @@ export default function VerificationPage() {
               {/* Certificate Preview */}
               <Card className="bg-white p-6 rounded-2xl shadow-lg">
                 <h2 className="text-xl font-bold mb-4">Certificate Preview</h2>
-                <div className="bg-gray-100 rounded-lg aspect-[1.414/1] flex items-center justify-center border-2 border-gray-200">
-                  <div className="text-center p-8">
-                    <Award className="h-20 w-20 mx-auto mb-4 text-gray-400" />
-                    <p className="text-gray-500 mb-4">Certificate preview would appear here</p>
-                    <p className="text-sm text-gray-400">In production, this would show the actual certificate image</p>
-                  </div>
+                <div className="bg-gray-100 rounded-lg overflow-hidden border-2 border-gray-200">
+                  {templateUrl ? (
+                    <div className="relative">
+                      <canvas
+                        ref={canvasRef}
+                        className="w-full h-auto"
+                        style={{ display: certificateGenerated ? 'block' : 'none' }}
+                      />
+                      {!certificateGenerated && (
+                        <div className="aspect-[1.414/1] flex items-center justify-center">
+                          <div className="text-center p-8">
+                            <Loader2 className="h-20 w-20 mx-auto mb-4 text-[#21808D] animate-spin" />
+                            <p className="text-gray-500 mb-4">Rendering certificate...</p>
+                            <p className="text-sm text-gray-400">Please wait...</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="aspect-[1.414/1] flex items-center justify-center">
+                      <div className="text-center p-8">
+                        <Award className="h-20 w-20 mx-auto mb-4 text-gray-400" />
+                        <p className="text-gray-500 mb-4">Certificate preview not available</p>
+                        <p className="text-sm text-gray-400">
+                          {certificate?.eventId 
+                            ? 'Loading template from storage...' 
+                            : 'This certificate was generated with an older version'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="flex gap-3 mt-4">
-                  <Button className="flex-1 bg-[#21808D] hover:bg-[#1a6570] text-white">
+                  <Button 
+                    className="flex-1 bg-[#21808D] hover:bg-[#1a6570] text-white"
+                    onClick={downloadCertificate}
+                    disabled={!certificateGenerated}
+                  >
                     <Download className="h-4 w-4 mr-2" />
                     Download Certificate
                   </Button>

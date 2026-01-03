@@ -8,6 +8,19 @@ export interface IEvent extends Document {
   organizationId: mongoose.Types.ObjectId
   createdBy: mongoose.Types.ObjectId
   certificatesGenerated: number
+  templateS3Key?: string // S3 key for certificate template
+  fieldConfiguration?: Array<{
+    id: string
+    name: string
+    x: number
+    y: number
+    fontSize: number
+    fontFamily: string
+    fontWeight: number
+    color: string
+    alignment: string
+    maxWidth?: number
+  }>
   createdAt: Date
   updatedAt: Date
 }
@@ -42,6 +55,25 @@ const EventSchema = new Schema<IEvent>(
     certificatesGenerated: {
       type: Number,
       default: 0,
+    },
+    templateS3Key: {
+      type: String,
+      required: false,
+    },
+    fieldConfiguration: {
+      type: [
+        {
+          id: String,
+          name: String,
+          x: Number,
+          y: Number,
+          fontSize: Number,
+          fontFamily: String,
+          color: String,
+          align: String,
+        },
+      ],
+      required: false,
     },
   },
   {

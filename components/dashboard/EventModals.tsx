@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
-import { X, ChevronRight, CalendarIcon, Loader2, Info } from "lucide-react"
+import { X, ChevronRight, CalendarIcon, Loader2, Info, Trash2 } from "lucide-react"
 import { format } from "date-fns"
 import { toast } from "sonner"
 import Image from "next/image"
@@ -44,6 +44,8 @@ interface EventModalProps {
   setEventDate: (date: Date | undefined) => void
   leaveClub?: (clubId: string) => Promise<any>
   createEvent?: (eventData: any) => Promise<any>
+  deleteEvent?: (eventId: string) => Promise<any>
+  refreshClubEvents?: (clubId: string) => Promise<void>
 }
 
 export function EventModals({
@@ -64,10 +66,14 @@ export function EventModals({
   setEventDate,
   leaveClub,
   createEvent,
+  deleteEvent,
+  refreshClubEvents,
 }: EventModalProps) {
   const [isCreatingEvent, setIsCreatingEvent] = useState(false)
   const [showInfoPopover, setShowInfoPopover] = useState(false)
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [eventToDelete, setEventToDelete] = useState<{id: string, name: string} | null>(null)
   
   const handleLeaveClub = async () => {
     if (selectedClub && leaveClub) {
@@ -81,6 +87,35 @@ export function EventModals({
       }
     }
     setShowLeaveConfirm(false)
+  }
+
+  const handleDeleteEvent = async () => {
+    if (!eventToDelete || !deleteEvent) return
+
+    try {
+      const result = await deleteEvent(eventToDelete.id)
+      if (result.success) {
+        toast.success(`Event "${eventToDelete.name}" deleted successfully`)
+        
+        // Clear selected event if it was the deleted one
+        if (selectedEvent?.eventId === eventToDelete.id) {
+          setSelectedEvent(null)
+        }
+        
+        // Refresh club events
+        if (selectedClub && refreshClubEvents) {
+          await refreshClubEvents(selectedClub)
+        }
+      } else {
+        toast.error(result.error || 'Failed to delete event')
+      }
+    } catch (error) {
+      console.error('Error deleting event:', error)
+      toast.error('Failed to delete event')
+    } finally {
+      setShowDeleteConfirm(false)
+      setEventToDelete(null)
+    }
   }
   
   return (
@@ -209,22 +244,24 @@ export function EventModals({
                 clubEvents[clubData.id].map((event, i) => (
                   <div 
                     key={event.id} 
-                    className={`flex items-center justify-between p-4 border-2 rounded-lg transition-all cursor-pointer ${
+                    className={`flex items-center justify-between p-4 border-2 rounded-lg transition-all ${
                       selectedEvent?.eventId === event.id 
                         ? 'border-[#21808D] bg-[#21808D]/5' 
                         : 'border-gray-100 hover:border-[#21808D]'
                     }`}
-                    onClick={() => {
-                      setSelectedEvent({
-                        club: clubData.id,
-                        eventId: event.id,
-                        eventName: event.name
-                      })
-                      setShowClubDetailModal(false)
-                      setCurrentPage("generate")
-                    }}
                   >
-                    <div className="flex items-center gap-4">
+                    <div 
+                      className="flex items-center gap-4 flex-1 cursor-pointer"
+                      onClick={() => {
+                        setSelectedEvent({
+                          club: clubData.id,
+                          eventId: event.id,
+                          eventName: event.name
+                        })
+                        setShowClubDetailModal(false)
+                        setCurrentPage("generate")
+                      }}
+                    >
                       <div className="w-12 h-12 flex items-center justify-center">
                         <Image src="/13.svg" alt="Event" width={32} height={32} />
                       </div>
@@ -237,6 +274,18 @@ export function EventModals({
                       {selectedEvent?.eventId === event.id && (
                         <span className="text-xs px-2 py-1 bg-[#21808D] text-white rounded-full">Active</span>
                       )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setEventToDelete({ id: event.id, name: event.name })
+                          setShowDeleteConfirm(true)
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                       <ChevronRight className="h-4 w-4 text-gray-400" />
                     </div>
                   </div>
@@ -306,7 +355,7 @@ export function EventModals({
                 }
                 
                 // Reset form and state before closing modal
-                e.currentTarget.reset()
+                e.currentTarget?.reset()
                 setEventDate(undefined)
                 setShowCreateEventModal(false)
                 setShowClubDetailModal(false)
@@ -401,6 +450,18 @@ export function EventModals({
         confirmText="Leave Club"
         cancelText="Cancel"
         onConfirm={handleLeaveClub}
+        variant="destructive"
+      />
+
+      {/* Delete Event Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Delete Event"
+        description={`Are you sure you want to delete "${eventToDelete?.name}"? This will permanently delete all certificates, history entries, and related data. This action cannot be undone.`}
+        confirmText="Delete Event"
+        cancelText="Cancel"
+        onConfirm={handleDeleteEvent}
         variant="destructive"
       />
     </>

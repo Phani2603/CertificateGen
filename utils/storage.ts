@@ -15,7 +15,8 @@ export interface SessionData {
   sendingMode: "auto" | "sequential" | "pooled"
   outputFormat: "png" | "pdf"
   quality: "standard" | "high"
-  templateImage: string
+  templateImage: string // Keep for backward compatibility (base64 or S3 URL)
+  templateS3Key?: string // NEW: Store S3 key separately
   fields: CertificateField[]
   timestamp: number
 }

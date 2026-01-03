@@ -6,7 +6,8 @@ export interface ICertificate extends Document {
   certificateHash: string
   recipientName: string
   recipientEmail: string
-  eventName: string
+  eventId?: mongoose.Types.ObjectId // NEW: Reference to Event model
+  eventName: string // KEPT: For backward compatibility
   eventDate: string
   organizationName: string
   clubName: string
@@ -54,6 +55,11 @@ const CertificateSchema = new Schema<ICertificate>(
     recipientEmail: {
       type: String,
       required: true,
+    },
+    eventId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Event',
+      required: false, // Optional for backward compatibility
     },
     eventName: {
       type: String,
