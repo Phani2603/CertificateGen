@@ -11,6 +11,8 @@ export interface IUser extends Document {
   bio?: string
   organization?: string
   organizationId?: mongoose.Types.ObjectId | IOrganization
+  privateOrgId?: mongoose.Types.ObjectId // NEW: For corporate organizations
+  userType?: 'corporate' | 'individual' | null // NEW: User type selection
   clubs: mongoose.Types.ObjectId[] | IClub[]
   adminOfClubs: mongoose.Types.ObjectId[] | IClub[]
   provider?: string
@@ -51,6 +53,15 @@ const UserSchema = new Schema<IUser>(
     organizationId: {
       type: Schema.Types.ObjectId,
       ref: 'Organization',
+    },
+    privateOrgId: {
+      type: Schema.Types.ObjectId,
+      ref: 'PrivateOrg',
+    },
+    userType: {
+      type: String,
+      enum: ['corporate', 'individual', null],
+      default: null,
     },
     clubs: [{
       type: Schema.Types.ObjectId,

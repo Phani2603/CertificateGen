@@ -4,13 +4,24 @@ import type { NextRequest } from "next/server"
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   
+  // Check for admin session
+  const adminSession = request.cookies.get("admin-session")
+  
+  // Admin routes protection
+  if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login")) {
+    if (!adminSession || adminSession.value !== "true") {
+      return NextResponse.redirect(new URL("/admin/login", request.url))
+    }
+  }
+  
   // Get session token from cookies
   const sessionToken = request.cookies.get("authjs.session-token") || 
                        request.cookies.get("__Secure-authjs.session-token")
   
   // Protected routes
-  const protectedRoutes = ["/dashboard", "/settings", "/api/certificates"]
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
+  const protectedRoutes = ["/dashboard", "/individual-dashboard", "/create-organization", "/settings", "/api/certificates"]
+  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route)) ||
+                          pathname.match(/^\/[\w-]+\/dashboard$/)
   
   // If route is protected and no session token, redirect to login
   if (isProtectedRoute && !sessionToken) {
@@ -19,9 +30,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
   
-  // If user is logged in and tries to access landing page, redirect to dashboard
+  // If user is logged in and tries to access old /dashboard, redirect to login to determine type
+  if (pathname === "/dashboard" && sessionToken) {
+    return NextResponse.redirect(new URL("/login", request.url))
+  }
+  
+  // If user is logged in and tries to access landing page, redirect to login to determine dashboard
   if (pathname === "/landing" && sessionToken) {
-    return NextResponse.redirect(new URL("/dashboard", request.url))
+    return NextResponse.redirect(new URL("/login", request.url))
   }
   
   return NextResponse.next()
@@ -29,9 +45,13 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/admin/:path*",
     "/dashboard/:path*",
+    "/individual-dashboard/:path*",
+    "/create-organization/:path*",
     "/api/certificates/:path*",
     "/settings/:path*",
     "/landing",
+    "/:slug/dashboard"
   ],
 }

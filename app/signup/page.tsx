@@ -1,26 +1,39 @@
 "use client"
 
-import { useState, FormEvent } from "react"
+import { Suspense, useState, FormEvent, useEffect } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { signIn } from "next-auth/react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { signIn, useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Building2, User } from "lucide-react"
 import Image from "next/image"
+import { cn } from "@/lib/utils"
 
-export default function SignupPage() {
+function SignupContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const { status } = useSession()
+  const inviteToken = searchParams.get('invite')
+  
+  // Redirect authenticated users with invite to the accept page
+  useEffect(() => {
+    if (status === "authenticated" && inviteToken) {
+      router.replace(`/invitations/accept?token=${encodeURIComponent(inviteToken)}`)
+    }
+  }, [status, inviteToken, router])
+  
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
+    userType: "" as "corporate" | "individual" | "",
   })
-
+  
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
@@ -30,7 +43,10 @@ export default function SignupPage() {
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          inviteToken // Pass invite token
+        }),
       })
 
       const data = await response.json()
@@ -50,7 +66,8 @@ export default function SignupPage() {
       if (result?.error) {
         setError("Account created but login failed")
       } else {
-        router.push("/dashboard")
+        // Redirect to login page which will route based on userType
+        router.push("/login")
       }
     } catch (err) {
       setError("An error occurred. Please try again.")
@@ -153,6 +170,59 @@ export default function SignupPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* User Type Selection */}
+            <div>
+              <Label>I want to use GetCertificates as</Label>
+              <div className="grid grid-cols-2 gap-3 mt-2">
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, userType: "corporate" }))}
+                  className={cn(
+                    "flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all hover:border-[#21808D]",
+                    formData.userType === "corporate" 
+                      ? "border-[#21808D] bg-[#21808D]/5" 
+                      : "border-gray-200 bg-white"
+                  )}
+                >
+                  <div className={cn(
+                    "w-10 h-10 rounded-lg flex items-center justify-center",
+                    formData.userType === "corporate" ? "bg-[#FF5733]" : "bg-gray-100"
+                  )}>
+                    <Building2 className={cn(
+                      "w-5 h-5",
+                      formData.userType === "corporate" ? "text-white" : "text-gray-600"
+                    )} />
+                  </div>
+                  <span className="text-sm font-medium text-center">Corporate/Business</span>
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, userType: "individual" }))}
+                  className={cn(
+                    "flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all hover:border-[#21808D]",
+                    formData.userType === "individual" 
+                      ? "border-[#21808D] bg-[#21808D]/5" 
+                      : "border-gray-200 bg-white"
+                  )}
+                >
+                  <div className={cn(
+                    "w-10 h-10 rounded-lg flex items-center justify-center",
+                    formData.userType === "individual" ? "bg-[#8FD6BD]" : "bg-gray-100"
+                  )}>
+                    <User className={cn(
+                      "w-5 h-5",
+                      formData.userType === "individual" ? "text-black" : "text-gray-600"
+                    )} />
+                  </div>
+                  <span className="text-sm font-medium text-center">Individual</span>
+                </button>
+              </div>
+              {!formData.userType && (
+                <p className="text-xs text-gray-500 mt-1">Please select how you plan to use the platform</p>
+              )}
+            </div>
+
             <div>
               <Label htmlFor="name">Full name</Label>
               <Input
@@ -205,7 +275,7 @@ export default function SignupPage() {
             <Button 
               type="submit" 
               className="w-full h-12 bg-[#21808D] hover:bg-[#1a6370] text-white font-semibold"
-              disabled={isLoading}
+              disabled={isLoading || !formData.userType}
             >
               {isLoading ? 'Creating account...' : 'Create account'}
             </Button>
@@ -224,5 +294,20 @@ export default function SignupPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#f6f6f6] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#21808D] mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <SignupContent />
+    </Suspense>
   )
 }

@@ -4,6 +4,7 @@ import connectDB from '@/lib/mongodb'
 import User from '@/models/User'
 import Organization from '@/models/Organization'
 import Club from '@/models/Club'
+import PrivateOrg from '@/models/PrivateOrg'
 
 // GET - Fetch user profile
 export async function GET(request: NextRequest) {
@@ -19,17 +20,8 @@ export async function GET(request: NextRequest) {
 
     await connectDB()
 
+    // First, fetch user without populate to check userType
     let user = await User.findOne({ email: session.user.email })
-      .populate('organizationId', 'name logoUrl')
-      .populate('clubs', 'name color logoUrl')
-
-    console.log('[Profile API] User fetched:', {
-      userId: user?._id,
-      email: user?.email,
-      hasOrganizationId: !!user?.organizationId,
-      organizationIdRaw: user?.organizationId,
-      organizationIdType: typeof user?.organizationId
-    })
 
     // Create user if doesn't exist
     if (!user) {
@@ -42,9 +34,43 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Type guard for populated organization
+    // Now populate based on userType
+    if (user.userType === 'individual' || user.userType === 'corporate') {
+      // For individual/corporate users, populate privateOrgId if exists
+      if (user.privateOrgId) {
+        await user.populate('privateOrgId', 'name logoUrl slug')
+      }
+      
+      // Clear old academic references for migrated users (cleanup)
+      if (user.organizationId || user.clubs?.length) {
+        console.log('[Profile API] Cleaning old academic data for individual/corporate user')
+        user.organizationId = undefined
+        user.clubs = []
+        await user.save()
+      }
+    } else {
+      // For academic users (or null userType), populate organizationId and clubs
+      if (user.organizationId || user.clubs?.length) {
+        await user.populate('organizationId', 'name logoUrl')
+        await user.populate('clubs', 'name color logoUrl')
+      }
+    }
+
+    console.log('[Profile API] User fetched:', {
+      userId: user._id,
+      email: user.email,
+      userType: user.userType,
+      hasOrganizationId: !!user.organizationId,
+      hasPrivateOrgId: !!user.privateOrgId,
+    })
+
+    // Type guards for populated data
     const isPopulatedOrg = (org: any): org is { _id: any; name: string; logoUrl?: string } => {
       return org && typeof org === 'object' && 'name' in org
+    }
+
+    const isPopulatedPrivateOrg = (org: any): org is { _id: any; name: string; logoUrl?: string; slug: string } => {
+      return org && typeof org === 'object' && 'name' in org && 'slug' in org
     }
 
     const organizationData = user.organizationId && isPopulatedOrg(user.organizationId)
@@ -55,7 +81,16 @@ export async function GET(request: NextRequest) {
         }
       : null
 
-    console.log('[Profile API] Organization data:', organizationData)
+    const privateOrgData = user.privateOrgId && isPopulatedPrivateOrg(user.privateOrgId)
+      ? {
+          id: user.privateOrgId._id.toString(),
+          name: user.privateOrgId.name,
+          logoUrl: user.privateOrgId.logoUrl,
+          slug: user.privateOrgId.slug,
+        }
+      : null
+
+    console.log('[Profile API] Organization data:', { organizationData, privateOrgData })
 
     return NextResponse.json({
       success: true,
@@ -66,7 +101,9 @@ export async function GET(request: NextRequest) {
         image: user.image,
         phone: user.phone || '',
         bio: user.bio || '',
+        userType: user.userType,
         organization: organizationData,
+        privateOrg: privateOrgData,
         clubs: user.clubs || [],
         adminOfClubs: user.adminOfClubs || [],
         createdAt: user.createdAt,
@@ -96,7 +133,7 @@ export async function PUT(request: NextRequest) {
     await connectDB()
 
     const body = await request.json()
-    const { name, phone, bio, image, organization } = body
+    const { name, phone, bio, image, organization, userType } = body
 
     const user = await User.findOne({ email: session.user.email })
 
@@ -113,6 +150,12 @@ export async function PUT(request: NextRequest) {
     if (bio !== undefined) user.bio = bio
     if (image !== undefined) user.image = image
     if (organization !== undefined) user.organization = organization
+    
+    // Allow updating userType if it's not set or if explicitly allowed
+    // This is mainly for the initial setup modal
+    if (userType && (!user.userType || ['individual', 'corporate', 'academic'].includes(userType))) {
+      user.userType = userType
+    }
 
     await user.save()
 
@@ -125,6 +168,7 @@ export async function PUT(request: NextRequest) {
         image: user.image,
         phone: user.phone,
         bio: user.bio,
+        userType: user.userType,
         organization: user.organization,
       },
     })
@@ -135,6 +179,11 @@ export async function PUT(request: NextRequest) {
       { status: 500 }
     )
   }
+}
+
+// PATCH - Update specific fields (alias for PUT in this case, but good practice to have)
+export async function PATCH(request: NextRequest) {
+  return PUT(request)
 }
 
 // DELETE - Delete user account (optional, be careful with this)

@@ -4,8 +4,9 @@ export interface IEvent extends Document {
   name: string
   description?: string
   date: Date
-  clubId: mongoose.Types.ObjectId
-  organizationId: mongoose.Types.ObjectId
+  clubId?: mongoose.Types.ObjectId // Optional for corporate events
+  organizationId?: mongoose.Types.ObjectId // Optional for corporate events
+  privateOrgId?: mongoose.Types.ObjectId // For corporate organizations
   createdBy: mongoose.Types.ObjectId
   certificatesGenerated: number
   templateS3Key?: string // S3 key for certificate template
@@ -40,12 +41,17 @@ const EventSchema = new Schema<IEvent>(
     clubId: {
       type: Schema.Types.ObjectId,
       ref: 'Club',
-      required: true,
+      required: false, // Optional for corporate events
     },
     organizationId: {
       type: Schema.Types.ObjectId,
       ref: 'Organization',
-      required: true,
+      required: false, // Optional for corporate events
+    },
+    privateOrgId: {
+      type: Schema.Types.ObjectId,
+      ref: 'PrivateOrg',
+      required: false,
     },
     createdBy: {
       type: Schema.Types.ObjectId,
