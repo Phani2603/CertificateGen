@@ -12,7 +12,7 @@ export interface IUser extends Document {
   organization?: string
   organizationId?: mongoose.Types.ObjectId | IOrganization
   privateOrgId?: mongoose.Types.ObjectId // NEW: For corporate organizations
-  userType?: 'corporate' | 'individual' | null // NEW: User type selection
+  userType?: 'corporate' | 'individual' | 'academic' | null // NEW: User type selection
   clubs: mongoose.Types.ObjectId[] | IClub[]
   adminOfClubs: mongoose.Types.ObjectId[] | IClub[]
   provider?: string
@@ -60,7 +60,7 @@ const UserSchema = new Schema<IUser>(
     },
     userType: {
       type: String,
-      enum: ['corporate', 'individual', null],
+      enum: ['corporate', 'individual', 'academic', null],
       default: null,
     },
     clubs: [{

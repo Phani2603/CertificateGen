@@ -19,6 +19,12 @@ export async function GET(request: NextRequest) {
     }
 
     await connectDB()
+    
+    // Ensure models are loaded (fix for Next.js cold starts)
+    // This ensures mongoose knows about these models before populate
+    if (!Organization || !Club || !PrivateOrg) {
+      console.error('[Profile API] Model loading issue')
+    }
 
     // First, fetch user without populate to check userType
     let user = await User.findOne({ email: session.user.email })
