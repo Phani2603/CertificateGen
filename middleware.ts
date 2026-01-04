@@ -30,16 +30,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
   
-  // If user is logged in and tries to access old /dashboard, redirect to login to determine type
-  if (pathname === "/dashboard" && sessionToken) {
-    return NextResponse.redirect(new URL("/login", request.url))
-  }
-  
-  // If user is logged in and tries to access landing page, redirect to login to determine dashboard
-  if (pathname === "/landing" && sessionToken) {
-    return NextResponse.redirect(new URL("/login", request.url))
-  }
-  
   return NextResponse.next()
 }
 

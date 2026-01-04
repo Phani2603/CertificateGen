@@ -56,6 +56,12 @@ function LoginContent() {
 
         try {
           const response = await fetch('/api/profile')
+          
+          if (!response.ok) {
+            console.error('Profile fetch failed:', response.status)
+            return
+          }
+          
           const data = await response.json()
           
           if (data.success && data.user) {
@@ -65,17 +71,14 @@ function LoginContent() {
               router.push('/individual-dashboard')
             } else if (data.user.userType === 'corporate') {
               // Check if user has organization
-              if (data.user.privateOrgId) {
-                const orgResponse = await fetch('/api/private-orgs')
-                const orgData = await orgResponse.json()
-                if (orgData.success && orgData.organizations?.length > 0) {
-                  router.push(`/${orgData.organizations[0].slug}/dashboard`)
-                } else {
-                  router.push('/create-organization')
-                }
+              if (data.user.privateOrg) {
+                router.push(`/${data.user.privateOrg.slug}/dashboard`)
               } else {
                 router.push('/create-organization')
               }
+            } else if (data.user.userType === 'academic') {
+              // Academic users go to general dashboard
+              router.push('/dashboard')
             }
           }
         } catch (error) {
