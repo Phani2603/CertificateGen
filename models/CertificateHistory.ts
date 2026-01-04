@@ -3,9 +3,10 @@ import mongoose, { Document, Model, Schema } from 'mongoose'
 export interface ICertificateHistory extends Document {
   eventId: mongoose.Types.ObjectId
   eventName: string
-  clubId: mongoose.Types.ObjectId
-  clubName: string
-  organizationId: mongoose.Types.ObjectId
+  clubId?: mongoose.Types.ObjectId
+  clubName?: string
+  organizationId?: mongoose.Types.ObjectId
+  privateOrgId?: mongoose.Types.ObjectId
   userId: mongoose.Types.ObjectId
   certificateCount: number
   totalSize: number // in bytes
@@ -30,16 +31,21 @@ const CertificateHistorySchema = new Schema<ICertificateHistory>(
     clubId: {
       type: Schema.Types.ObjectId,
       ref: 'Club',
-      required: true,
+      required: false,
     },
     clubName: {
       type: String,
-      required: true,
+      required: false,
     },
     organizationId: {
       type: Schema.Types.ObjectId,
       ref: 'Organization',
-      required: true,
+      required: false,
+    },
+    privateOrgId: {
+      type: Schema.Types.ObjectId,
+      ref: 'PrivateOrg',
+      required: false,
     },
     userId: {
       type: Schema.Types.ObjectId,

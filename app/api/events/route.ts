@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const clubId = searchParams.get('clubId')
+    const privateOrgId = searchParams.get('privateOrgId')
 
     const user = await User.findOne({ email: session.user.email })
     if (!user) {
@@ -25,7 +26,10 @@ export async function GET(request: NextRequest) {
 
     let query: any = {}
     
-    if (clubId) {
+    if (privateOrgId) {
+      // Fetch events for a specific private organization
+      query.privateOrgId = privateOrgId
+    } else if (clubId) {
       // When clubId is specified, fetch ALL events for that club (not filtered by user membership)
       // This allows users to see all club events when viewing club details
       query.clubId = clubId
@@ -38,12 +42,21 @@ export async function GET(request: NextRequest) {
 
     const events = await Event.find(query)
       .populate('clubId', 'name color')
+      .populate('privateOrgId', 'name')
       .sort({ date: -1 })
       .lean()
+
+    // If fetching for private org, return flat list
+    if (privateOrgId) {
+      return NextResponse.json({ success: true, events })
+    }
 
     // Group by club
     const eventsByClub: Record<string, any[]> = {}
     events.forEach(event => {
+      // Skip events without clubId when grouping by club
+      if (!event.clubId) return
+
       const clubKey = event.clubId._id.toString()
       if (!eventsByClub[clubKey]) {
         eventsByClub[clubKey] = []
@@ -78,11 +91,48 @@ export async function POST(request: NextRequest) {
     await connectDB()
 
     const body = await request.json()
-    const { clubId, name, description, date } = body
+    const { clubId, privateOrgId, name, description, date } = body
 
     const user = await User.findOne({ email: session.user.email })
     if (!user) {
       return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 })
+    }
+
+    // Handle private organization events
+    if (privateOrgId) {
+      const PrivateOrg = (await import('@/models/PrivateOrg')).default
+      const privateOrg = await PrivateOrg.findById(privateOrgId)
+      
+      if (!privateOrg) {
+        return NextResponse.json({ success: false, error: 'Organization not found' }, { status: 404 })
+      }
+
+      // Check if user has access (owner or member)
+      const isOwner = privateOrg.ownerId.toString() === user._id.toString()
+      const isMember = privateOrg.allowedUsers.includes(user._id)
+
+      if (!isOwner && !isMember) {
+        return NextResponse.json({ success: false, error: 'Not authorized to create events for this organization' }, { status: 403 })
+      }
+
+      const newEvent = await Event.create({
+        name,
+        description,
+        date: new Date(date),
+        privateOrgId: privateOrg._id,
+        createdBy: user._id,
+      })
+
+      return NextResponse.json({ 
+        success: true, 
+        event: newEvent,
+        message: `Created event ${name} successfully`
+      })
+    }
+
+    // Handle club events (existing logic)
+    if (!clubId) {
+      return NextResponse.json({ success: false, error: 'Club ID or Organization ID is required' }, { status: 400 })
     }
 
     // Verify user is member of the club

@@ -1,24 +1,94 @@
 "use client"
 
-import { useState, FormEvent } from "react"
+import { Suspense, useState, FormEvent, useEffect } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { signIn } from "next-auth/react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { signIn, useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
 import { ArrowLeft } from "lucide-react"
 import Image from "next/image"
+import { UserTypeSelectionModal } from "@/components/UserTypeSelectionModal"
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const inviteToken = searchParams.get('invite')
+  const { data: session, status } = useSession()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const [showTypeSelection, setShowTypeSelection] = useState(false)
+  const [hasCheckedRedirect, setHasCheckedRedirect] = useState(false)
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   })
+
+  useEffect(() => {
+    async function checkUserType() {
+      // Only check once when page loads, not during form submission
+      if (status === "authenticated" && !isLoading && !hasCheckedRedirect) {
+        setHasCheckedRedirect(true)
+        
+        // Handle Invite Token if present
+        if (inviteToken) {
+          try {
+            const res = await fetch('/api/invitations/accept', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token: inviteToken })
+            })
+            const data = await res.json()
+            if (data.success) {
+              // Redirect to the org dashboard
+              router.push(`/${data.orgSlug}/dashboard`)
+              return
+            } else {
+              console.error('Failed to accept invite:', data.error)
+              // Continue to normal redirect logic but maybe show error?
+            }
+          } catch (err) {
+            console.error('Error accepting invite:', err)
+          }
+        }
+
+        try {
+          const response = await fetch('/api/profile')
+          
+          if (!response.ok) {
+            console.error('Profile fetch failed:', response.status)
+            return
+          }
+          
+          const data = await response.json()
+          
+          if (data.success && data.user) {
+            if (!data.user.userType) {
+              setShowTypeSelection(true)
+            } else if (data.user.userType === 'individual') {
+              router.push('/individual-dashboard')
+            } else if (data.user.userType === 'corporate') {
+              // Check if user has organization
+              if (data.user.privateOrg) {
+                router.push(`/${data.user.privateOrg.slug}/dashboard`)
+              } else {
+                router.push('/create-organization')
+              }
+            } else if (data.user.userType === 'academic') {
+              // Academic users go to general dashboard
+              router.push('/dashboard')
+            }
+          }
+        } catch (error) {
+          console.error('Error checking user type:', error)
+        }
+      }
+    }
+
+    checkUserType()
+  }, [status, router, isLoading, hasCheckedRedirect, inviteToken])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -34,17 +104,25 @@ export default function LoginPage() {
 
       if (result?.error) {
         setError("Invalid email or password")
+        setIsLoading(false)
       } else {
-        router.push("/dashboard")
+        // Successfully logged in - allow useEffect to handle redirect
+        setHasCheckedRedirect(false)
       }
     } catch (err) {
       setError("An error occurred. Please try again.")
-    } finally {
       setIsLoading(false)
     }
   }
+  
   return (
-    <div className="min-h-screen bg-[#f6f6f6] flex items-center justify-center p-6">
+    <>
+      <UserTypeSelectionModal 
+        isOpen={showTypeSelection} 
+        onClose={() => setShowTypeSelection(false)} 
+      />
+      
+      <div className="min-h-screen bg-[#f6f6f6] flex items-center justify-center p-6">
       <div className="w-full max-w-6xl grid md:grid-cols-2 gap-12 items-center">
         {/* Left Side - Branding */}
         <div className="hidden md:block">
@@ -100,7 +178,10 @@ export default function LoginPage() {
           <Button 
             variant="outline" 
             className="w-full mb-4 border-gray-300 hover:bg-gray-50 h-12"
-            onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+            onClick={() => {
+              const cb = `/login${inviteToken ? `?invite=${inviteToken}` : ''}`
+              signIn('google', { callbackUrl: cb })
+            }}
             type="button"
           >
             <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
@@ -127,7 +208,10 @@ export default function LoginPage() {
           <Button 
             variant="outline" 
             className="w-full mb-6 border-gray-300 hover:bg-gray-50 h-12"
-            onClick={() => signIn('github', { callbackUrl: '/dashboard' })}
+            onClick={() => {
+              const cb = `/login${inviteToken ? `?invite=${inviteToken}` : ''}`
+              signIn('github', { callbackUrl: cb })
+            }}
             type="button"
           >
             <svg className="mr-3 h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
@@ -205,5 +289,21 @@ export default function LoginPage() {
         </Card>
       </div>
     </div>
+    </>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#f6f6f6] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#21808D] mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   )
 }

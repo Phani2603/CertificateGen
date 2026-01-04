@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
+    const privateOrgId = searchParams.get('privateOrgId')
     const skip = (page - 1) * limit
 
     const user = await User.findOne({ email: session.user.email })
@@ -24,11 +25,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 })
     }
 
+    let query: any = { userId: user._id }
+    
+    if (privateOrgId) {
+      // If privateOrgId is provided, fetch history for that org (if user is owner/member)
+      // For now, let's just filter by privateOrgId
+      query = { privateOrgId }
+    }
+
     // Get total count for pagination
-    const total = await CertificateHistory.countDocuments({ userId: user._id })
+    const total = await CertificateHistory.countDocuments(query)
 
     // Get paginated history (populate will be null if ref doesn't exist)
-    const history = await CertificateHistory.find({ userId: user._id })
+    const history = await CertificateHistory.find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
@@ -49,7 +58,7 @@ export async function GET(request: NextRequest) {
       id: item._id.toString(),
       eventName: item.eventName,
       clubName: item.clubName,
-      count: item.certificateCount,
+      certificateCount: item.certificateCount,
       date: item.createdAt.toISOString().split('T')[0],
       timestamp: item.createdAt.getTime(),
       successRate: item.successRate,
@@ -89,7 +98,7 @@ export async function POST(request: NextRequest) {
     await connectDB()
 
     const body = await request.json()
-    const { eventId, eventName, clubId, clubName, certificateCount, totalSize, batchId, certificateIds } = body
+    const { eventId, eventName, clubId, clubName, certificateCount, totalSize, batchId, certificateIds, privateOrgId } = body
 
     const user = await User.findOne({ email: session.user.email })
     if (!user) {
@@ -107,6 +116,7 @@ export async function POST(request: NextRequest) {
       clubId,
       clubName,
       organizationId: orgId,
+      privateOrgId,
       userId: user._id,
       certificateCount,
       totalSize,
