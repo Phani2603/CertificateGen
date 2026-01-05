@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import connectDB from '@/lib/mongodb'
 import User from '@/models/User'
+import Organization from '@/models/Organization'
+import PrivateOrg from '@/models/PrivateOrg'
+import Club from '@/models/Club'
+import CertificateHistory from '@/models/CertificateHistory'
+import Event from '@/models/Event'
 import AdminLog from '@/models/AdminLog'
 
 // Helper to check admin auth
@@ -24,13 +29,56 @@ export async function GET(
     await connectDB()
     const { id } = await params
 
-    const user = await User.findById(id).select('-password').lean()
+    // Ensure models are loaded
+    if (!Organization || !Club || !PrivateOrg) {
+      console.error('[Admin User Details] Model loading issue')
+    }
+
+    const user = await User.findById(id)
+      .select('-password')
+      .populate('organizationId', 'name logoUrl')
+      .populate('privateOrgId', 'name slug logoUrl')
+      .populate('clubs', 'name color')
+      .populate('adminOfClubs', 'name')
+      .lean()
     
     if (!user) {
       return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ success: true, user })
+    // Fetch additional stats
+    const [certificateStats, eventStats] = await Promise.all([
+      CertificateHistory.aggregate([
+        { $match: { generatedBy: user._id } },
+        { $group: { _id: null, total: { $sum: '$certificateCount' } } }
+      ]),
+      Event.countDocuments({ createdBy: user._id })
+    ])
+
+    const totalCertificates = certificateStats[0]?.total || 0
+    const totalEvents = eventStats || 0
+
+    // Get last activity
+    const lastActivity = await CertificateHistory.findOne({ generatedBy: user._id })
+      .sort({ createdAt: -1 })
+      .select('createdAt')
+      .lean()
+
+    return NextResponse.json({ 
+      success: true, 
+      user: {
+        ...user,
+        totalCertificates,
+        totalEvents,
+        lastActivity: lastActivity ? new Date(lastActivity.createdAt).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }) : null,
+      }
+    })
   } catch (error) {
     console.error('Error fetching user:', error)
     return NextResponse.json({ success: false, error: 'Failed to fetch user' }, { status: 500 })

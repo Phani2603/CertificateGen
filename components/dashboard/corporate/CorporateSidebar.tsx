@@ -3,7 +3,7 @@
 import { signOut } from "next-auth/react"
 import Image from "next/image"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Building2, Calendar, Users, Settings, LogOut, Menu, X, History } from "lucide-react"
+import { LogOut, Menu, X } from "lucide-react"
 
 export type CorporatePage = "overview" | "events" | "history" | "members" | "settings"
 
@@ -31,11 +31,11 @@ export function CorporateSidebar({
   userEmail,
 }: CorporateSidebarProps) {
   const navItems = [
-    { id: "overview" as CorporatePage, label: "Overview", icon: Building2 },
-    { id: "events" as CorporatePage, label: "Events", icon: Calendar },
-    { id: "history" as CorporatePage, label: "History", icon: History },
-    { id: "members" as CorporatePage, label: "Members", icon: Users },
-    { id: "settings" as CorporatePage, label: "Settings", icon: Settings },
+    { id: "overview" as CorporatePage, label: "Overview", imageSrc: "/overview.svg" },
+    { id: "events" as CorporatePage, label: "Events", imageSrc: "/13.svg" },
+    { id: "history" as CorporatePage, label: "History", imageSrc: "/history.svg" },
+    { id: "members" as CorporatePage, label: "Members", imageSrc: "/members.svg" },
+    { id: "settings" as CorporatePage, label: "Settings", imageSrc: "/setting.svg" },
   ]
 
   return (
@@ -95,7 +95,6 @@ export function CorporateSidebar({
         <nav className="flex-1 p-3">
           <ul className="space-y-1.5">
             {navItems.map((item) => {
-              const Icon = item.icon
               return (
                 <li key={item.id}>
                   <button
@@ -109,7 +108,13 @@ export function CorporateSidebar({
                         : "text-gray-700 hover:bg-gray-100"
                     }`}
                   >
-                    <Icon className="h-5 w-5 sm:h-6 sm:w-6 shrink-0" />
+                    <Image 
+                      src={item.imageSrc} 
+                      alt={item.label} 
+                      width={24} 
+                      height={24} 
+                      className="h-5 w-5 sm:h-6 sm:w-6 shrink-0" 
+                    />
                     {sidebarOpen && <span className="font-medium text-sm sm:text-base md:text-lg">{item.label}</span>}
                   </button>
                 </li>

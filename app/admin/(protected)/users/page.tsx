@@ -21,7 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Search, MoreHorizontal, Edit, Trash2, ShieldAlert } from "lucide-react"
+import { Search, MoreHorizontal, Edit, Trash2, ShieldAlert, Eye } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
+import { UserDetailsPanel } from "@/components/admin/UserDetailsPanel"
 
 interface User {
   _id: string
@@ -67,6 +68,10 @@ export default function UsersPage() {
     email: "",
     userType: ""
   })
+
+  // User Details Panel State
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
+  const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
 
   useEffect(() => {
     fetchUsers()
@@ -126,7 +131,10 @@ export default function UsersPage() {
     })
     setIsEditDialogOpen(true)
   }
-
+  const handleViewDetails = (userId: string) => {
+    setSelectedUserId(userId)
+    setIsDetailsPanelOpen(true)
+  }
   const handleUpdateUser = async () => {
     if (!editingUser) return
 
@@ -286,6 +294,9 @@ export default function UsersPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => handleViewDetails(user._id)}>
+                              <Eye className="mr-2 h-4 w-4" /> View Details
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => navigator.clipboard.writeText(user._id)}>
                               Copy ID
                             </DropdownMenuItem>
@@ -389,6 +400,18 @@ export default function UsersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* User Details Panel */}
+      {selectedUserId && (
+        <UserDetailsPanel
+          userId={selectedUserId}
+          isOpen={isDetailsPanelOpen}
+          onClose={() => {
+            setIsDetailsPanelOpen(false)
+            setSelectedUserId(null)
+          }}
+        />
+      )}
     </div>
   )
 }
