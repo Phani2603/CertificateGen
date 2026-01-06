@@ -7,6 +7,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Check, X, AlertCircle, Clock } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { useSocket } from "@/components/socket-provider"
+import { toast as sonnerToast } from "sonner"
 
 interface AccessRequest {
   _id: string
@@ -27,10 +29,44 @@ export default function RequestsPage() {
   const [requests, setRequests] = useState<AccessRequest[]>([])
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
+  const { socket, isConnected, joinAdmin } = useSocket()
 
   useEffect(() => {
     fetchRequests()
   }, [])
+
+  // Join admin room for real-time updates
+  useEffect(() => {
+    if (isConnected) {
+      joinAdmin()
+      console.log('👑 Joined admin room for real-time updates')
+    }
+  }, [isConnected, joinAdmin])
+
+  // Listen for real-time updates
+  useEffect(() => {
+    if (!socket) return
+
+    // New access request received
+    socket.on('new-access-request', (data) => {
+      console.log('📢 New access request:', data)
+      sonnerToast.info('New Access Request', {
+        description: `${data.userEmail} requested ${data.requestedType} access`,
+      })
+      fetchRequests() // Refresh list
+    })
+
+    // Access request status updated
+    socket.on('access-request-updated', (data) => {
+      console.log('📢 Access request updated:', data)
+      fetchRequests() // Refresh list
+    })
+
+    return () => {
+      socket.off('new-access-request')
+      socket.off('access-request-updated')
+    }
+  }, [socket])
 
   const fetchRequests = async () => {
     try {

@@ -4,6 +4,7 @@ import {  Roboto } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { getGoogleFontsUrl } from "@/lib/fonts"
 import { AuthProvider } from "@/components/auth-provider"
+import { SocketProvider } from "@/components/socket-provider"
 import { Toaster } from "@/components/ui/sonner"
 import Script from "next/script"
 import "./globals.css"
@@ -51,7 +52,9 @@ export default function RootLayout({
         </Script>
 
         <AuthProvider>
-          {children}
+          <SocketProvider>
+            {children}
+          </SocketProvider>
         </AuthProvider>
         <Toaster position="top-right" richColors />
         <Analytics />

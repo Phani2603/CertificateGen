@@ -181,7 +181,7 @@ export default function CorporateDashboard({ params }: PageProps) {
             </Button>
             <Button variant="outline" onClick={() => window.location.href = '/'} className="w-full">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Go Home
+              Go to individual Dashboard
             </Button>
           </div>
         </Card>

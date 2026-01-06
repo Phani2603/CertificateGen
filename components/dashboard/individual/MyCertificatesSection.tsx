@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Download, ExternalLink, Search, Award, Filter, ChevronLeft, ChevronRight, X } from "lucide-react"
 import Image from "next/image"
+import { useSocket } from "@/components/socket-provider"
+import { toast } from "sonner"
 
 interface Certificate {
   _id: string
@@ -31,10 +33,28 @@ export function MyCertificatesSection({ userId }: MyCertificatesSectionProps) {
   const [selectedCertificate, setSelectedCertificate] = useState<Certificate | null>(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const itemsPerPage = 6
+  const { socket } = useSocket()
 
   useEffect(() => {
     fetchCertificates()
   }, [userId])
+
+  // Listen for real-time certificate updates
+  useEffect(() => {
+    if (!socket) return
+
+    socket.on('new-certificate', (data) => {
+      console.log('📢 New certificate received:', data)
+      toast.success('New Certificate Received!', {
+        description: `${data.eventName} certificate is now available`,
+      })
+      fetchCertificates() // Refresh list
+    })
+
+    return () => {
+      socket.off('new-certificate')
+    }
+  }, [socket])
 
   useEffect(() => {
     if (searchQuery) {

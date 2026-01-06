@@ -9,6 +9,7 @@ export interface IUser extends Document {
   image?: string
   phone?: string
   bio?: string
+  address?: string
   organization?: string
   organizationId?: mongoose.Types.ObjectId | IOrganization
   privateOrgId?: mongoose.Types.ObjectId // NEW: For corporate organizations
@@ -18,6 +19,11 @@ export interface IUser extends Document {
   provider?: string
   providerId?: string
   emailVerified?: Date
+  isBlocked?: boolean
+  isSuspended?: boolean
+  suspendedUntil?: Date
+  banReason?: string
+  bannedAt?: Date
   createdAt: Date
   updatedAt: Date
 }
@@ -45,6 +51,9 @@ const UserSchema = new Schema<IUser>(
       type: String,
     },
     bio: {
+      type: String,
+    },
+    address: {
       type: String,
     },
     organization: {
@@ -80,6 +89,23 @@ const UserSchema = new Schema<IUser>(
       type: String,
     },
     emailVerified: {
+      type: Date,
+    },
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    },
+    isSuspended: {
+      type: Boolean,
+      default: false,
+    },
+    suspendedUntil: {
+      type: Date,
+    },
+    banReason: {
+      type: String,
+    },
+    bannedAt: {
       type: Date,
     },
   },

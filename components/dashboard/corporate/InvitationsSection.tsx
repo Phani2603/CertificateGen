@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Mail, Plus, UserPlus, Clock, CheckCircle, XCircle, Users, Shield } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useSocket } from "@/components/socket-provider"
+import { toast } from "sonner"
 
 interface Invitation {
   _id: string
@@ -37,6 +39,7 @@ export function InvitationsSection({ organizationId, organizationSlug, isOwner }
   const [showInviteForm, setShowInviteForm] = useState(false)
   const [inviteEmail, setInviteEmail] = useState("")
   const [isSending, setIsSending] = useState(false)
+  const { socket, joinOrganization } = useSocket()
 
   console.log('[InvitationsSection] Props:', { organizationId, organizationSlug, isOwner })
 
@@ -45,6 +48,41 @@ export function InvitationsSection({ organizationId, organizationSlug, isOwner }
       fetchData()
     }
   }, [organizationSlug])
+
+  // Join organization room for real-time updates
+  useEffect(() => {
+    if (organizationId && socket) {
+      joinOrganization(organizationId)
+      console.log('🏢 Joined organization room:', organizationId)
+    }
+  }, [organizationId, socket, joinOrganization])
+
+  // Listen for real-time invitation updates
+  useEffect(() => {
+    if (!socket) return
+
+    socket.on('invitation-sent', (data) => {
+      console.log('📢 Invitation sent:', data)
+      toast.success('Invitation Sent', {
+        description: `Invitation sent to ${data.email}`,
+      })
+      fetchInvitations() // Refresh list
+    })
+
+    socket.on('invitation-updated', (data) => {
+      console.log('📢 Invitation updated:', data)
+      toast.info('Invitation Updated', {
+        description: `${data.email} ${data.status} the invitation`,
+      })
+      fetchInvitations()
+      fetchMembers() // Refresh members if accepted
+    })
+
+    return () => {
+      socket.off('invitation-sent')
+      socket.off('invitation-updated')
+    }
+  }, [socket])
 
   const fetchData = async () => {
     setIsLoading(true)
