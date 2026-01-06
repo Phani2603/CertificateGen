@@ -278,13 +278,22 @@ function LoginContent() {
 
           <p className="text-center text-sm text-gray-500 mt-6">
             By signing in, you agree to our{" "}
-            <Link href="#" className="text-[#21808D] hover:underline">
-              Terms
-            </Link>{" "}
-            and{" "}
-            <Link href="#" className="text-[#21808D] hover:underline">
+            <Link href="/TERMS&CONDTIONS.docx" target="_blank" className="text-[#21808D] hover:underline font-medium">
+              Terms & Conditions
+            </Link>
+            {", "}
+            <Link href="/PRIVACY POLICY.docx" target="_blank" className="text-[#21808D] hover:underline font-medium">
               Privacy Policy
             </Link>
+            {", "}
+            <Link href="/USER AGREEMENT.docx" target="_blank" className="text-[#21808D] hover:underline font-medium">
+              User Agreement
+            </Link>
+            {" and "}
+            <Link href="/USER POLICIES.docx" target="_blank" className="text-[#21808D] hover:underline font-medium">
+              User Policies
+            </Link>
+            .
           </p>
         </Card>
       </div>

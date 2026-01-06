@@ -4,7 +4,9 @@ import {  Roboto } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { getGoogleFontsUrl } from "@/lib/fonts"
 import { AuthProvider } from "@/components/auth-provider"
+import { SocketProvider } from "@/components/socket-provider"
 import { Toaster } from "@/components/ui/sonner"
+import Script from "next/script"
 import "./globals.css"
 
 
@@ -35,8 +37,24 @@ export default function RootLayout({
         <link href={getGoogleFontsUrl()} rel="stylesheet" />
       </head>
       <body className={`font-sans ${roboto.className} antialiased`}>
+        {/* Google Analytics */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-G1CV391NB5"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-G1CV391NB5');
+          `}
+        </Script>
+
         <AuthProvider>
-          {children}
+          <SocketProvider>
+            {children}
+          </SocketProvider>
         </AuthProvider>
         <Toaster position="top-right" richColors />
         <Analytics />

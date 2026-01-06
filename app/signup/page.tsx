@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import { ArrowLeft, Building2, User } from "lucide-react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -33,6 +34,7 @@ function SignupContent() {
     password: "",
     userType: "" as "corporate" | "individual" | "",
   })
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
   
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -272,23 +274,53 @@ function SignupContent() {
               </div>
             )}
 
+            {/* Terms & Policies Acceptance */}
+            <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <Checkbox 
+                id="terms" 
+                checked={agreedToTerms}
+                onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+                className="mt-1"
+              />
+              <div className="flex-1">
+                <Label htmlFor="terms" className="text-sm font-medium cursor-pointer">
+                  I agree to the Terms & Policies
+                </Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  By signing up, you agree to our{" "}
+                  <Link href="/TERMS&CONDTIONS.docx" target="_blank" className="text-[#21808D] hover:underline font-medium">
+                    Terms & Conditions
+                  </Link>
+                  {", "}
+                  <Link href="/PRIVACY POLICY.docx" target="_blank" className="text-[#21808D] hover:underline font-medium">
+                    Privacy Policy
+                  </Link>
+                  {", "}
+                  <Link href="/USER AGREEMENT.docx" target="_blank" className="text-[#21808D] hover:underline font-medium">
+                    User Agreement
+                  </Link>
+                  {" and "}
+                  <Link href="/USER POLICIES.docx" target="_blank" className="text-[#21808D] hover:underline font-medium">
+                    User Policies
+                  </Link>
+                  .
+                </p>
+              </div>
+            </div>
+
             <Button 
               type="submit" 
               className="w-full h-12 bg-[#21808D] hover:bg-[#1a6370] text-white font-semibold"
-              disabled={isLoading || !formData.userType}
+              disabled={isLoading || !formData.userType || !agreedToTerms}
             >
               {isLoading ? 'Creating account...' : 'Create account'}
             </Button>
           </form>
 
           <p className="text-center text-sm text-gray-500 mt-6">
-            By creating an account, you agree to our{" "}
-            <Link href="#" className="text-[#21808D] hover:underline">
-              Terms
-            </Link>{" "}
-            and{" "}
-            <Link href="#" className="text-[#21808D] hover:underline">
-              Privacy Policy
+            Already have an account?{" "}
+            <Link href="/login" className="text-[#21808D] hover:underline font-medium">
+              Sign in
             </Link>
           </p>
         </Card>
