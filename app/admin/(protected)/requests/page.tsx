@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Check, X, AlertCircle, Clock } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useSocket } from "@/components/socket-provider"
-import { toast as sonnerToast } from "sonner"
+import { useIslandAlerts } from "@/components/ui/island-alerts"
 
 interface AccessRequest {
   _id: string
@@ -30,6 +30,7 @@ export default function RequestsPage() {
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
   const { socket, isConnected, joinAdmin } = useSocket()
+  const { show } = useIslandAlerts()
 
   useEffect(() => {
     fetchRequests()
@@ -50,8 +51,10 @@ export default function RequestsPage() {
     // New access request received
     socket.on('new-access-request', (data) => {
       console.log('📢 New access request:', data)
-      sonnerToast.info('New Access Request', {
+      show({
+        title: 'New Access Request',
         description: `${data.userEmail} requested ${data.requestedType} access`,
+        tone: 'info'
       })
       fetchRequests() // Refresh list
     })
@@ -103,18 +106,30 @@ export default function RequestsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ requestId, status })
       })
-      
-      const data = await res.json()
-      
-      if (data.success) {
+
+      let data: any = { success: false }
+      try {
+        data = await res.json()
+      } catch (parseErr) {
+        console.error('Failed to parse response', parseErr)
+      }
+
+      if (res.ok && data.success) {
         toast({
           title: "Success",
           description: `Request ${status} successfully`,
         })
         fetchRequests() // Refresh list
-      } else {
-        throw new Error(data.error)
+        return
       }
+
+      const message = data?.error || 'Failed to update request'
+      console.error('Request update failed', message)
+      toast({
+        title: "Error",
+        description: message,
+        variant: "destructive"
+      })
     } catch (error) {
       console.error("Failed to update request", error)
       toast({

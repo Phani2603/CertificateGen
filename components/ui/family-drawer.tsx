@@ -3,6 +3,7 @@
 import {
   createContext,
   useContext,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -215,26 +216,33 @@ function FamilyDrawerContent({
   className,
   asChild = false,
 }: FamilyDrawerContentProps) {
+  const titleId = useId()
   const { bounds } = useFamilyDrawer()
 
   const content = (
-    <motion.div
-      animate={{
-        height: bounds.height,
-        transition: {
-          duration: 0.27,
-          ease: [0.25, 1, 0.5, 1],
-        },
-      }}
-    >
-      {children}
-    </motion.div>
+    <div className="flex flex-col">
+      <Drawer.Title className="sr-only" id={titleId}>
+        Drawer
+      </Drawer.Title>
+      <motion.div
+        animate={{
+          height: bounds.height,
+          transition: {
+            duration: 0.27,
+            ease: [0.25, 1, 0.5, 1],
+          },
+        }}
+      >
+        {children}
+      </motion.div>
+    </div>
   )
 
   if (asChild) {
     return (
       <Drawer.Content
         asChild
+        aria-labelledby={titleId}
         className={clsx(
           "fixed inset-x-4 bottom-4 z-10 mx-auto max-w-[361px] overflow-hidden rounded-[36px] bg-background outline-none md:mx-auto md:w-full",
           className
@@ -248,6 +256,7 @@ function FamilyDrawerContent({
   return (
     <Drawer.Content
       asChild
+      aria-labelledby={titleId}
       className={clsx(
         "fixed inset-x-4 bottom-4 z-10 mx-auto max-w-[361px] overflow-hidden rounded-[36px] bg-background outline-none md:mx-auto md:w-full",
         className
@@ -373,7 +382,7 @@ function FamilyDrawerHeader({
   return (
     <header className={clsx("mt-[21px]", className)}>
       {icon}
-      <h2 className="mt-2.5 text-[22px] font-semibold text-foreground md:font-medium">
+      <h2 className="mt-2.5 text-[22px] font-roboto font-bold text-foreground md:font-lg">
         {title}
       </h2>
       <p className="mt-3 text-[17px] font-medium leading-[24px] text-muted-foreground md:font-normal">

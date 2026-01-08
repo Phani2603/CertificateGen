@@ -25,10 +25,30 @@ export default function AdminLoginPage() {
     setError("")
 
     try {
+      // Get geolocation if available
+      let geoLocation: { latitude: number; longitude: number } | null = null
+      
+      if (navigator.geolocation) {
+        try {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 })
+          })
+          geoLocation = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          }
+        } catch (geoErr) {
+          console.warn('[Admin Login] Geolocation denied or unavailable:', geoErr)
+        }
+      }
+
       const response = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          geoLocation
+        }),
       })
 
       const data = await response.json()

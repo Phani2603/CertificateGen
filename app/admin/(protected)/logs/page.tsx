@@ -26,6 +26,7 @@ interface AdminLog {
   targetId: string
   details: any
   ipAddress: string
+  userAgent?: string
   createdAt: string
 }
 
@@ -36,6 +37,7 @@ export default function LogsPage() {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const { toast } = useToast()
+  const latestLogin = logs.find((log) => log.action === 'ADMIN_LOGIN')
 
   useEffect(() => {
     fetchLogs()
@@ -59,8 +61,10 @@ export default function LogsPage() {
         action: search
       })
       
+      console.log('[Logs Page] Fetching logs with params:', params.toString())
       const res = await fetch(`/api/admin/logs?${params}`)
       const data = await res.json()
+      console.log('[Logs Page] Response:', { status: res.status, data })
       
       if (!res.ok && res.status === 401) {
         window.location.href = '/admin/login'
@@ -68,13 +72,14 @@ export default function LogsPage() {
       }
       
       if (data.success) {
+        console.log('[Logs Page] Setting logs:', data.logs.length, 'items')
         setLogs(data.logs)
         setTotalPages(data.pagination.pages)
       } else {
-        console.error('Failed to fetch logs:', data.error)
+        console.error('[Logs Page] Failed to fetch logs:', data.error, data.details)
       }
     } catch (error) {
-      console.error("Failed to fetch logs", error)
+      console.error("[Logs Page] Failed to fetch logs", error)
       toast({
         title: "Error",
         description: "Failed to load audit logs",
@@ -93,6 +98,32 @@ export default function LogsPage() {
           <p className="text-muted-foreground">Track all administrative actions and system events.</p>
         </div>
       </div>
+
+      {latestLogin && (
+        <Card className="border-l-4 border-l-blue-500">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold">Latest Admin Login</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm text-muted-foreground">
+            <div>
+              <p className="font-semibold text-slate-800">{new Date(latestLogin.createdAt).toLocaleString()}</p>
+              <p>Time</p>
+            </div>
+            <div>
+              <p className="font-semibold text-slate-800 truncate" title={latestLogin.userAgent}>{latestLogin.userAgent || '—'}</p>
+              <p>Device / Agent</p>
+            </div>
+            <div>
+              <p className="font-semibold text-slate-800">
+                {[latestLogin.details?.geo?.city, latestLogin.details?.geo?.region, latestLogin.details?.geo?.country]
+                  .filter(Boolean)
+                  .join(', ') || '—'}
+              </p>
+              <p>Location</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
@@ -117,7 +148,9 @@ export default function LogsPage() {
                   <TableHead>Admin</TableHead>
                   <TableHead>Action</TableHead>
                   <TableHead>Target</TableHead>
-                  <TableHead>IP Address</TableHead>
+                  <TableHead>IP</TableHead>
+                  <TableHead>Device</TableHead>
+                  <TableHead>Location</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -161,8 +194,20 @@ export default function LogsPage() {
                           <span className="text-xs font-mono text-muted-foreground">{log.targetId}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {log.ipAddress}
+                      <TableCell className="font-mono text-xs">{log.ipAddress}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground max-w-[180px] truncate" title={log.userAgent}>
+                        {log.userAgent || '—'}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {log.details?.geo?.city || log.details?.geo?.region || log.details?.geo?.country ? (
+                          <>
+                            {[log.details?.geo?.city, log.details?.geo?.region, log.details?.geo?.country]
+                              .filter(Boolean)
+                              .join(', ')}
+                          </>
+                        ) : (
+                          '—'
+                        )}
                       </TableCell>
                     </TableRow>
                   ))

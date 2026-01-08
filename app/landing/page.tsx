@@ -59,7 +59,7 @@ export default function LandingPage() {
                 Sign In
               </Button>
             </Link>
-            <Link href="/dashboard">
+            <Link href="/signup">
               <Button size="sm" className="bg-[#21808D] hover:bg-[#1a6570] text-white text-xs md:text-sm px-3 md:px-4">
                 Get Started
                 <ArrowRight className="ml-1 md:ml-2 h-3 w-3 md:h-4 md:w-4" />
@@ -85,7 +85,7 @@ export default function LandingPage() {
               students become recognized creators,
               and organizations grow with trust, not tricks.
             </p>
-            <Link href="/dashboard">
+            <Link href="/signup">
               <Button size="lg" className="bg-[#21808D] hover:bg-[#1a6570] text-white text-sm md:text-base lg:text-lg px-6 md:px-8 py-4 md:py-6 rounded-full w-full sm:w-auto">
                 Explore Now
               </Button>
@@ -240,7 +240,7 @@ export default function LandingPage() {
           <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-white/90 mb-6 md:mb-8 max-w-2xl mx-auto px-4">
             Join hundreds of organizations already using CertificateHash to create and verify professional certificates.
           </p>
-          <Link href="/dashboard">
+          <Link href="/signup">
             <Button size="lg" className="bg-white text-[#21808D] hover:bg-gray-100 text-sm md:text-base lg:text-lg px-6 md:px-8 py-4 md:py-6 rounded-full font-bold w-full sm:w-auto">
               Get Started Free
               <ArrowRight className="ml-2 h-4 w-4 md:h-5 md:w-5" />

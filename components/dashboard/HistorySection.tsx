@@ -230,52 +230,54 @@ export function HistorySection({
               </Button>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 md:gap-4">
-              <Card className="p-3 md:p-4 bg-gradient-to-br from-[#FF5733] to-[#ff7a59] text-white">
-                <div className="text-2xl md:text-3xl font-bold">{selectedHistoryItem.count}</div>
-                <div className="text-[10px] md:text-sm opacity-90">Generated</div>
-              </Card>
-              <Card className="p-3 md:p-4 bg-gradient-to-br from-[#8FD6BD] to-[#a8e0cd] text-gray-900">
-                <div className="text-2xl md:text-3xl font-bold">{selectedHistoryItem.successRate}%</div>
-                <div className="text-[10px] md:text-sm opacity-80">Success Rate</div>
-              </Card>
-              <Card className="p-3 md:p-4 bg-gradient-to-br from-[#F4E04D] to-[#f7e878] text-gray-900">
-                <div className="text-2xl md:text-3xl font-bold">{selectedHistoryItem.totalSize}</div>
-                <div className="text-[10px] md:text-sm opacity-80">Total Size</div>
-              </Card>
-            </div>
-
-            <div className="mt-6 p-6 bg-gray-50 rounded-lg">
-              <h3 className="text-lg font-bold mb-4 text-gray-900">Generation Summary</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center pb-2 border-b border-gray-200">
-                  <span className="text-gray-600">Event Name</span>
-                  <span className="font-semibold text-gray-900">{selectedHistoryItem.eventName}</span>
-                </div>
-                <div className="flex justify-between items-center pb-2 border-b border-gray-200">
-                  <span className="text-gray-600">Club Name</span>
-                  <span className="font-semibold text-gray-900">{selectedHistoryItem.clubName}</span>
-                </div>
-                <div className="flex justify-between items-center pb-2 border-b border-gray-200">
-                  <span className="text-gray-600">Date Generated</span>
-                  <span className="font-semibold text-gray-900">{selectedHistoryItem.date}</span>
-                </div>
-                <div className="flex justify-between items-center pb-2 border-b border-gray-200">
-                  <span className="text-gray-600">Total Certificates</span>
-                  <span className="font-semibold text-gray-900">{selectedHistoryItem.count}</span>
-                </div>
-                <div className="flex justify-between items-center pb-2 border-b border-gray-200">
-                  <span className="text-gray-600">Success Rate</span>
-                  <span className="font-semibold text-green-600">{selectedHistoryItem.successRate}%</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Total Size</span>
-                  <span className="font-semibold text-gray-900">{selectedHistoryItem.totalSize}</span>
-                </div>
+            <div className="flex-1 overflow-y-auto pr-1 space-y-6">
+              <div className="grid grid-cols-3 gap-2 md:gap-4">
+                <Card className="p-3 md:p-4 bg-gradient-to-br from-[#FF5733] to-[#ff7a59] text-white">
+                  <div className="text-2xl md:text-3xl font-bold">{selectedHistoryItem.count}</div>
+                  <div className="text-[10px] md:text-sm opacity-90">Generated</div>
+                </Card>
+                <Card className="p-3 md:p-4 bg-gradient-to-br from-[#8FD6BD] to-[#a8e0cd] text-gray-900">
+                  <div className="text-2xl md:text-3xl font-bold">{selectedHistoryItem.successRate}%</div>
+                  <div className="text-[10px] md:text-sm opacity-80">Success Rate</div>
+                </Card>
+                <Card className="p-3 md:p-4 bg-gradient-to-br from-[#F4E04D] to-[#f7e878] text-gray-900">
+                  <div className="text-2xl md:text-3xl font-bold">{selectedHistoryItem.totalSize}</div>
+                  <div className="text-[10px] md:text-sm opacity-80">Total Size</div>
+                </Card>
               </div>
-              <p className="mt-4 text-xs text-gray-500 italic">
-                Note: Certificate files are downloaded as ZIP and not stored on server.
-              </p>
+
+              <div className="p-6 bg-gray-50 rounded-lg">
+                <h3 className="text-lg font-bold mb-4 text-gray-900">Generation Summary</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center pb-2 border-b border-gray-200">
+                    <span className="text-gray-600">Event Name</span>
+                    <span className="font-semibold text-gray-900">{selectedHistoryItem.eventName}</span>
+                  </div>
+                  <div className="flex justify-between items-center pb-2 border-b border-gray-200">
+                    <span className="text-gray-600">Club Name</span>
+                    <span className="font-semibold text-gray-900">{selectedHistoryItem.clubName}</span>
+                  </div>
+                  <div className="flex justify-between items-center pb-2 border-b border-gray-200">
+                    <span className="text-gray-600">Date Generated</span>
+                    <span className="font-semibold text-gray-900">{selectedHistoryItem.date}</span>
+                  </div>
+                  <div className="flex justify-between items-center pb-2 border-b border-gray-200">
+                    <span className="text-gray-600">Total Certificates</span>
+                    <span className="font-semibold text-gray-900">{selectedHistoryItem.count}</span>
+                  </div>
+                  <div className="flex justify-between items-center pb-2 border-b border-gray-200">
+                    <span className="text-gray-600">Success Rate</span>
+                    <span className="font-semibold text-green-600">{selectedHistoryItem.successRate}%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Total Size</span>
+                    <span className="font-semibold text-gray-900">{selectedHistoryItem.totalSize}</span>
+                  </div>
+                </div>
+                <p className="mt-4 text-xs text-gray-500 italic">
+                  Note: Certificate files are downloaded as ZIP and not stored on server.
+                </p>
+              </div>
             </div>
           </Card>
         </div>

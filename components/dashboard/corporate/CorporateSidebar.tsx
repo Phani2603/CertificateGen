@@ -54,7 +54,7 @@ export function CorporateSidebar({
           sidebarOpen ? "w-64" : "w-20"
         } bg-green-300/60 backdrop-blur-2xl rounded-r-2xl sm:rounded-r-3xl border-r border-gray-200 transition-all duration-300 flex flex-col shadow-sm fixed md:sticky md:top-0 min-h-screen md:h-screen z-40 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-        }`}
+        } overflow-y-auto pb-24 md:overflow-visible md:pb-0`}
       >
         {/* Logo */}
         <div className="p-2 sm:p-3 flex items-center">
@@ -92,7 +92,7 @@ export function CorporateSidebar({
         )}
 
         {/* Navigation */}
-        <nav className="flex-1 p-3">
+        <nav className="flex-1 p-3 pb-6">
           <ul className="space-y-1.5">
             {navItems.map((item) => {
               return (

@@ -15,6 +15,16 @@ import FieldConfiguration from "@/components/steps/field-configuration"
 import CertificateGeneration from "@/components/steps/certificate-generation"
 import type { CertificateField } from "@/types/certificate"
 import Image from "next/image"
+import {
+  FamilyDrawerAnimatedContent,
+  FamilyDrawerAnimatedWrapper,
+  FamilyDrawerClose,
+  FamilyDrawerContent,
+  FamilyDrawerHeader,
+  FamilyDrawerOverlay,
+  FamilyDrawerPortal,
+  FamilyDrawerRoot,
+} from "@/components/ui/family-drawer"
 
 type Step = "upload" | "configure" | "generate"
 
@@ -391,12 +401,7 @@ export function CorporateEventsSection({
                               year: 'numeric'
                             })}
                           </p>
-                          {event.certificatesGenerated > 0 && (
-                            <div className="mt-1 flex items-center gap-1 text-xs text-gray-500">
-                              <Award className="w-3 h-3" />
-                              <span>{event.certificatesGenerated} generated</span>
-                            </div>
-                          )}
+        
                         </div>
 
                         {/* Generate Button */}
@@ -648,63 +653,79 @@ export function CorporateEventsSection({
         </div>
       )}
 
-      {/* Event Info Modal */}
-      {showInfoModal && infoEvent && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="bg-white p-8 rounded-2xl max-w-lg w-full">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">Event Details</h2>
-              <Button variant="ghost" size="sm" onClick={() => {
-                setShowInfoModal(false)
-                setInfoEvent(null)
-              }}>
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-gray-600">Event Name</label>
-                <p className="text-lg font-semibold mt-1">{infoEvent.name}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-600">Event Date</label>
-                <p className="text-base mt-1">
-                  {new Date(infoEvent.date).toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                </p>
-              </div>
-              {infoEvent.description && (
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Description</label>
-                  <p className="text-base mt-1 text-gray-700">{infoEvent.description}</p>
-                </div>
-              )}
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Certificates Generated</label>
-                  <p className="text-2xl font-bold text-[#21808D] mt-1">{infoEvent.certificatesGenerated || 0}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Recipients</label>
-                  <p className="text-2xl font-bold text-[#21808D] mt-1">{infoEvent.recipientCount || 0}</p>
-                </div>
-              </div>
-            </div>
-            <Button 
-              className="w-full mt-6 bg-[#21808D] hover:bg-[#1a6370]"
-              onClick={() => {
-                setShowInfoModal(false)
-                setInfoEvent(null)
-              }}
-            >
-              Close
-            </Button>
-          </Card>
-        </div>
+      {/* Event Info Drawer */}
+      {infoEvent && (
+        <FamilyDrawerRoot
+          open={showInfoModal}
+          onOpenChange={(open) => {
+            setShowInfoModal(open)
+            if (!open) setInfoEvent(null)
+          }}
+        >
+          <FamilyDrawerPortal>
+            <FamilyDrawerOverlay />
+            <FamilyDrawerContent>
+              <FamilyDrawerAnimatedWrapper>
+                <FamilyDrawerAnimatedContent>
+                  <div className="relative">
+                    <FamilyDrawerClose />
+                    <FamilyDrawerHeader
+                      icon={
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#21808D]/10 text-[#21808D]">
+                          <Info className="h-5 w-5" />
+                        </div>
+                      }
+                      title="Event Details"
+                      description={infoEvent.name}
+                    />
+                  </div>
+
+                  <div className="space-y-4 pt-2">
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Event Date</label>
+                      <p className="text-base mt-1">
+                        {new Date(infoEvent.date).toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    </div>
+
+                    {infoEvent.description && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Description</label>
+                        <p className="text-base mt-1 text-gray-700">{infoEvent.description}</p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Certificates Generated</label>
+                        <p className="text-2xl font-bold text-[#21808D] mt-1">{infoEvent.certificatesGenerated || 0}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Recipients</label>
+                        <p className="text-2xl font-bold text-[#21808D] mt-1">{infoEvent.recipientCount || 0}</p>
+                      </div>
+                    </div>
+
+                    <Button
+                      className="w-full mt-6 bg-[#21808D] hover:bg-[#1a6370]"
+                      onClick={() => {
+                        setShowInfoModal(false)
+                        setInfoEvent(null)
+                      }}
+                    >
+                      Close
+                    </Button>
+                  </div>
+                </FamilyDrawerAnimatedContent>
+              </FamilyDrawerAnimatedWrapper>
+            </FamilyDrawerContent>
+          </FamilyDrawerPortal>
+        </FamilyDrawerRoot>
       )}
     </>
   )

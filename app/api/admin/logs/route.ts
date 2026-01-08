@@ -42,6 +42,8 @@ export async function GET(request: NextRequest) {
       AdminLog.countDocuments(query)
     ])
 
+    console.log(`[Admin Logs API] Found ${total} logs, returning ${logs.length} for page ${page}`)
+
     return NextResponse.json({
       success: true,
       logs,
@@ -53,7 +55,11 @@ export async function GET(request: NextRequest) {
       }
     })
   } catch (error) {
-    console.error('Error fetching logs:', error)
-    return NextResponse.json({ success: false, error: 'Failed to fetch logs' }, { status: 500 })
+    console.error('[Admin Logs API] Error fetching logs:', error)
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Failed to fetch logs',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }

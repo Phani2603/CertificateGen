@@ -71,15 +71,23 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Log action
+    const ipAddress = request.headers.get('x-forwarded-for') || 'unknown'
+    const userAgent = request.headers.get('user-agent') || 'unknown'
+    const geo = {
+      city: request.headers.get('x-vercel-ip-city') || null,
+      region: request.headers.get('x-vercel-ip-country-region') || null,
+      country: request.headers.get('x-vercel-ip-country') || null,
+    }
+
     await AdminLog.create({
-      adminId: null, // System action or placeholder
+      adminId: adminId || null, // optional
       adminEmail: process.env.ADMIN_EMAIL || 'admin@system.local',
-      action: `Access Request ${status}`,
-      targetType: 'AccessRequest',
+      action: `ACCESS_REQUEST_${status.toUpperCase()}`,
+      targetType: 'accessRequest',
       targetId: requestId,
-      details: { requestedType: accessRequest.requestedType, userId: accessRequest.userId },
-      ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
-      userAgent: request.headers.get('user-agent') || 'unknown'
+      details: { requestedType: accessRequest.requestedType, userId: accessRequest.userId, geo },
+      ipAddress,
+      userAgent,
     })
 
     return NextResponse.json({ success: true })
