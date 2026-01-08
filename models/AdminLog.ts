@@ -4,7 +4,7 @@ export interface IAdminLog extends Document {
   adminId?: mongoose.Types.ObjectId | null
   adminEmail: string
   action: string // e.g., 'APPROVED_ACCESS_REQUEST', 'DELETED_USER', 'EDITED_ORG'
-  targetType: 'user' | 'organization' | 'privateOrg' | 'event' | 'certificate' | 'accessRequest'
+  targetType: 'user' | 'organization' | 'privateOrg' | 'event' | 'certificate' | 'accessRequest' | 'admin'
   targetId: mongoose.Types.ObjectId
   details?: Record<string, any>
   ipAddress?: string
@@ -30,7 +30,7 @@ const AdminLogSchema = new Schema<IAdminLog>(
     },
     targetType: {
       type: String,
-      enum: ['user', 'organization', 'privateOrg', 'event', 'certificate', 'accessRequest'],
+      enum: ['user', 'organization', 'privateOrg', 'event', 'certificate', 'accessRequest', 'admin'],
       required: true,
     },
     targetId: {

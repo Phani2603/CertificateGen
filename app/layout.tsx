@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { getGoogleFontsUrl } from "@/lib/fonts"
 import { AuthProvider } from "@/components/auth-provider"
 import { SocketProvider } from "@/components/socket-provider"
+import { IslandAlertsProvider } from "@/components/ui/island-alerts"
 import { Toaster } from "@/components/ui/sonner"
 import Script from "next/script"
 import "./globals.css"
@@ -53,11 +54,13 @@ export default function RootLayout({
 
         <AuthProvider>
           <SocketProvider>
-            {children}
+            <IslandAlertsProvider>
+              {children}
+            </IslandAlertsProvider>
           </SocketProvider>
         </AuthProvider>
         <Toaster position="top-right" richColors />
-        <Analytics />
+        <Analytics mode="production" />
       </body>
     </html>
   )

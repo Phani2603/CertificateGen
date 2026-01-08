@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Mail, Plus, UserPlus, Clock, CheckCircle, XCircle, Users, Shield } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useSocket } from "@/components/socket-provider"
-import { toast } from "sonner"
+import { useIslandAlerts } from "@/components/ui/island-alerts"
 
 interface Invitation {
   _id: string
@@ -40,6 +40,7 @@ export function InvitationsSection({ organizationId, organizationSlug, isOwner }
   const [inviteEmail, setInviteEmail] = useState("")
   const [isSending, setIsSending] = useState(false)
   const { socket, joinOrganization } = useSocket()
+  const { show } = useIslandAlerts()
 
   console.log('[InvitationsSection] Props:', { organizationId, organizationSlug, isOwner })
 
@@ -63,16 +64,20 @@ export function InvitationsSection({ organizationId, organizationSlug, isOwner }
 
     socket.on('invitation-sent', (data) => {
       console.log('📢 Invitation sent:', data)
-      toast.success('Invitation Sent', {
+      show({
+        title: 'Invitation Sent',
         description: `Invitation sent to ${data.email}`,
+        tone: 'success'
       })
       fetchInvitations() // Refresh list
     })
 
     socket.on('invitation-updated', (data) => {
       console.log('📢 Invitation updated:', data)
-      toast.info('Invitation Updated', {
+      show({
+        title: 'Invitation Updated',
         description: `${data.email} ${data.status} the invitation`,
+        tone: 'info'
       })
       fetchInvitations()
       fetchMembers() // Refresh members if accepted
@@ -142,13 +147,25 @@ export function InvitationsSection({ organizationId, organizationSlug, isOwner }
         setInviteEmail("")
         setShowInviteForm(false)
         fetchInvitations()
-        alert('Invitation sent successfully!')
+        show({
+          title: 'Invite email sent',
+          description: `Delivered to ${inviteEmail}`,
+          tone: 'success'
+        })
       } else {
-        alert(data.error || "Failed to send invitation")
+        show({
+          title: 'Invite failed',
+          description: data.error || 'Failed to send invitation',
+          tone: 'error'
+        })
       }
     } catch (error) {
       console.error('Error sending invitation:', error)
-      alert("An error occurred")
+      show({
+        title: 'Something went wrong',
+        description: 'Unable to send invite right now',
+        tone: 'error'
+      })
     } finally {
       setIsSending(false)
     }
@@ -167,14 +184,26 @@ export function InvitationsSection({ organizationId, organizationSlug, isOwner }
       const data = await response.json()
 
       if (data.success) {
-        alert('Invitation resent successfully!')
+        show({
+          title: 'Invite resent',
+          description: 'We re-delivered the invitation email.',
+          tone: 'success'
+        })
         fetchInvitations()
       } else {
-        alert(data.error || "Failed to resend invitation")
+        show({
+          title: 'Resend failed',
+          description: data.error || 'Failed to resend invitation',
+          tone: 'error'
+        })
       }
     } catch (error) {
       console.error('Error resending invitation:', error)
-      alert("An error occurred")
+      show({
+        title: 'Something went wrong',
+        description: 'Unable to resend invite right now',
+        tone: 'error'
+      })
     } finally {
       setIsSending(false)
     }
@@ -193,14 +222,26 @@ export function InvitationsSection({ organizationId, organizationSlug, isOwner }
       const data = await response.json()
 
       if (data.success) {
-        alert('Member removed successfully')
+        show({
+          title: 'Member removed',
+          description: 'The user no longer has access.',
+          tone: 'info'
+        })
         fetchMembers()
       } else {
-        alert(data.error || 'Failed to remove member')
+        show({
+          title: 'Remove failed',
+          description: data.error || 'Failed to remove member',
+          tone: 'error'
+        })
       }
     } catch (error) {
       console.error('Error removing member:', error)
-      alert('An error occurred')
+      show({
+        title: 'Something went wrong',
+        description: 'Unable to remove this member right now',
+        tone: 'error'
+      })
     }
   }
 
@@ -217,14 +258,26 @@ export function InvitationsSection({ organizationId, organizationSlug, isOwner }
       const data = await response.json()
 
       if (data.success) {
-        alert('Ownership transferred successfully. The page will reload.')
+        show({
+          title: 'Ownership transferred',
+          description: 'Reloading to reflect the new owner.',
+          tone: 'info'
+        })
         window.location.reload()
       } else {
-        alert(data.error || 'Failed to transfer ownership')
+        show({
+          title: 'Transfer failed',
+          description: data.error || 'Failed to transfer ownership',
+          tone: 'error'
+        })
       }
     } catch (error) {
       console.error('Error transferring ownership:', error)
-      alert('An error occurred')
+      show({
+        title: 'Something went wrong',
+        description: 'Unable to transfer ownership right now',
+        tone: 'error'
+      })
     }
   }
 

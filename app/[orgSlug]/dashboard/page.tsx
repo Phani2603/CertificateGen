@@ -12,10 +12,11 @@ import { InvitationsSection } from "@/components/dashboard/corporate/Invitations
 import { CorporateSettings } from "@/components/dashboard/corporate/CorporateSettings"
 import { UserTypeSelectionModal } from "@/components/UserTypeSelectionModal"
 import { CorporateSidebar, CorporatePage } from "@/components/dashboard/corporate/CorporateSidebar"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Menu, AlertCircle, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { CorporateProfileOverlay } from "@/components/dashboard/corporate/CorporateProfileOverlay"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 interface PageProps {
   params: Promise<{
@@ -36,6 +37,7 @@ export default function CorporateDashboard({ params }: PageProps) {
   const [currentPage, setCurrentPage] = useState<CorporatePage>("overview")
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [activeEvent, setActiveEvent] = useState<{ eventName: string } | null>(null)
+  const pageStorageKey = resolvedParams ? `corp-page-${resolvedParams.orgSlug}` : null
 
   const handleUpdateSettings = async (data: any) => {
     if (!resolvedParams) return
@@ -60,6 +62,15 @@ export default function CorporateDashboard({ params }: PageProps) {
   useEffect(() => {
     params.then(setResolvedParams)
   }, [params])
+
+  // Restore last visited page per org
+  useEffect(() => {
+    if (!resolvedParams) return
+    const stored = localStorage.getItem(`corp-page-${resolvedParams.orgSlug}`)
+    if (stored) {
+      setCurrentPage(stored as CorporatePage)
+    }
+  }, [resolvedParams])
 
   useEffect(() => {
     async function fetchData() {
@@ -128,6 +139,12 @@ export default function CorporateDashboard({ params }: PageProps) {
 
     fetchData()
   }, [status, resolvedParams])
+
+  // Persist current page per org
+  useEffect(() => {
+    if (!resolvedParams) return
+    localStorage.setItem(`corp-page-${resolvedParams.orgSlug}`, currentPage)
+  }, [currentPage, resolvedParams])
 
   // Fetch active event (most recent event)
   useEffect(() => {
@@ -249,14 +266,18 @@ export default function CorporateDashboard({ params }: PageProps) {
               
               {!activeEvent && <div className="hidden md:block" />}
               
-              <Avatar className="w-10 h-10 md:w-12 md:h-12 cursor-pointer ring-2 ring-white shadow-lg" onClick={() => setCurrentPage("settings")} title="Go to Settings">
-                {session?.user?.image && (
-                  <AvatarImage src={session.user.image} alt={session?.user?.name || "User"} />
-                )}
-                <AvatarFallback className="bg-[#21808D] text-white text-sm md:text-base">
-                  {session?.user?.name ? session.user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
-                </AvatarFallback>
-              </Avatar>
+              <CorporateProfileOverlay
+                trigger={
+                  <Avatar className="w-10 h-10 md:w-12 md:h-12 cursor-pointer ring-2 ring-white shadow-lg" title="Open profile">
+                    {session?.user?.image && (
+                      <AvatarImage src={session.user.image} alt={session?.user?.name || "User"} />
+                    )}
+                    <AvatarFallback className="bg-[#21808D] text-white text-sm md:text-base">
+                      {session?.user?.name ? session.user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                }
+              />
             </header>
 
             {/* Page Content */}

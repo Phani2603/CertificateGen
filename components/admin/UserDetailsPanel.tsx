@@ -38,6 +38,25 @@ interface ActivityItem {
   source: 'admin' | 'user'
 }
 
+interface ActivitySummaries {
+  orgs: {
+    academicCreated: number
+    academicJoined: number
+    corporateOwned: number
+    corporateMember: number
+    lastOrg: string | null
+  }
+  events: {
+    createdCount: number
+    lastEvent: string | null
+  }
+  certificates: {
+    batches: number
+    totalGenerated: number
+    lastBatch: string | null
+  }
+}
+
 interface SessionEntry {
   _id?: string
   action: string
@@ -57,6 +76,7 @@ export const UserDetailsPanel = ({ userId, isOpen, onClose }: UserDetailsPanelPr
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("overview")
   const [activity, setActivity] = useState<ActivityItem[]>([])
+  const [summaries, setSummaries] = useState<ActivitySummaries | null>(null)
   const [sessions, setSessions] = useState<SessionEntry[]>([])
   const [actionLoading, setActionLoading] = useState<string | null>(null)
 
@@ -90,15 +110,6 @@ export const UserDetailsPanel = ({ userId, isOpen, onClose }: UserDetailsPanelPr
       const response = await fetch(`/api/admin/users/${userId}/activity`)
       const data = await response.json()
       if (data.success) {
-        const adminLogs: ActivityItem[] = (data.adminLogs || []).map((log: any) => ({
-          _id: log._id,
-          action: log.action,
-          description: log.details?.description || log.details?.message,
-          actorEmail: log.adminEmail,
-          createdAt: log.createdAt,
-          meta: log.details,
-          source: 'admin',
-        }))
         const userActivities: ActivityItem[] = (data.activity || []).map((item: any) => ({
           _id: item._id,
           action: item.action,
@@ -107,12 +118,12 @@ export const UserDetailsPanel = ({ userId, isOpen, onClose }: UserDetailsPanelPr
           actorEmail: item.actorEmail,
           createdAt: item.createdAt,
           meta: item.meta,
-          source: item.actorType === 'admin' ? 'admin' : 'user',
+          source: item.source || 'user',
         }))
-        const combined = [...adminLogs, ...userActivities].sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        )
-        setActivity(combined)
+        setActivity(userActivities)
+        if (data.summaries) {
+          setSummaries(data.summaries)
+        }
       }
     } catch (error) {
       console.error('Error fetching activity:', error)
@@ -288,6 +299,66 @@ export const UserDetailsPanel = ({ userId, isOpen, onClose }: UserDetailsPanelPr
                       )}
                     </CardContent>
                   </Card>
+
+                  {/* Organization Snapshot */}
+                  {summaries && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                          <Building2 className="w-4 h-4" />
+                          Organization Footprint
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="grid grid-cols-2 gap-3 text-sm">
+                        <div className="space-y-1">
+                          <p className="text-slate-500">Academic created</p>
+                          <p className="text-lg font-semibold">{summaries.orgs.academicCreated}</p>
+                          <p className="text-slate-500">Academic joined</p>
+                          <p className="text-lg font-semibold">{summaries.orgs.academicJoined}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-slate-500">Corporate owned</p>
+                          <p className="text-lg font-semibold">{summaries.orgs.corporateOwned}</p>
+                          <p className="text-slate-500">Corporate member</p>
+                          <p className="text-lg font-semibold">{summaries.orgs.corporateMember}</p>
+                        </div>
+                        {summaries.orgs.lastOrg && (
+                          <div className="col-span-2 text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded">
+                            Last org activity: {summaries.orgs.lastOrg}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Activity Snapshot */}
+                  {summaries && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                          <Activity className="w-4 h-4" />
+                          Events & Certificates
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <p className="text-slate-500">Events created</p>
+                          <p className="text-lg font-semibold">{summaries.events.createdCount}</p>
+                          {summaries.events.lastEvent && (
+                            <p className="text-xs text-slate-600 mt-1">Latest: {summaries.events.lastEvent}</p>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-slate-500">Certificates issued</p>
+                          <p className="text-lg font-semibold">{summaries.certificates.totalGenerated}</p>
+                          <p className="text-xs text-slate-600 mt-1">Batches: {summaries.certificates.batches}</p>
+                          {summaries.certificates.lastBatch && (
+                            <p className="text-xs text-slate-600">Last: {summaries.certificates.lastBatch}</p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
 
                   {/* Account Information */}
                   <Card>

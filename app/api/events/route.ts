@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import connectDB from '@/lib/mongodb'
 import Event from '@/models/Event'
+import Certificate from '@/models/Certificate'
 import Club from '@/models/Club'
 import User from '@/models/User'
 
@@ -46,9 +47,43 @@ export async function GET(request: NextRequest) {
       .sort({ date: -1 })
       .lean()
 
+    // Pre-compute certificate counts for all fetched events to power info drawer
+    const eventIds = events.map(event => event._id).filter(Boolean)
+    const certStats = eventIds.length
+      ? await Certificate.aggregate([
+          { $match: { eventId: { $in: eventIds } } },
+          {
+            $group: {
+              _id: '$eventId',
+              certificatesGenerated: { $sum: 1 },
+              recipientEmails: { $addToSet: '$recipientEmail' },
+            },
+          },
+          {
+            $project: {
+              certificatesGenerated: 1,
+              recipientCount: { $size: '$recipientEmails' },
+            },
+          },
+        ])
+      : []
+
+    const statsMap = new Map(
+      certStats.map((stat: any) => [stat._id.toString(), stat])
+    )
+
     // If fetching for private org, return flat list
     if (privateOrgId) {
-      return NextResponse.json({ success: true, events })
+      const enrichedEvents = events.map(event => {
+        const stats = statsMap.get(event._id.toString())
+        return {
+          ...event,
+          certificatesGenerated: stats?.certificatesGenerated ?? event.certificatesGenerated ?? 0,
+          recipientCount: stats?.recipientCount ?? 0,
+        }
+      })
+
+      return NextResponse.json({ success: true, events: enrichedEvents })
     }
 
     // Group by club
@@ -61,12 +96,14 @@ export async function GET(request: NextRequest) {
       if (!eventsByClub[clubKey]) {
         eventsByClub[clubKey] = []
       }
+      const stats = statsMap.get(event._id.toString())
       eventsByClub[clubKey].push({
         id: event._id.toString(),
         name: event.name,
         description: event.description,
         date: event.date,
-        certificatesGenerated: event.certificatesGenerated,
+        certificatesGenerated: stats?.certificatesGenerated ?? event.certificatesGenerated,
+        recipientCount: stats?.recipientCount ?? 0,
       })
     })
 
