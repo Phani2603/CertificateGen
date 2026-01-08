@@ -19,6 +19,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const clubId = searchParams.get('clubId')
     const privateOrgId = searchParams.get('privateOrgId')
+    
+    console.log('[Events API] GET request:', { clubId, privateOrgId, userEmail: session.user.email })
 
     const user = await User.findOne({ email: session.user.email })
     if (!user) {
@@ -29,6 +31,7 @@ export async function GET(request: NextRequest) {
     
     if (privateOrgId) {
       // Fetch events for a specific private organization
+      console.log('[Events API] Fetching events for privateOrgId:', privateOrgId)
       query.privateOrgId = privateOrgId
     } else if (clubId) {
       // When clubId is specified, fetch ALL events for that club (not filtered by user membership)
@@ -38,7 +41,8 @@ export async function GET(request: NextRequest) {
       // When no clubId specified, show only events from clubs user is a member of
       query.clubId = { $in: user.clubs }
     } else {
-      return NextResponse.json({ success: true, events: {} })
+      console.log('[Events API] No clubs or privateOrgId found, returning empty array')
+      return NextResponse.json({ success: true, events: [] })
     }
 
     const events = await Event.find(query)
@@ -46,6 +50,8 @@ export async function GET(request: NextRequest) {
       .populate('privateOrgId', 'name')
       .sort({ date: -1 })
       .lean()
+    
+    console.log('[Events API] Found', events.length, 'events for query:', query)
 
     // Pre-compute certificate counts for all fetched events to power info drawer
     const eventIds = events.map(event => event._id).filter(Boolean)
@@ -82,7 +88,8 @@ export async function GET(request: NextRequest) {
           recipientCount: stats?.recipientCount ?? 0,
         }
       })
-
+      
+      console.log('[Events API] Returning', enrichedEvents.length, 'enriched events for privateOrgId:', privateOrgId)
       return NextResponse.json({ success: true, events: enrichedEvents })
     }
 
