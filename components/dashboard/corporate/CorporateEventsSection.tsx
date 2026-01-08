@@ -78,10 +78,6 @@ export function CorporateEventsSection({
     csvData: [],
   })
 
-  useEffect(() => {
-    fetchEvents()
-  }, [organizationId])
-
   // Calculate pagination
   const totalPages = Math.ceil(events.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
@@ -102,24 +98,39 @@ export function CorporateEventsSection({
     "from-pink-500 to-pink-600"
   ]
 
-  useEffect(() => {
-    fetchEvents()
-  }, [organizationId])
-
   const fetchEvents = async () => {
+    console.log('[CorporateEventsSection] Fetching events for organizationId:', organizationId)
+    setIsLoading(true)
     try {
-      const response = await fetch(`/api/events?privateOrgId=${organizationId}`)
+      const url = `/api/events?privateOrgId=${organizationId}`
+      console.log('[CorporateEventsSection] Fetching from URL:', url)
+      
+      const response = await fetch(url)
       const data = await response.json()
+      
+      console.log('[CorporateEventsSection] Fetch response:', { status: response.status, data })
 
       if (data.success) {
+        console.log('[CorporateEventsSection] Setting events:', data.events?.length || 0, 'items')
         setEvents(data.events || [])
+      } else {
+        console.error('[CorporateEventsSection] Fetch failed:', data.error)
+        toast.error(data.error || 'Failed to fetch events')
       }
     } catch (error) {
-      console.error('Error fetching events:', error)
+      console.error('[CorporateEventsSection] Error fetching events:', error)
+      toast.error('Failed to fetch events')
     } finally {
       setIsLoading(false)
     }
   }
+
+  useEffect(() => {
+    console.log('[CorporateEventsSection] useEffect triggered with organizationId:', organizationId)
+    if (organizationId) {
+      fetchEvents()
+    }
+  }, [organizationId])
 
   const handleCreateEvent = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
