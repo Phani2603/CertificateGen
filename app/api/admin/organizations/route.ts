@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 
     if (type === 'all' || type === 'corporate') {
       corporateOrgs = await PrivateOrg.find(searchRegex)
-        .select('name slug logoUrl members createdAt isPublic')
+        .select('name slug logoUrl allowedUsers createdAt isPublic')
         .lean()
       // Add type field
       corporateOrgs = corporateOrgs.map(org => ({ ...org, orgType: 'corporate' }))

@@ -68,6 +68,16 @@ export async function PATCH(request: NextRequest) {
       await User.findByIdAndUpdate(accessRequest.userId, {
         userType: accessRequest.requestedType
       })
+
+      // Notify user via WebSocket if they're online
+      const io = (global as any).io
+      if (io) {
+        io.to(`user:${accessRequest.userId}`).emit('promotion-approved', {
+          requestedType: accessRequest.requestedType,
+          message: `Your request to upgrade to ${accessRequest.requestedType} account has been approved!`,
+          timestamp: new Date().toISOString()
+        })
+      }
     }
 
     // Log action

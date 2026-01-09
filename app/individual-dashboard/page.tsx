@@ -1,7 +1,7 @@
 "use client"
 
 import { useSession } from "next-auth/react"
-import { redirect } from "next/navigation"
+import { redirect, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { IndividualHeader } from "@/components/dashboard/individual/IndividualHeader"
 import { MyCertificatesSection } from "@/components/dashboard/individual/MyCertificatesSection"
@@ -9,6 +9,8 @@ import { AchievementsSection } from "@/components/dashboard/individual/Achieveme
 import { ActiveEventsSection } from "@/components/dashboard/individual/ActiveEventsSection"
 import { UserTypeSelectionModal } from "@/components/UserTypeSelectionModal"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { Building2, Mail, Phone } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -21,10 +23,12 @@ import {
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
-import { Building2 } from "lucide-react"
+import { useIslandAlerts } from "@/components/ui/island-alerts"
 
 export default function IndividualDashboard() {
   const { data: session, status } = useSession()
+  const router = useRouter()
+  const { addAlert } = useIslandAlerts()
   const [showTypeSelection, setShowTypeSelection] = useState(false)
   const [userData, setUserData] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -63,6 +67,42 @@ export default function IndividualDashboard() {
 
     fetchUserData()
   }, [status])
+
+  // Poll for promotion approval (WebSocket disabled for now)
+  useEffect(() => {
+    if (!userData || status !== 'authenticated') return
+
+    // Poll for user type changes to detect promotion approval
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch('/api/profile')
+        const data = await response.json()
+        
+        if (data.success && data.user) {
+          // Check if user was promoted to corporate
+          if (data.user.userType === 'corporate' && userData?.userType === 'individual') {
+            addAlert({
+              title: 'Promotion Approved!',
+              message: 'Your account has been upgraded to corporate!',
+              type: 'success',
+              duration: 10000,
+            })
+            
+            // Force hard refresh to update session and redirect
+            setTimeout(() => {
+              window.location.href = '/create-organization'
+            }, 2000)
+            
+            clearInterval(pollInterval)
+          }
+        }
+      } catch (error) {
+        console.error('Error polling user status:', error)
+      }
+    }, 5000) // Poll every 5 seconds
+    
+    return () => clearInterval(pollInterval)
+  }, [userData, status, addAlert, router])
 
   const handleUpgradeRequest = async () => {
     if (!upgradeReason.trim()) {
@@ -131,7 +171,11 @@ export default function IndividualDashboard() {
       />
       
       <div className="min-h-screen bg-[#f6f6f6]">
-        <IndividualHeader userName={userData?.name || session?.user?.name || "User"} />
+        <IndividualHeader 
+          userName={userData?.name || session?.user?.name || "User"}
+          userEmail={userData?.email || session?.user?.email}
+          userImage={userData?.image || session?.user?.image}
+        />
         
         <main className="container mx-auto px-4 py-8 max-w-7xl">
           <div className="flex justify-end mb-6">
@@ -176,6 +220,32 @@ export default function IndividualDashboard() {
             <AchievementsSection userId={userData?._id} />
             <ActiveEventsSection userId={userData?._id} />
             <MyCertificatesSection userId={userData?._id} />
+            
+            {/* Contact Information */}
+            <Card className="border-blue-200 bg-blue-50">
+              <div className="p-6">
+                <h3 className="text-sm font-semibold text-blue-900 mb-3">Need Help?</h3>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 text-sm text-blue-800">
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    <a href="mailto:forge@senement.com" className="hover:underline">
+                      forge@senement.com
+                    </a>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4" />
+                    <a
+                      href="https://wa.me/9492478546"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:underline"
+                    >
+                      Chat on WhatsApp
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </Card>
           </div>
         </main>
       </div>

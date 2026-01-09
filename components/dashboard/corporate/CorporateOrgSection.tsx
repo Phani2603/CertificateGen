@@ -17,10 +17,10 @@ interface CorporateOrgSectionProps {
     isPublic: boolean
   }
   isOwner: boolean
+  onEditClick?: () => void
 }
 
-export function CorporateOrgSection({ organization, isOwner }: CorporateOrgSectionProps) {
-  const [isEditing, setIsEditing] = useState(false)
+export function CorporateOrgSection({ organization, isOwner, onEditClick }: CorporateOrgSectionProps) {
 
   return (
     <div className="space-y-4">
@@ -29,11 +29,11 @@ export function CorporateOrgSection({ organization, isOwner }: CorporateOrgSecti
           <Building2 className="w-6 h-6 text-[#FF5733]" />
           Organization Overview
         </h2>
-        {isOwner && (
+        {isOwner && onEditClick && (
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => setIsEditing(!isEditing)}
+            onClick={onEditClick}
           >
             <Edit className="w-4 h-4 mr-2" />
             Edit

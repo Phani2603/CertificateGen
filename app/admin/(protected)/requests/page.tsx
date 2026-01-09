@@ -7,7 +7,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Check, X, AlertCircle, Clock } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { useSocket } from "@/components/socket-provider"
 import { useIslandAlerts } from "@/components/ui/island-alerts"
 
 interface AccessRequest {
@@ -29,47 +28,11 @@ export default function RequestsPage() {
   const [requests, setRequests] = useState<AccessRequest[]>([])
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
-  const { socket, isConnected, joinAdmin } = useSocket()
   const { show } = useIslandAlerts()
 
   useEffect(() => {
     fetchRequests()
   }, [])
-
-  // Join admin room for real-time updates
-  useEffect(() => {
-    if (isConnected) {
-      joinAdmin()
-      console.log('👑 Joined admin room for real-time updates')
-    }
-  }, [isConnected, joinAdmin])
-
-  // Listen for real-time updates
-  useEffect(() => {
-    if (!socket) return
-
-    // New access request received
-    socket.on('new-access-request', (data) => {
-      console.log('📢 New access request:', data)
-      show({
-        title: 'New Access Request',
-        description: `${data.userEmail} requested ${data.requestedType} access`,
-        tone: 'info'
-      })
-      fetchRequests() // Refresh list
-    })
-
-    // Access request status updated
-    socket.on('access-request-updated', (data) => {
-      console.log('📢 Access request updated:', data)
-      fetchRequests() // Refresh list
-    })
-
-    return () => {
-      socket.off('new-access-request')
-      socket.off('access-request-updated')
-    }
-  }, [socket])
 
   const fetchRequests = async () => {
     try {

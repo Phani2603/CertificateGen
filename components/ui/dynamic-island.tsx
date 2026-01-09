@@ -216,20 +216,33 @@ const DynamicIslandProvider: React.FC<DynamicIslandProviderProps> = ({
   }
 
   const [state, dispatch] = useReducer(blobReducer, initialState)
+  const isProcessingRef = useRef(false)
+  const queueLengthRef = useRef(0)
 
   useEffect(() => {
+    // Prevent infinite loops by tracking if we're already processing
+    // and only process if queue length has actually changed
+    if (isProcessingRef.current || state.animationQueue.length === 0 || 
+        queueLengthRef.current === state.animationQueue.length) {
+      return
+    }
+
     const processQueue = async () => {
+      isProcessingRef.current = true
+      queueLengthRef.current = state.animationQueue.length
+      
       for (const step of state.animationQueue) {
         await new Promise((resolve) => setTimeout(resolve, step.delay))
         dispatch({ type: "SET_SIZE", newSize: step.size })
       }
       dispatch({ type: "ANIMATION_END" })
+      
+      isProcessingRef.current = false
+      queueLengthRef.current = 0
     }
 
-    if (state.animationQueue.length > 0) {
-      processQueue()
-    }
-  }, [state.animationQueue])
+    processQueue()
+  }, [state.animationQueue.length])
 
   const setSize = useCallback(
     (newSize: SizePresets) => {
@@ -371,7 +384,7 @@ const DynamicIslandContent = ({
   return (
     <motion.div
       id={id}
-      className="mx-auto h-0 w-0 items-center justify-center border border-black/10 bg-black text-center text-black transition duration-300 ease-in-out focus-within:bg-neutral-900 hover:shadow-md dark:border dark:border-white/5 dark:focus-within:bg-black"
+      className="mx-auto h-0 w-0 items-center justify-center border border-black/10 bg-black text-center text-black transition duration-300 ease-in-out focus-within:bg-neutral-900 hover:shadow-md dark:border dark:border-white/5 dark:focus-within:bg-black overflow-hidden"
       animate={{
         width: dimensions.width,
         height: dimensions.height,
@@ -432,7 +445,7 @@ const DynamicContainer = ({ className, children }: DynamicContainerProps) => {
       transition={transition}
       exit={{ opacity: 0, filter: "blur(10px)", scale: 0.95, y: 20 }}
       style={{ willChange }}
-      className={className}
+      className={`${className} overflow-hidden`}
     >
       {children}
     </motion.div>

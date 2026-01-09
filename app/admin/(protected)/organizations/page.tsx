@@ -1,13 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Search, MoreHorizontal, ExternalLink, Trash2, Building2 } from "lucide-react"
+import { Search, MoreHorizontal, ExternalLink, Trash2, Building2, Mail, Phone } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
+import { useIslandAlerts } from "@/components/ui/island-alerts"
 
 interface Organization {
   _id: string
@@ -47,6 +48,7 @@ export default function OrganizationsPage() {
   const [search, setSearch] = useState("")
   const [activeTab, setActiveTab] = useState("all")
   const { toast } = useToast()
+  const { addAlert } = useIslandAlerts()
 
   useEffect(() => {
     fetchOrgs()
@@ -59,15 +61,15 @@ export default function OrganizationsPage() {
         search,
         type: 'all' // We fetch all and filter client-side for tabs to be snappy
       })
-      
+
       const res = await fetch(`/api/admin/organizations?${params}`)
       const data = await res.json()
-      
+
       if (!res.ok && res.status === 401) {
         window.location.href = '/admin/login'
         return
       }
-      
+
       if (data.success) {
         setOrgs(data.organizations)
       } else {
@@ -85,7 +87,7 @@ export default function OrganizationsPage() {
     }
   }
 
-  const handleDelete = async (orgId: string) => {
+  const handleDelete = async (orgId: string, orgName: string) => {
     if (!confirm("Are you sure you want to delete this organization? This action cannot be undone.")) return
 
     try {
@@ -93,22 +95,26 @@ export default function OrganizationsPage() {
         method: 'DELETE'
       })
       const data = await res.json()
-      
+
       if (data.success) {
-        toast({
-          title: "Success",
-          description: "Organization deleted successfully"
+        addAlert({
+          title: 'Organization Deleted',
+          message: `Successfully deleted "${orgName}"`,
+          type: 'success',
+          duration: 5000,
         })
-        fetchOrgs()
+        // Auto-refresh data
+        await fetchOrgs()
       } else {
         throw new Error(data.error)
       }
     } catch (error) {
       console.error("Failed to delete organization", error)
-      toast({
-        title: "Error",
-        description: "Failed to delete organization",
-        variant: "destructive"
+      addAlert({
+        title: 'Delete Failed',
+        message: 'Failed to delete organization. Please try again.',
+        type: 'error',
+        duration: 5000,
       })
     }
   }
@@ -224,7 +230,7 @@ export default function OrganizationsPage() {
                                   </a>
                                 </DropdownMenuItem>
                               )}
-                              <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(org._id)}>
+                              <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(org._id, org.name)}>
                                 <Trash2 className="mr-2 h-4 w-4" /> Delete Org
                               </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -237,6 +243,32 @@ export default function OrganizationsPage() {
               </Table>
             </div>
           </Tabs>
+        </CardContent>
+      </Card>
+
+      {/* Contact Information */}
+      <Card className="mt-6 border-blue-200 bg-blue-50">
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-6 text-sm text-blue-900">
+            <div className="flex items-center gap-2">
+              <Mail className="h-4 w-4" />
+              <a href="mailto:forge@senement.com" className="hover:underline">
+                forge@senement.com
+              </a>
+            </div>
+            <div className="flex items-center gap-2">
+              <Phone className="h-4 w-4" />
+              <a
+                href="https://wa.me/94924 78546"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline"
+              >
+                Chat on WhatsApp
+              </a>
+            </div>
+
+          </div>
         </CardContent>
       </Card>
     </div>
