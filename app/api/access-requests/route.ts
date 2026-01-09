@@ -59,6 +59,21 @@ export async function POST(request: NextRequest) {
       requestedAt: new Date()
     })
 
+    // Notify admin via WebSocket
+    const io = (global as any).io
+    if (io) {
+      io.to('admin').emit('new-access-request', {
+        requestId: accessRequest._id,
+        userId: user._id,
+        userName: user.name,
+        userEmail: user.email,
+        currentType: user.userType,
+        requestedType,
+        reason,
+        timestamp: new Date().toISOString()
+      })
+    }
+
     return NextResponse.json({
       success: true,
       request: accessRequest

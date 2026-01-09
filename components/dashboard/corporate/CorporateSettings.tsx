@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { toast } from "sonner"
+import { useIslandAlerts } from "@/components/ui/island-alerts"
 import { Loader2 } from "lucide-react"
 
 interface CorporateSettingsProps {
@@ -17,6 +17,7 @@ interface CorporateSettingsProps {
 }
 
 export function CorporateSettings({ organization, onUpdate }: CorporateSettingsProps) {
+  const { addAlert } = useIslandAlerts()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     name: organization.name,
@@ -31,9 +32,19 @@ export function CorporateSettings({ organization, onUpdate }: CorporateSettingsP
     setIsLoading(true)
     try {
       await onUpdate(formData)
-      toast.success("Organization settings updated successfully")
+      addAlert({
+        title: 'Settings Updated',
+        message: 'Organization settings updated successfully',
+        type: 'success',
+        duration: 5000,
+      })
     } catch (error) {
-      toast.error("Failed to update settings")
+      addAlert({
+        title: 'Update Failed',
+        message: 'Failed to update organization settings',
+        type: 'error',
+        duration: 5000,
+      })
       console.error(error)
     } finally {
       setIsLoading(false)

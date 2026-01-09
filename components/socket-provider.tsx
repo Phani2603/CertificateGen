@@ -39,8 +39,18 @@ export function SocketProvider({ children }: SocketProviderProps) {
       return
     }
 
+    // Check if WebSocket server is available (only in development with custom server)
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL
+    
+    // Skip WebSocket in production if not configured (Vercel doesn't support custom servers)
+    if (!socketUrl || socketUrl === '') {
+      console.log('ℹ️ WebSocket server not configured, skipping socket connection')
+      console.log('ℹ️ Real-time features will use polling instead')
+      return
+    }
+
     // Initialize socket connection
-    const socketInstance = io(process.env.NEXT_PUBLIC_SOCKET_URL || '', {
+    const socketInstance = io(socketUrl, {
       path: '/socket.io/',
       transports: ['websocket', 'polling'],
       reconnection: true,

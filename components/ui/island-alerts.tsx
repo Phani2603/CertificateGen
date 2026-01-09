@@ -22,8 +22,16 @@ interface IslandAlert {
   tone?: IslandTone
 }
 
+interface AddAlertParams {
+  title: string
+  message?: string
+  type?: "success" | "info" | "error"
+  duration?: number
+}
+
 interface IslandAlertsContextValue {
   show: (alert: IslandAlert) => void
+  addAlert: (alert: AddAlertParams) => void
 }
 
 const IslandAlertsContext = createContext<IslandAlertsContextValue | null>(null)
@@ -37,7 +45,16 @@ export function IslandAlertsProvider({ children }: { children: ReactNode }) {
     setVersion((v) => v + 1)
   }, [])
 
-  const value = useMemo(() => ({ show }), [show])
+  const addAlert = useCallback((params: AddAlertParams) => {
+    setAlert({
+      title: params.title,
+      description: params.message,
+      tone: params.type || "info",
+    })
+    setVersion((v) => v + 1)
+  }, [])
+
+  const value = useMemo(() => ({ show, addAlert }), [show, addAlert])
 
   return (
     <DynamicIslandProvider initialSize={SIZE_PRESETS.COMPACT}>
@@ -85,7 +102,7 @@ function IslandAlertRenderer({ alert, version }: { alert: IslandAlert | null; ve
   }[tone]
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-4 z-50 flex justify-center">
+    <div className="pointer-events-none fixed inset-x-0 top-4 z-[9999] flex justify-center">
       <DynamicIsland id="island-alert">
         <DynamicContainer className="flex w-full items-center gap-3 px-4 py-3 text-left">
           <div className={cn("flex h-9 w-9 items-center justify-center rounded-full border border-white/10", toneStyles[tone])}>

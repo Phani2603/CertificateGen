@@ -4,7 +4,6 @@ import {  Roboto } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { getGoogleFontsUrl } from "@/lib/fonts"
 import { AuthProvider } from "@/components/auth-provider"
-import { SocketProvider } from "@/components/socket-provider"
 import { IslandAlertsProvider } from "@/components/ui/island-alerts"
 import { Toaster } from "@/components/ui/sonner"
 import Script from "next/script"
@@ -53,11 +52,9 @@ export default function RootLayout({
         </Script>
 
         <AuthProvider>
-          <SocketProvider>
-            <IslandAlertsProvider>
-              {children}
-            </IslandAlertsProvider>
-          </SocketProvider>
+          <IslandAlertsProvider>
+            {children}
+          </IslandAlertsProvider>
         </AuthProvider>
         <Toaster position="top-right" richColors />
         <Analytics mode="production" />

@@ -6,9 +6,11 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Shield, Users, Building2, UserCog, LogOut, TrendingUp, FileText, AlertCircle } from "lucide-react"
 import Link from "next/link"
+import { useIslandAlerts } from "@/components/ui/island-alerts"
 
 export default function AdminDashboard() {
   const router = useRouter()
+  const { addAlert } = useIslandAlerts()
   const [stats, setStats] = useState({
     totalUsers: 0,
     individualUsers: 0,
@@ -27,6 +29,26 @@ export default function AdminDashboard() {
     fetchStats()
   }, [])
 
+  // Poll for new access requests (WebSocket disabled for now)
+  useEffect(() => {
+    // Poll for new requests
+    const pollInterval = setInterval(async () => {
+      const currentStats = await fetchStats()
+      
+      // Check if there are new pending requests
+      if (currentStats && currentStats.pendingRequests > stats.pendingRequests) {
+        addAlert({
+          title: 'New Access Request',
+          message: 'A new account upgrade request has been submitted',
+          type: 'info',
+          duration: 15000,
+        })
+      }
+    }, 10000) // Poll every 10 seconds
+    
+    return () => clearInterval(pollInterval)
+  }, [stats.pendingRequests, addAlert])
+
   const fetchStats = async () => {
     try {
       const response = await fetch('/api/admin/stats')
@@ -36,17 +58,20 @@ export default function AdminDashboard() {
         console.error('Failed to fetch stats:', data.error)
         if (response.status === 401) {
           router.push('/admin/login')
-          return
+          return null
         }
       }
 
       if (data.success) {
         setStats(data.stats)
+        return data.stats
       } else {
         console.error('Stats fetch unsuccessful:', data.error)
+        return null
       }
     } catch (error) {
       console.error('Error fetching stats:', error)
+      return null
     } finally {
       setIsLoading(false)
     }

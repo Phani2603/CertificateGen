@@ -1,16 +1,20 @@
 "use client"
 
-import { Award, LogOut } from "lucide-react"
+import { Award, LogOut, User as UserIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { signOut } from "next-auth/react"
 import Link from "next/link"
 import Image from "next/image"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { IndividualProfileOverlay } from "@/components/dashboard/individual/IndividualProfileOverlay"
 
 interface IndividualHeaderProps {
   userName: string
+  userEmail?: string
+  userImage?: string
 }
 
-export function IndividualHeader({ userName }: IndividualHeaderProps) {
+export function IndividualHeader({ userName, userEmail, userImage }: IndividualHeaderProps) {
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
       <div className="container mx-auto px-4">
@@ -29,11 +33,18 @@ export function IndividualHeader({ userName }: IndividualHeaderProps) {
               <span className="font-semibold">{userName}</span>
             </div>
 
-            <Link href="/profile">
-              <Button variant="ghost" size="sm">
-                Profile
-              </Button>
-            </Link>
+            <IndividualProfileOverlay
+              trigger={
+                <button className="relative">
+                  <Avatar className="h-9 w-9 cursor-pointer hover:opacity-80 transition-opacity">
+                    <AvatarImage src={userImage} alt={userName} />
+                    <AvatarFallback className="bg-[#8FD6BD] text-white">
+                      {userName.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
+              }
+            />
 
             <Button
               variant="ghost"

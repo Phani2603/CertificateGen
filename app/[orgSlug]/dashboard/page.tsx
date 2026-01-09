@@ -288,6 +288,7 @@ export default function CorporateDashboard({ params }: PageProps) {
                     <CorporateOrgSection 
                       organization={orgData}
                       isOwner={String(orgData.ownerId) === String(userData?.id || userData?._id)}
+                      onEditClick={() => setCurrentPage("settings")}
                     />
                     
                     {/* Stats Overview */}
