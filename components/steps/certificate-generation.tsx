@@ -5,6 +5,7 @@ import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
 import { Upload, Download, Loader2, CheckCircle, AlertCircle, Mail } from "lucide-react"
 import JSZip from "jszip"
 import FileSaver from "file-saver"
@@ -45,6 +46,13 @@ export default function CertificateGeneration({
   const [quality, setQuality] = useState<"standard" | "high">("standard")
   const [generationStatus, setGenerationStatus] = useState<"idle" | "success" | "error">("idle")
   const [generatedCount, setGeneratedCount] = useState(0)
+  const [currentPhase, setCurrentPhase] = useState<
+    "idle" | "rendering" | "registering" | "zipping" | "completed" | "error"
+  >("idle")
+  const [renderBatchInfo, setRenderBatchInfo] = useState<{ current: number; total: number } | null>(null)
+  const [registerBatchInfo, setRegisterBatchInfo] = useState<{ current: number; total: number } | null>(null)
+  const [registeredCount, setRegisteredCount] = useState(0)
+  const [totalToRegister, setTotalToRegister] = useState(0)
   const [cachedTemplateUrl, setCachedTemplateUrl] = useState<string | null>(null) // NEW: Cache S3 template URL
   const [generatedCertificates, setGeneratedCertificates] = useState<Array<{
     email: string
@@ -387,6 +395,10 @@ export default function CertificateGeneration({
     setIsGenerating(true)
     setGenerationStatus("idle")
     setGeneratedCount(0)
+    setCurrentPhase("rendering")
+    setRenderBatchInfo(null)
+    setRegisterBatchInfo(null)
+    setRegisteredCount(0)
     setEmailStatus("idle")
     setEmailsSent(0)
     setEmailErrors([])
@@ -407,14 +419,19 @@ export default function CertificateGeneration({
       const BATCH_DELAY = 50 // 50ms delay between batches to keep UI responsive
       const totalCertificates = csvData.length
 
+      const totalRenderBatches = Math.ceil(totalCertificates / BATCH_SIZE)
+      setRenderBatchInfo({ current: 0, total: totalRenderBatches })
+
       console.log(`[Batch Processing] Starting generation of ${totalCertificates} certificates in batches of ${BATCH_SIZE}`)
 
       for (let batchStart = 0; batchStart < totalCertificates; batchStart += BATCH_SIZE) {
         const batchEnd = Math.min(batchStart + BATCH_SIZE, totalCertificates)
         const batchNumber = Math.floor(batchStart / BATCH_SIZE) + 1
-        const totalBatches = Math.ceil(totalCertificates / BATCH_SIZE)
+        const totalBatches = totalRenderBatches
         
         console.log(`[Batch ${batchNumber}/${totalBatches}] Processing certificates ${batchStart + 1} to ${batchEnd}`)
+
+        setRenderBatchInfo({ current: batchNumber, total: totalBatches })
 
         // Process current batch
         for (let i = batchStart; i < batchEnd; i++) {
@@ -529,10 +546,20 @@ export default function CertificateGeneration({
           const REGISTER_BATCH_SIZE = 200
           const allRegistered: any[] = []
 
+          const totalToRegisterLocal = certificatesToRegister.length
+          const totalRegisterBatches = Math.ceil(totalToRegisterLocal / REGISTER_BATCH_SIZE)
+          setCurrentPhase("registering")
+          setRegisterBatchInfo({ current: 0, total: totalRegisterBatches })
+          setRegisteredCount(0)
+          setTotalToRegister(totalToRegisterLocal)
+
           for (let start = 0; start < certificatesToRegister.length; start += REGISTER_BATCH_SIZE) {
             const end = Math.min(start + REGISTER_BATCH_SIZE, certificatesToRegister.length)
             const batch = certificatesToRegister.slice(start, end)
             const batchId = `${batchIdBase}-${Math.floor(start / REGISTER_BATCH_SIZE) + 1}`
+
+            const currentBatchNumber = Math.floor(start / REGISTER_BATCH_SIZE) + 1
+            setRegisterBatchInfo({ current: currentBatchNumber, total: totalRegisterBatches })
 
             console.log(`[Certificate Registration] Sending batch ${start + 1}-${end} of ${certificatesToRegister.length}`)
 
@@ -554,6 +581,10 @@ export default function CertificateGeneration({
             if (result.success && result.certificates) {
               console.log(`[Certificate Registration] Batch registered ${result.registered}/${result.total}`)
               allRegistered.push(...result.certificates)
+              setRegisteredCount((prev) => {
+                const next = prev + batch.length
+                return next > totalToRegisterLocal ? totalToRegisterLocal : next
+              })
             } else {
               console.warn("[Certificate Registration] Batch registration failed:", result.error)
             }
@@ -592,6 +623,7 @@ export default function CertificateGeneration({
       }
 
       // NOW create organized folder structure with verification data
+      setCurrentPhase("zipping")
       const certificatesRootFolder = zip.folder("certificates")
 
       if (certificatesRootFolder && registeredVerificationData.length > 0) {
@@ -915,9 +947,11 @@ Generated: ${new Date().toLocaleString()}
       }
 
       setGenerationStatus("success")
+      setCurrentPhase("completed")
     } catch (error) {
       console.error("Error generating certificates:", error)
       setGenerationStatus("error")
+      setCurrentPhase("error")
       toast.error("Error generating certificates. Please try again.")
     } finally {
       setIsGenerating(false)
@@ -1349,10 +1383,37 @@ Generated: ${new Date().toLocaleString()}
               )}
               {isGenerating && (
                 <div className="pt-2 border-t border-[#21808D]/20">
-                  <p className="text-gray-600 text-xs">Progress</p>
-                  <p className="text-sm font-semibold text-[#21808D]">
-                    {generatedCount} / {csvData.length}
+                <p className="text-gray-600 text-xs mb-1">Progress</p>
+                <div className="space-y-1">
+                  <Progress
+                    value={
+                      currentPhase === "rendering" || currentPhase === "idle"
+                        ? (csvData.length ? (generatedCount / csvData.length) * 100 : 0)
+                        : currentPhase === "registering" && totalToRegister
+                        ? (registeredCount / totalToRegister) * 100
+                        : currentPhase === "zipping" || currentPhase === "completed"
+                        ? 100
+                        : 0
+                    }
+                    className="h-2 w-full bg-[#21808D]/10"
+                  />
+                  <p className="text-xs text-[#21808D] font-medium">
+                    {currentPhase === "rendering" && (
+                      <>
+                        Generating certificates: {generatedCount} / {csvData.length}
+                        {renderBatchInfo && ` (Batch ${renderBatchInfo.current} of ${renderBatchInfo.total})`}
+                      </>
+                    )}
+                    {currentPhase === "registering" && registerBatchInfo && (
+                      <>
+                        Registering in database: batch {registerBatchInfo.current} of {registerBatchInfo.total}
+                      </>
+                    )}
+                    {currentPhase === "zipping" && "Packaging ZIP file..."}
+                    {currentPhase === "completed" && "Completed"}
+                    {currentPhase === "error" && "Error during generation"}
                   </p>
+                </div>
                 </div>
               )}
             </div>

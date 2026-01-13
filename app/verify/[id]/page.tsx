@@ -44,7 +44,10 @@ interface FieldConfig {
   fontSize: number
   fontFamily: string
   color: string
-  align: string
+  alignment?: CanvasTextAlign
+  align?: CanvasTextAlign
+  fontWeight?: number
+  maxWidth?: number
 }
 
 export default function VerificationPage() {
@@ -262,25 +265,25 @@ export default function VerificationPage() {
               alignment: field.alignment || field.align
             })
             
-            // Set font style (match generation)
-            const fontWeight = field.fontWeight || 400
-            const fontString = `${fontWeight} ${field.fontSize}px "${field.fontFamily}", serif`
+            // Match certificate generation rendering for consistent positioning
+            const rawFontWeight = field.fontWeight === 400 ? undefined : field.fontWeight
+            const fontString = rawFontWeight
+              ? `${rawFontWeight} ${field.fontSize}px "${field.fontFamily}"`
+              : `${field.fontSize}px "${field.fontFamily}"`
+
             ctx.font = fontString
             ctx.fillStyle = field.color
-            
-            // Handle alignment (match generation logic)
+
             const alignment = (field.alignment || field.align || 'left') as CanvasTextAlign
             ctx.textAlign = alignment
-            ctx.textBaseline = 'top'
-            
-            // Adjust x position based on alignment (match generation)
-            const x = alignment === 'center' 
-              ? field.x 
-              : alignment === 'right' 
-              ? field.x + (field.maxWidth || 0) 
+
+            // Adjust x position based on alignment (same as generation & MyCertificates)
+            const x = alignment === 'center'
+              ? field.x
+              : alignment === 'right'
+              ? field.x + (field.maxWidth || 0)
               : field.x
 
-            // Draw text with maxWidth if available
             if (field.maxWidth) {
               ctx.fillText(value, x, field.y, field.maxWidth)
             } else {
