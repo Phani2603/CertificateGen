@@ -21,8 +21,11 @@ export async function GET(request: NextRequest) {
       recipientEmail: session.user.email
     })
       .sort({ issuedDate: -1 })
-      .select('recipientName recipientEmail eventName issuedDate certificateUrl organizationId privateOrgId')
+      .select('recipientName recipientEmail eventName issuedDate templateS3Key fieldConfiguration eventId organizationId privateOrgId')
       .lean()
+
+    console.log(`[My Certificates] Found ${certificates.length} certificates for ${session.user.email}`)
+    console.log(`[My Certificates] First cert has templateS3Key: ${certificates[0]?.templateS3Key ? 'YES' : 'NO'}`)
 
     // Populate organization names if needed
     const enrichedCertificates = await Promise.all(

@@ -1,10 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Download, ExternalLink, Search, Award, Filter, ChevronLeft, ChevronRight, X } from "lucide-react"
+import { ExternalLink, Search, Award, Filter, ChevronLeft, ChevronRight, X } from "lucide-react"
 import Image from "next/image"
 import { useSocket } from "@/components/socket-provider"
 import { toast } from "sonner"
@@ -15,7 +15,9 @@ interface Certificate {
   recipientEmail: string
   eventName: string
   issuedDate: string
-  certificateUrl: string
+  templateS3Key?: string
+  fieldConfiguration?: any[]
+  eventId?: string
   organizationName?: string
   privateOrgName?: string
 }
@@ -32,8 +34,12 @@ export function MyCertificatesSection({ userId }: MyCertificatesSectionProps) {
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedCertificate, setSelectedCertificate] = useState<Certificate | null>(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
-  const itemsPerPage = 6
+  const [certificateImages, setCertificateImages] = useState<Record<string, string>>({}) // Store rendered certificate images
+  const [loadingImages, setLoadingImages] = useState<Record<string, boolean>>({})
+  const itemsPerPage = 8
   const { socket } = useSocket()
+  const componentRef = useRef<HTMLDivElement>(null)
+  const gridRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetchCertificates()
@@ -71,6 +77,19 @@ export function MyCertificatesSection({ userId }: MyCertificatesSectionProps) {
     }
   }, [searchQuery, certificates])
 
+  // Scroll to component top when page changes
+  useEffect(() => {
+    if (componentRef.current) {
+      // Scroll to the component with offset for header
+      const headerOffset = 100
+      const elementPosition = componentRef.current.getBoundingClientRect().top + window.scrollY
+      window.scrollTo({
+        top: elementPosition - headerOffset,
+        behavior: 'smooth'
+      })
+    }
+  }, [currentPage])
+
   // Calculate pagination
   const totalPages = Math.ceil(filteredCertificates.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
@@ -88,6 +107,15 @@ export function MyCertificatesSection({ userId }: MyCertificatesSectionProps) {
       const data = await response.json()
 
       if (data.success) {
+        console.log('[MyCertificates] Fetched certificates:', {
+          count: data.certificates?.length,
+          firstCertData: data.certificates?.[0] ? {
+            eventName: data.certificates[0].eventName,
+            organizationName: data.certificates[0].organizationName,
+            privateOrgName: data.certificates[0].privateOrgName,
+            issuedDate: data.certificates[0].issuedDate,
+          } : 'N/A'
+        })
         setCertificates(data.certificates || [])
         setFilteredCertificates(data.certificates || [])
       }
@@ -97,6 +125,158 @@ export function MyCertificatesSection({ userId }: MyCertificatesSectionProps) {
       setIsLoading(false)
     }
   }
+
+  // Render certificate from template and field config
+  const renderCertificateImage = async (cert: Certificate) => {
+    let templateS3Key = cert.templateS3Key
+    let fieldConfig = cert.fieldConfiguration
+
+    console.log(`[MyCertificates] Starting render for ${cert._id}:`, {
+      hasCertTemplate: !!cert.templateS3Key,
+      hasCertConfig: !!cert.fieldConfiguration,
+      hasEventId: !!cert.eventId,
+    })
+
+    // If certificate doesn't have template/config, try to fetch from event
+    if ((!templateS3Key || !fieldConfig) && cert.eventId) {
+      try {
+        console.log(`[MyCertificates] Fetching event data for ${cert.eventId}`)
+        const eventResponse = await fetch(`/api/events/${cert.eventId}`)
+        const eventData = await eventResponse.json()
+        
+        if (eventData.success && eventData.event) {
+          templateS3Key = templateS3Key || eventData.event.templateS3Key
+          fieldConfig = fieldConfig || eventData.event.fieldConfiguration
+          console.log(`[MyCertificates] Got template from event:`, {
+            hasTemplate: !!templateS3Key,
+            hasConfig: !!fieldConfig,
+            templateKey: templateS3Key,
+          })
+        }
+      } catch (error) {
+        console.error('[MyCertificates] Error fetching event:', error)
+      }
+    }
+
+    if (!templateS3Key || !fieldConfig) {
+      console.log(`[MyCertificates] Certificate ${cert._id} missing template or config after fallback`)
+      return null
+    }
+
+    try {
+      setLoadingImages(prev => ({ ...prev, [cert._id]: true }))
+
+      // Get signed URL for template
+      console.log(`[MyCertificates] Getting signed URL for key: ${templateS3Key}`)
+      const templateResponse = await fetch(
+        `/api/templates/signed-url?key=${encodeURIComponent(templateS3Key)}`
+      )
+      const templateData = await templateResponse.json()
+
+      console.log(`[MyCertificates] Signed URL response:`, {
+        success: templateData.success,
+        hasUrl: !!templateData.signedUrl,
+      })
+
+      if (!templateData.success || !templateData.signedUrl) {
+        console.error('[MyCertificates] Failed to get template URL:', templateData.error)
+        return null
+      }
+
+      // Load template image
+      console.log(`[MyCertificates] Loading template from signed URL`)
+      const img: HTMLImageElement = document.createElement('img')
+      img.crossOrigin = 'anonymous'
+      
+      return new Promise<string | null>((resolve) => {
+        img.onload = () => {
+          console.log(`[MyCertificates] Template image loaded, creating canvas`)
+          
+          const canvas = document.createElement('canvas')
+          const ctx = canvas.getContext('2d')
+          
+          console.log(`[MyCertificates] Canvas context:`, {
+            canvasExists: !!canvas,
+            ctxExists: !!ctx,
+            ctxType: ctx?.constructor.name,
+            hasDrawImage: !!ctx?.drawImage,
+          })
+          
+          if (!ctx) {
+            console.error('[MyCertificates] Failed to get canvas context')
+            resolve(null)
+            return
+          }
+
+          canvas.width = img.width
+          canvas.height = img.height
+          
+          console.log(`[MyCertificates] Canvas size: ${canvas.width}x${canvas.height}`)
+          
+          try {
+            ctx.drawImage(img, 0, 0)
+            console.log(`[MyCertificates] Template drawn to canvas`)
+          } catch (drawError) {
+            console.error('[MyCertificates] Error drawing image:', drawError)
+            resolve(null)
+            return
+          }
+
+          // Draw demo text for each field
+          (fieldConfig || []).forEach((field: any) => {
+            let demoText = 'Demo Text'
+            if (field.name === 'Name') demoText = cert.recipientName
+            else if (field.name === 'Date') demoText = new Date(cert.issuedDate).toLocaleDateString()
+            else if (field.name === 'Course') demoText = cert.eventName
+
+            const fontWeight = field.fontWeight === 400 ? '' : field.fontWeight
+            const fontString = fontWeight
+              ? `${fontWeight} ${field.fontSize}px "${field.fontFamily}"`
+              : `${field.fontSize}px "${field.fontFamily}"`
+
+            try {
+              ctx.font = fontString
+              ctx.fillStyle = field.color
+              ctx.textAlign = field.alignment as any
+
+              const x =
+                field.alignment === 'center' ? field.x : field.alignment === 'right' ? field.x + (field.maxWidth || 0) : field.x
+              ctx.fillText(demoText, x, field.y, field.maxWidth)
+            } catch (textError) {
+              console.error('[MyCertificates] Error drawing text for field:', field.name, textError)
+            }
+          })
+
+          console.log(`[MyCertificates] Text drawn, converting to data URL`)
+          const imageData = canvas.toDataURL('image/png')
+          console.log(`[MyCertificates] Image data created, size: ${imageData.length} bytes`)
+          setCertificateImages(prev => ({ ...prev, [cert._id]: imageData }))
+          resolve(imageData)
+        }
+        
+        img.onerror = () => {
+          console.error('[MyCertificates] Failed to load template image from:', templateData.signedUrl)
+          resolve(null)
+        }
+        
+        img.src = templateData.signedUrl
+      })
+    } catch (error) {
+      console.error('[MyCertificates] Error rendering certificate:', error)
+      return null
+    } finally {
+      setLoadingImages(prev => ({ ...prev, [cert._id]: false }))
+    }
+  }
+
+  // Render images when certificates load
+  useEffect(() => {
+    certificates.forEach(cert => {
+      if (!certificateImages[cert._id] && !loadingImages[cert._id]) {
+        renderCertificateImage(cert)
+      }
+    })
+  }, [certificates])
 
   if (isLoading) {
     return (
@@ -113,40 +293,40 @@ export function MyCertificatesSection({ userId }: MyCertificatesSectionProps) {
 
   return (
     <>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div ref={componentRef} className="space-y-4 sm:space-y-6 lg:space-y-8 w-full">
+        {/* Header - Responsive */}
+        <div className="flex flex-col gap-4">
           <div>
-            <h2 className="text-2xl font-bold flex items-center gap-2">
-              <Award className="w-6 h-6 text-[#8FD6BD]" />
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold flex items-center gap-2 sm:gap-3">
+              <Award className="w-5 sm:w-6 h-5 sm:h-6 text-[#8FD6BD]" />
               My Certificates
             </h2>
-            <p className="text-gray-600 text-sm mt-1">
+            <p className="text-gray-600 text-xs sm:text-sm mt-2">
               {certificates.length} certificate{certificates.length !== 1 ? 's' : ''} earned
             </p>
           </div>
 
-          {/* Search */}
-          <div className="relative w-full sm:w-80">
+          {/* Search - Responsive */}
+          <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
               placeholder="Search certificates..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-10 text-sm"
             />
           </div>
         </div>
 
         {/* Certificates Grid */}
         {filteredCertificates.length === 0 ? (
-          <Card className="p-12">
+          <Card className="p-6 sm:p-8 lg:p-12">
             <div className="text-center">
-              <Award className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <Award className="w-12 sm:w-16 h-12 sm:h-16 text-gray-300 mx-auto mb-3 sm:mb-4" />
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
                 {searchQuery ? "No certificates found" : "No certificates yet"}
               </h3>
-              <p className="text-gray-600">
+              <p className="text-sm sm:text-base text-gray-600">
                 {searchQuery 
                   ? "Try adjusting your search query" 
                   : "Certificates you receive will appear here"
@@ -156,79 +336,91 @@ export function MyCertificatesSection({ userId }: MyCertificatesSectionProps) {
           </Card>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" ref={gridRef}>
               {currentCertificates.map((cert) => (
-                <Card key={cert._id} className="p-6 hover:shadow-lg transition-shadow">
-                  <div className="space-y-4">
-                    {/* Certificate Preview */}
-                    <div className="aspect-video bg-gradient-to-br from-[#21808D] to-[#8FD6BD] rounded-lg flex items-center justify-center">
-                      <Award className="w-12 h-12 text-white" />
-                    </div>
+                <div 
+                  key={cert._id} 
+                  onClick={() => {
+                    setSelectedCertificate(cert)
+                    setShowDetailModal(true)
+                  }}
+                  className="group relative bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-[#21808D] hover:shadow-lg transition-all duration-300 cursor-pointer flex flex-col h-full"
+                >
+                  {/* Certificate Image Preview - Compact */}
+                  <div className="relative h-32 bg-gradient-to-br from-[#21808D] to-[#8FD6BD] overflow-hidden flex items-center justify-center">
+                    {certificateImages[cert._id] ? (
+                      <>
+                        <img 
+                          src={certificateImages[cert._id]} 
+                          alt={cert.eventName}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                          <div className="bg-white/90 backdrop-blur-sm rounded-full p-2">
+                            <ExternalLink className="w-5 h-5 text-[#21808D]" />
+                          </div>
+                        </div>
+                      </>
+                    ) : loadingImages[cert._id] ? (
+                      <div className="flex flex-col items-center justify-center gap-1">
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-xs text-white">Loading...</span>
+                      </div>
+                    ) : (
+                      <Award className="w-10 h-10 text-white/60" />
+                    )}
+                  </div>
 
-                    {/* Details */}
-                    <div>
-                      <h3 className="font-semibold text-lg line-clamp-1">{cert.eventName}</h3>
-                      <p className="text-sm text-gray-600 mt-1">
+                  {/* Certificate Details - Compact */}
+                  <div className="p-3 flex-1 flex flex-col justify-between">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-xs line-clamp-1 text-gray-900">{cert.eventName}</h3>
+                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
                         {cert.organizationName || cert.privateOrgName || "Organization"}
                       </p>
-                      <p className="text-xs text-gray-500 mt-2">
-                        Issued: {new Date(cert.issuedDate).toLocaleDateString()}
+                      <p className="text-xs text-gray-400 mt-1.5 font-medium">
+                        {new Date(cert.issuedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
                       </p>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex-1"
-                        onClick={() => {
-                          setSelectedCertificate(cert)
-                          setShowDetailModal(true)
-                        }}
-                      >
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        Details
-                      </Button>
-                      <Button
-                        size="sm"
-                        className="flex-1 bg-[#21808D] hover:bg-[#1a6370]"
-                        onClick={() => {
-                          const link = document.createElement('a')
-                          link.href = cert.certificateUrl
-                          link.download = `${cert.eventName}-certificate.pdf`
-                          link.click()
-                        }}
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        Download
-                      </Button>
-                    </div>
+                    {/* Quick Action Button */}
+                    <Button
+                      size="sm"
+                      className="w-full mt-2 bg-[#21808D] hover:bg-[#1a6370] text-white h-7 text-xs"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setSelectedCertificate(cert)
+                        setShowDetailModal(true)
+                      }}
+                    >
+                      <ExternalLink className="w-2.5 h-2.5 mr-1" />
+                      View
+                    </Button>
                   </div>
-                </Card>
+                </div>
               ))}
             </div>
 
-            {/* Pagination Controls */}
+            {/* Enhanced Pagination Controls */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
-                <div className="text-sm text-gray-600">
-                  Showing {startIndex + 1}-{Math.min(endIndex, filteredCertificates.length)} of {filteredCertificates.length}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-6 border-t border-gray-200">
+                <div className="text-xs sm:text-sm text-gray-500 font-medium">
+                  Showing <span className="font-semibold text-gray-900">{startIndex + 1}-{Math.min(endIndex, filteredCertificates.length)}</span> of <span className="font-semibold text-gray-900">{filteredCertificates.length}</span>
                 </div>
-                <div className="flex items-center gap-2">
+                
+                <div className="flex items-center gap-1.5">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
-                    className="h-8 w-8 p-0"
+                    className="h-9 w-9 p-0 rounded-lg border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
                   
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5 bg-gray-50 rounded-lg p-1">
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
-                      // Show first, last, current, and adjacent pages
                       if (
                         page === 1 ||
                         page === totalPages ||
@@ -237,13 +429,13 @@ export function MyCertificatesSection({ userId }: MyCertificatesSectionProps) {
                         return (
                           <Button
                             key={page}
-                            variant={currentPage === page ? "default" : "outline"}
+                            variant={currentPage === page ? "default" : "ghost"}
                             size="sm"
                             onClick={() => setCurrentPage(page)}
-                            className={`h-8 w-8 p-0 ${
+                            className={`h-8 w-8 p-0 rounded-md transition-all ${
                               currentPage === page 
-                                ? "bg-[#21808D] hover:bg-[#1a6570] text-white" 
-                                : ""
+                                ? "bg-[#21808D] hover:bg-[#1a6370] text-white shadow-sm" 
+                                : "text-gray-600 hover:bg-white hover:text-[#21808D]"
                             }`}
                           >
                             {page}
@@ -254,8 +446,8 @@ export function MyCertificatesSection({ userId }: MyCertificatesSectionProps) {
                         page === currentPage + 2
                       ) {
                         return (
-                          <span key={page} className="px-1 text-gray-400">
-                            ...
+                          <span key={page} className="px-2 text-gray-300 text-sm">
+                            •••
                           </span>
                         )
                       }
@@ -268,7 +460,7 @@ export function MyCertificatesSection({ userId }: MyCertificatesSectionProps) {
                     size="sm"
                     onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages}
-                    className="h-8 w-8 p-0"
+                    className="h-9 w-9 p-0 rounded-lg border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Button>
@@ -281,89 +473,123 @@ export function MyCertificatesSection({ userId }: MyCertificatesSectionProps) {
 
       {/* Certificate Detail Modal */}
       {showDetailModal && selectedCertificate && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 md:p-4">
-          <Card className="bg-white p-4 md:p-8 rounded-2xl max-w-4xl w-full max-h-[85vh] md:max-h-[80vh] overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between mb-4 md:mb-6">
-              <div className="flex-1 min-w-0 pr-2">
-                <h2 className="text-2xl md:text-3xl font-bold truncate">{selectedCertificate.eventName}</h2>
-                <p className="text-xs md:text-sm text-gray-500 mt-1">
-                  Issued on {new Date(selectedCertificate.issuedDate).toLocaleDateString('en-US', { 
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4 lg:p-6 overflow-auto">
+          <Card className="bg-white rounded-xl sm:rounded-2xl max-w-5xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh] sm:max-h-[95vh]">
+            {/* Modal Header - Responsive */}
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-100 sticky top-0 bg-white z-10">
+              <div className="flex-1 min-w-0 pr-3">
+                <h2 className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900 line-clamp-2">{selectedCertificate.eventName}</h2>
+                <p className="text-xs sm:text-sm text-gray-500 mt-1 line-clamp-1">
+                  Issued {new Date(selectedCertificate.issuedDate).toLocaleDateString('en-US', { 
                     year: 'numeric', 
-                    month: 'long', 
+                    month: 'short', 
                     day: 'numeric' 
-                  })}
+                  })} • {selectedCertificate.organizationName || selectedCertificate.privateOrgName}
                 </p>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => {
-                setShowDetailModal(false)
-                setSelectedCertificate(null)
-              }}>
-                <X className="h-5 w-5" />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => {
+                  setShowDetailModal(false)
+                  setSelectedCertificate(null)
+                }}
+                className="shrink-0 h-8 w-8 sm:h-10 sm:w-10 p-0"
+              >
+                <X className="h-4 sm:h-5 w-4 sm:w-5" />
               </Button>
             </div>
 
-            {/* Certificate Preview */}
-            <div className="mb-6">
-              <div className="aspect-video bg-gradient-to-br from-[#21808D] to-[#8FD6BD] rounded-lg flex items-center justify-center">
-                <Award className="w-24 h-24 text-white" />
+            {/* Modal Content - Responsive */}
+            <div className="overflow-y-auto flex-1 p-4 sm:p-6 lg:p-8">
+              {/* Certificate Preview - Full Size */}
+              <div className="mb-6 sm:mb-8 rounded-lg sm:rounded-xl overflow-hidden border border-gray-200 shadow-sm bg-gray-50">
+                {certificateImages[selectedCertificate._id] ? (
+                  <div className="flex items-center justify-center bg-white p-3 sm:p-4 lg:p-6">
+                    <img 
+                      src={certificateImages[selectedCertificate._id]} 
+                      alt={selectedCertificate.eventName}
+                      className="w-full h-auto max-h-72 sm:max-h-96 object-contain"
+                    />
+                  </div>
+                ) : loadingImages[selectedCertificate._id] ? (
+                  <div className="h-48 sm:h-72 lg:h-96 bg-gray-100 flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-2 sm:gap-3">
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 border-3 border-[#21808D] border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-xs sm:text-sm text-gray-600 font-medium">Rendering certificate...</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="h-48 sm:h-72 lg:h-96 bg-gradient-to-br from-[#21808D] to-[#8FD6BD] flex items-center justify-center">
+                    <Award className="w-16 sm:w-20 lg:w-24 h-16 sm:h-20 lg:h-24 text-white/60" />
+                  </div>
+                )}
               </div>
-            </div>
 
-            <div className="flex-1 overflow-y-auto">
-              <div className="p-6 bg-gray-50 rounded-lg">
-                <h3 className="text-lg font-bold mb-4 text-gray-900">Certificate Details</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center pb-2 border-b border-gray-200">
-                    <span className="text-gray-600">Event Name</span>
-                    <span className="font-semibold text-gray-900">{selectedCertificate.eventName}</span>
+              {/* Certificate Information Grid - Responsive */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 mt-6 sm:mt-8">
+                <div className="space-y-3 sm:space-y-4">
+                  <div className="pb-3 sm:pb-4 border-b border-gray-100">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Event Name</p>
+                    <p className="text-sm sm:text-base font-semibold text-gray-900 mt-1.5">{selectedCertificate.eventName}</p>
                   </div>
-                  <div className="flex justify-between items-center pb-2 border-b border-gray-200">
-                    <span className="text-gray-600">Organization</span>
-                    <span className="font-semibold text-gray-900">
+                  <div className="pb-3 sm:pb-4 border-b border-gray-100">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Organization</p>
+                    <p className="text-sm sm:text-base font-semibold text-gray-900 mt-1.5">
                       {selectedCertificate.organizationName || selectedCertificate.privateOrgName || "N/A"}
-                    </span>
+                    </p>
                   </div>
-                  <div className="flex justify-between items-center pb-2 border-b border-gray-200">
-                    <span className="text-gray-600">Recipient Name</span>
-                    <span className="font-semibold text-gray-900">{selectedCertificate.recipientName}</span>
+                  <div className="pb-3 sm:pb-4 border-b border-gray-100">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Recipient Name</p>
+                    <p className="text-sm sm:text-base font-semibold text-gray-900 mt-1.5">{selectedCertificate.recipientName}</p>
                   </div>
-                  <div className="flex justify-between items-center pb-2 border-b border-gray-200">
-                    <span className="text-gray-600">Recipient Email</span>
-                    <span className="font-semibold text-gray-900">{selectedCertificate.recipientEmail}</span>
+                </div>
+
+                <div className="space-y-3 sm:space-y-4">
+                  <div className="pb-3 sm:pb-4 border-b border-gray-100">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Email Address</p>
+                    <p className="text-sm sm:text-base font-semibold text-gray-900 mt-1.5 break-all">{selectedCertificate.recipientEmail}</p>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Date Issued</span>
-                    <span className="font-semibold text-gray-900">
+                  <div className="pb-3 sm:pb-4 border-b border-gray-100">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Date Issued</p>
+                    <p className="text-sm sm:text-base font-semibold text-gray-900 mt-1.5">
                       {new Date(selectedCertificate.issuedDate).toLocaleDateString('en-US', { 
                         year: 'numeric', 
                         month: 'long', 
                         day: 'numeric' 
                       })}
-                    </span>
+                    </p>
+                  </div>
+                  <div className="pb-3 sm:pb-4">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Certificate ID</p>
+                    <p className="text-xs sm:text-sm font-mono text-gray-600 mt-1.5 truncate">{selectedCertificate._id}</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="flex gap-3 pt-4 mt-4 border-t border-gray-200">
+            {/* Modal Footer - Responsive */}
+            <div className="p-4 sm:p-6 border-t border-gray-100 bg-gray-50 flex gap-2 sm:gap-3 flex-col-reverse sm:flex-row">
               <Button
                 variant="outline"
-                className="flex-1"
-                onClick={() => window.open(selectedCertificate.certificateUrl, '_blank')}
-              >
-                <ExternalLink className="w-4 h-4 mr-2" />
-                View Certificate
-              </Button>
-              <Button
-                className="flex-1 bg-[#21808D] hover:bg-[#1a6370]"
+                className="w-full sm:flex-1 text-sm"
                 onClick={() => {
-                  const link = document.createElement('a')
-                  link.href = selectedCertificate.certificateUrl
-                  link.download = `${selectedCertificate.eventName}-certificate.pdf`
-                  link.click()
+                  setShowDetailModal(false)
+                  setSelectedCertificate(null)
                 }}
               >
-                <Download className="w-4 h-4 mr-2" />
+                Close
+              </Button>
+              <Button
+                className="w-full sm:flex-1 bg-[#21808D] hover:bg-[#1a6370] text-sm"
+                onClick={() => {
+                  // Future: Add download functionality
+                  toast.info('Download feature coming soon!', {
+                    description: 'You will be able to download this certificate'
+                  })
+                }}
+              >
+                <ExternalLink className="w-3 sm:w-4 h-3 sm:h-4 mr-1.5 sm:mr-2" />
                 Download
               </Button>
             </div>

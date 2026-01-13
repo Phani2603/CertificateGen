@@ -170,82 +170,104 @@ export default function IndividualDashboard() {
         onClose={() => setShowTypeSelection(false)} 
       />
       
-      <div className="min-h-screen bg-[#f6f6f6]">
+      <div className="min-h-screen bg-gradient-to-b from-[#f6f6f6] to-[#f0f0f0]">
         <IndividualHeader 
           userName={userData?.name || session?.user?.name || "User"}
           userEmail={userData?.email || session?.user?.email}
           userImage={userData?.image || session?.user?.image}
         />
         
-        <main className="container mx-auto px-4 py-8 max-w-7xl">
-          <div className="flex justify-end mb-6">
-            <Dialog open={isUpgradeDialogOpen} onOpenChange={setIsUpgradeDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                  <Building2 className="h-4 w-4" />
-                  Upgrade to Corporate
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Upgrade to Corporate Account</DialogTitle>
-                  <DialogDescription>
-                    Request to upgrade your account to Corporate status. This will allow you to create organizations and issue certificates.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="reason">Reason for Upgrade</Label>
-                    <Textarea
-                      id="reason"
-                      placeholder="Please tell us why you want to upgrade (e.g., Company Name, Use Case)"
-                      value={upgradeReason}
-                      onChange={(e) => setUpgradeReason(e.target.value)}
-                    />
+        <main className="w-full">
+          {/* Main content with responsive padding and tighter max-width for larger side margins */}
+          <div className="mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 py-6 sm:py-8 lg:py-10 w-full max-w-5xl">
+            {/* Action Button Section - Responsive */}
+            <div className="flex justify-end mb-6 sm:mb-8 lg:mb-10">
+              <Dialog open={isUpgradeDialogOpen} onOpenChange={setIsUpgradeDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="gap-2 text-sm sm:text-base">
+                    <Building2 className="h-4 w-4" />
+                    Upgrade to Corporate
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="w-[95vw] sm:w-full max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Upgrade to Corporate Account</DialogTitle>
+                    <DialogDescription className="text-xs sm:text-sm">
+                      Request to upgrade your account to Corporate status. This will allow you to create organizations and issue certificates.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="reason" className="text-sm">Reason for Upgrade</Label>
+                      <Textarea
+                        id="reason"
+                        placeholder="Please tell us why you want to upgrade (e.g., Company Name, Use Case)"
+                        value={upgradeReason}
+                        onChange={(e) => setUpgradeReason(e.target.value)}
+                        className="text-sm"
+                      />
+                    </div>
                   </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsUpgradeDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleUpgradeRequest} disabled={isSubmittingUpgrade}>
-                    {isSubmittingUpgrade ? "Submitting..." : "Submit Request"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
+                  <DialogFooter className="flex gap-2 flex-col-reverse sm:flex-row">
+                    <Button variant="outline" onClick={() => setIsUpgradeDialogOpen(false)} className="w-full sm:w-auto">
+                      Cancel
+                    </Button>
+                    <Button onClick={handleUpgradeRequest} disabled={isSubmittingUpgrade} className="w-full sm:w-auto">
+                      {isSubmittingUpgrade ? "Submitting..." : "Submit Request"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
 
-          <div className="space-y-8">
-            <AchievementsSection userId={userData?._id} />
-            <ActiveEventsSection userId={userData?._id} />
-            <MyCertificatesSection userId={userData?._id} />
-            
-            {/* Contact Information */}
-            <Card className="border-blue-200 bg-blue-50">
-              <div className="p-6">
-                <h3 className="text-sm font-semibold text-blue-900 mb-3">Need Help?</h3>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 text-sm text-blue-800">
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4" />
-                    <a href="mailto:forge@senement.com" className="hover:underline">
-                      forge@senement.com
-                    </a>
+            {/* Content Sections with consistent spacing */}
+            <div className="space-y-6 sm:space-y-8 lg:space-y-10">
+              {/* Achievements Section */}
+              <section className="scroll-mt-20">
+                <AchievementsSection userId={userData?._id} />
+              </section>
+
+              {/* Active Events Section */}
+              <section className="scroll-mt-20">
+                <ActiveEventsSection userId={userData?._id} />
+              </section>
+
+              {/* My Certificates Section */}
+              <section className="scroll-mt-20">
+                <MyCertificatesSection userId={userData?._id} />
+              </section>
+              
+              {/* Contact Information Card - Responsive */}
+              <section className="scroll-mt-20">
+                <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100 shadow-sm">
+                  <div className="p-4 sm:p-6 lg:p-8">
+                    <h3 className="text-sm sm:text-base font-semibold text-blue-900 mb-4 sm:mb-5">Need Help?</h3>
+                    <div className="flex flex-col gap-4 sm:gap-6 text-sm text-blue-800">
+                      <div className="flex items-center gap-3">
+                        <Mail className="h-5 w-5 shrink-0 text-blue-700" />
+                        <a href="mailto:forge@senement.com" className="hover:underline hover:text-blue-900 transition-colors break-all">
+                          forge@senement.com
+                        </a>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Phone className="h-5 w-5 shrink-0 text-blue-700" />
+                        <a
+                          href="https://wa.me/9492478546"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:underline hover:text-blue-900 transition-colors"
+                        >
+                          Chat on WhatsApp
+                        </a>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4" />
-                    <a
-                      href="https://wa.me/9492478546"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:underline"
-                    >
-                      Chat on WhatsApp
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </Card>
+                </Card>
+              </section>
+
+              {/* Bottom Spacing */}
+              <div className="h-6 sm:h-8 lg:h-10"></div>
+            </div>
           </div>
         </main>
       </div>

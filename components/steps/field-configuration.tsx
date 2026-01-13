@@ -27,7 +27,12 @@ export default function FieldConfiguration({
   const [isAddingField, setIsAddingField] = useState(false)
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null)
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 })
+  const [draggingFieldId, setDraggingFieldId] = useState<string | null>(null)
   const previewCanvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    console.log(`[Field Config] Dragging state changed:`, draggingFieldId)
+  }, [draggingFieldId])
 
   useEffect(() => {
     const fontFamilies = CERTIFICATE_FONTS.map((f) => f.family).join("|")
@@ -87,13 +92,51 @@ export default function FieldConfiguration({
   }, [fields, imageSize])
 
   const handleImageClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isAddingField) return
+    if (!isAddingField) {
+      // Check if clicked on a field marker for dragging
+      const canvas = previewCanvasRef.current
+      if (!canvas) return
 
-    const rect = previewCanvasRef.current?.getBoundingClientRect()
-    if (!rect) return
+      const rect = canvas.getBoundingClientRect()
+      const scaleX = canvas.width / rect.width
+      const scaleY = canvas.height / rect.height
+      
+      const clickX = (e.clientX - rect.left) * scaleX
+      const clickY = (e.clientY - rect.top) * scaleY
 
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
+      console.log(`[Field Config] Click detected at: ${clickX}, ${clickY} (scaled)`)
+
+      // Check if click is on a field marker (blue square, 10x10 pixels, centered at field.x)
+      for (const field of fields) {
+        const markerLeft = field.x - 5
+        const markerRight = field.x + 5
+        const markerTop = field.y - 15
+        const markerBottom = field.y - 5
+
+        console.log(`[Field Config] Checking field ${field.id}: marker bounds [${markerLeft}-${markerRight}], [${markerTop}-${markerBottom}]`)
+
+        if (clickX >= markerLeft && clickX <= markerRight && clickY >= markerTop && clickY <= markerBottom) {
+          console.log(`[Field Config] ✅ Marker clicked on field: ${field.id}`)
+          setDraggingFieldId(field.id)
+          setSelectedFieldId(field.id)
+          return
+        }
+      }
+      console.log(`[Field Config] No marker hit`)
+      return
+    }
+
+    const canvas = previewCanvasRef.current
+    if (!canvas) return
+
+    const rect = canvas.getBoundingClientRect()
+    const scaleX = canvas.width / rect.width
+    const scaleY = canvas.height / rect.height
+    
+    const x = (e.clientX - rect.left) * scaleX
+    const y = (e.clientY - rect.top) * scaleY
+
+    console.log(`[Field Config] Adding new field at: ${x}, ${y}`)
 
     const newField: CertificateField = {
       id: Date.now().toString(),
@@ -111,6 +154,51 @@ export default function FieldConfiguration({
     onFieldsUpdate([...fields, newField])
     setIsAddingField(false)
     setSelectedFieldId(newField.id)
+  }
+
+  const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = previewCanvasRef.current
+    if (!canvas) return
+
+    const rect = canvas.getBoundingClientRect()
+    const scaleX = canvas.width / rect.width
+    const scaleY = canvas.height / rect.height
+
+    if (draggingFieldId) {
+      // Update field position while dragging
+      const x = Math.round((e.clientX - rect.left) * scaleX)
+      const y = Math.round((e.clientY - rect.top) * scaleY)
+
+      console.log(`[Field Config] Dragging field ${draggingFieldId} to: ${x}, ${y}`)
+      updateField(draggingFieldId, { x, y })
+      canvas.style.cursor = "grabbing"
+    } else {
+      // Show grab cursor when hovering over field markers, crosshair in add mode
+      let isOverMarker = false
+      const mouseX = (e.clientX - rect.left) * scaleX
+      const mouseY = (e.clientY - rect.top) * scaleY
+
+      for (const field of fields) {
+        const markerLeft = field.x - 5
+        const markerRight = field.x + 5
+        const markerTop = field.y - 15
+        const markerBottom = field.y - 5
+
+        if (mouseX >= markerLeft && mouseX <= markerRight && mouseY >= markerTop && mouseY <= markerBottom) {
+          isOverMarker = true
+          break
+        }
+      }
+
+      canvas.style.cursor = isAddingField ? "crosshair" : isOverMarker ? "grab" : "default"
+    }
+  }
+
+  const handleCanvasMouseUp = () => {
+    if (draggingFieldId) {
+      console.log(`[Field Config] Finished dragging field: ${draggingFieldId}`)
+    }
+    setDraggingFieldId(null)
   }
 
   const updateField = (id: string, updates: Partial<CertificateField>) => {
@@ -137,7 +225,10 @@ export default function FieldConfiguration({
             <canvas
               ref={previewCanvasRef}
               onClick={handleImageClick}
-              className={`w-full h-auto ${isAddingField ? "cursor-crosshair" : "cursor-default"}`}
+              onMouseMove={handleCanvasMouseMove}
+              onMouseUp={handleCanvasMouseUp}
+              onMouseLeave={handleCanvasMouseUp}
+              className="w-full h-auto cursor-auto"
             />
           </div>
 
@@ -148,8 +239,15 @@ export default function FieldConfiguration({
             } text-white`}
           >
             <Plus className="w-4 h-4 mr-2" />
-            {isAddingField ? "Cancel" : "Add Field"}
+            {isAddingField ? "Cancel" : "Add Field by Clicking"}
           </Button>
+          
+          <div className="relative">
+            <p className="text-xs text-gray-500 text-center mb-2">OR drag fields to position</p>
+            <div className="text-xs text-gray-400 text-center mb-3 p-3 bg-blue-50 rounded-lg border-2 border-blue-200">
+              💡 Click on the template to add a field at that location, then drag the field marker (blue square) to adjust position
+            </div>
+          </div>
         </div>
 
         {/* Field Properties Panel */}

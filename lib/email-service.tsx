@@ -1,6 +1,7 @@
 import { Resend } from "resend"
 import nodemailer from "nodemailer"
 import path from "path"
+import fs from "fs"
 import { decryptCredentials } from "@/utils/secure-storage"
 
 // Lazy initialization of Resend - only create when needed
@@ -10,6 +11,28 @@ const getResend = () => {
     resend = new Resend(process.env.RESEND_API_KEY)
   }
   return resend
+}
+
+// Helper function to safely get logo attachment
+const getLogoAttachment = () => {
+  try {
+    const logoPath = path.join(process.cwd(), "public", "klh.png")
+    // Check if file exists before trying to attach
+    if (fs.existsSync(logoPath)) {
+      console.log("[Email Service] Logo file found at:", logoPath)
+      return {
+        filename: "klh-logo.png",
+        path: logoPath,
+        cid: "klh-logo",
+      }
+    } else {
+      console.warn("[Email Service] Logo file not found at:", logoPath)
+      return null
+    }
+  } catch (error) {
+    console.error("[Email Service] Error checking logo file:", error)
+    return null
+  }
 }
 
 // Pooled email transporter for bulk sending (reuses connections)
@@ -161,112 +184,117 @@ export async function sendCertificateEmail(
       }
       const transporter = await createEmailTransporter(credentials)
       
+      // Try to get logo attachment
+      const logoAttachment = getLogoAttachment()
+      
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f5f5f5;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 20px;">
+            <tr>
+              <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                  
+                  <!-- Header with Logo -->
+                  <tr>
+                    <td style="background: linear-gradient(135deg, #21808D 0%, #1a6570 100%); padding: 40px 30px; text-align: center;">
+                      ${logoAttachment ? '<img src="cid:klh-logo" alt="KLH University" style="max-width: 120px; height: auto; margin-bottom: 20px;" />' : ''}
+                      <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Congratulations!</h1>
+                    </td>
+                  </tr>
+                  
+                  <!-- Main Content -->
+                  <tr>
+                    <td style="padding: 40px 30px;">
+                      <p style="color: #1a1a1a; font-size: 18px; margin: 0 0 20px; line-height: 1.6;">
+                        Dear <strong>${recipientName}</strong>,
+                      </p>
+                      
+                      <p style="color: #333333; font-size: 16px; margin: 0 0 20px; line-height: 1.6;">
+                        We are delighted to inform you that your certificate has been successfully generated and is attached to this email.
+                      </p>
+                      
+                      <div style="background-color: #f0f9fa; border-left: 4px solid #21808D; padding: 20px; margin: 25px 0; border-radius: 4px;">
+                        <p style="color: #1a6570; font-size: 15px; margin: 0; line-height: 1.6;">
+                          <strong>📎 Your certificate is attached as:</strong><br/>
+                          <span style="font-family: monospace; color: #333;">${fileName}</span>
+                        </p>
+                      </div>
+                      
+                      <p style="color: #333333; font-size: 16px; margin: 0 0 20px; line-height: 1.6;">
+                        This certificate is a testament to your hard work, dedication, and the knowledge you've gained. We are incredibly proud of your achievement and hope this milestone serves as a stepping stone to greater success in your future endeavors.
+                      </p>
+                      
+                      <p style="color: #333333; font-size: 16px; margin: 0 0 20px; line-height: 1.6;">
+                        Your commitment to learning and excellence has truly paid off. May this achievement inspire you to continue pursuing knowledge and reaching new heights in your academic and professional journey.
+                      </p>
+                      
+                      <!-- Tips Section -->
+                      <div style="background-color: #fffbf0; border: 1px solid #ffd700; padding: 20px; margin: 25px 0; border-radius: 8px;">
+                        <h3 style="color: #1a1a1a; margin: 0 0 15px; font-size: 16px;">💡 Important Tips:</h3>
+                        <ul style="color: #555; font-size: 14px; margin: 0; padding-left: 20px; line-height: 1.8;">
+                          <li>Download and save your certificate immediately</li>
+                          <li>Keep both digital and printed copies for your records</li>
+                          <li>You can print this on high-quality paper for framing</li>
+                          <li>Share your achievement on LinkedIn to enhance your profile</li>
+                        </ul>
+                      </div>
+                      
+                      <p style="color: #333333; font-size: 16px; margin: 25px 0 20px; line-height: 1.6;">
+                        If you have any questions or need assistance, please don't hesitate to reach out to us.
+                      </p>
+                      
+                      <p style="color: #333333; font-size: 16px; margin: 0 0 10px; line-height: 1.6;">
+                        <strong>Once again, congratulations on this well-deserved recognition!</strong>
+                      </p>
+                    </td>
+                  </tr>
+                  
+                  <!-- Footer -->
+                  <tr>
+                    <td style="background-color: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #e0e0e0;">
+                      <p style="color: #666666; font-size: 14px; margin: 0 0 10px; line-height: 1.6;">
+                        <strong>Best regards,</strong><br/>
+                        Certificate Team<br/>
+                        KLH University
+                      </p>
+                      <p style="color: #999999; font-size: 12px; margin: 15px 0 0; line-height: 1.5;">
+                        This is an automated email. Please do not reply to this message.<br/>
+                        If you need assistance, please contact your program coordinator.
+                      </p>
+                    </td>
+                  </tr>
+                  
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+      
+      // Build attachments array
+      const attachments: any[] = []
+      if (logoAttachment) {
+        attachments.push(logoAttachment)
+      }
+      attachments.push({
+        filename: fileName,
+        content: buffer,
+        contentType: "image/png",
+      })
+      
       const info = await transporter.sendMail({
         from: `"KLH University - Certificate Team" <${credentials.email}>`,
         to: email,
         subject: `🎓 Congratulations ${recipientName}! Your Certificate is Ready`,
-        html: `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          </head>
-          <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f5f5f5;">
-            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 20px;">
-              <tr>
-                <td align="center">
-                  <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                    
-                    <!-- Header with Logo -->
-                    <tr>
-                      <td style="background: linear-gradient(135deg, #21808D 0%, #1a6570 100%); padding: 40px 30px; text-align: center;">
-                        <img src="cid:klh-logo" alt="KLH University" style="max-width: 120px; height: auto; margin-bottom: 20px;" />
-                        <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Congratulations!</h1>
-                      </td>
-                    </tr>
-                    
-                    <!-- Main Content -->
-                    <tr>
-                      <td style="padding: 40px 30px;">
-                        <p style="color: #1a1a1a; font-size: 18px; margin: 0 0 20px; line-height: 1.6;">
-                          Dear <strong>${recipientName}</strong>,
-                        </p>
-                        
-                        <p style="color: #333333; font-size: 16px; margin: 0 0 20px; line-height: 1.6;">
-                          We are delighted to inform you that your certificate has been successfully generated and is attached to this email.
-                        </p>
-                        
-                        <div style="background-color: #f0f9fa; border-left: 4px solid #21808D; padding: 20px; margin: 25px 0; border-radius: 4px;">
-                          <p style="color: #1a6570; font-size: 15px; margin: 0; line-height: 1.6;">
-                            <strong>📎 Your certificate is attached as:</strong><br/>
-                            <span style="font-family: monospace; color: #333;">${fileName}</span>
-                          </p>
-                        </div>
-                        
-                        <p style="color: #333333; font-size: 16px; margin: 0 0 20px; line-height: 1.6;">
-                          This certificate is a testament to your hard work, dedication, and the knowledge you've gained. We are incredibly proud of your achievement and hope this milestone serves as a stepping stone to greater success in your future endeavors.
-                        </p>
-                        
-                        <p style="color: #333333; font-size: 16px; margin: 0 0 20px; line-height: 1.6;">
-                          Your commitment to learning and excellence has truly paid off. May this achievement inspire you to continue pursuing knowledge and reaching new heights in your academic and professional journey.
-                        </p>
-                        
-                        <!-- Tips Section -->
-                        <div style="background-color: #fffbf0; border: 1px solid #ffd700; padding: 20px; margin: 25px 0; border-radius: 8px;">
-                          <h3 style="color: #1a1a1a; margin: 0 0 15px; font-size: 16px;">💡 Important Tips:</h3>
-                          <ul style="color: #555; font-size: 14px; margin: 0; padding-left: 20px; line-height: 1.8;">
-                            <li>Download and save your certificate immediately</li>
-                            <li>Keep both digital and printed copies for your records</li>
-                            <li>You can print this on high-quality paper for framing</li>
-                            <li>Share your achievement on LinkedIn to enhance your profile</li>
-                          </ul>
-                        </div>
-                        
-                        <p style="color: #333333; font-size: 16px; margin: 25px 0 20px; line-height: 1.6;">
-                          If you have any questions or need assistance, please don't hesitate to reach out to us.
-                        </p>
-                        
-                        <p style="color: #333333; font-size: 16px; margin: 0 0 10px; line-height: 1.6;">
-                          <strong>Once again, congratulations on this well-deserved recognition!</strong>
-                        </p>
-                      </td>
-                    </tr>
-                    
-                    <!-- Footer -->
-                    <tr>
-                      <td style="background-color: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #e0e0e0;">
-                        <p style="color: #666666; font-size: 14px; margin: 0 0 10px; line-height: 1.6;">
-                          <strong>Best regards,</strong><br/>
-                          Certificate Team<br/>
-                          KLH University
-                        </p>
-                        <p style="color: #999999; font-size: 12px; margin: 15px 0 0; line-height: 1.5;">
-                          This is an automated email. Please do not reply to this message.<br/>
-                          If you need assistance, please contact your program coordinator.
-                        </p>
-                      </td>
-                    </tr>
-                    
-                  </table>
-                </td>
-              </tr>
-            </table>
-          </body>
-          </html>
-        `,
-        attachments: [
-          {
-            filename: "klh-logo.png",
-            path: path.join(process.cwd(), "public", "klh.png"),
-            cid: "klh-logo",
-          },
-          {
-            filename: fileName,
-            content: buffer,
-            contentType: "image/png",
-          },
-        ],
+        html: htmlContent,
+        attachments: attachments,
       })
 
       console.log("[Email Service] Gmail Success! Message ID:", info.messageId)
@@ -436,95 +464,100 @@ export async function sendBulkCertificatesPooled(
             ? recipient.certificateBlob 
             : Buffer.from(await (recipient.certificateBlob as Blob).arrayBuffer())
 
+          // Try to get logo attachment
+          const logoAttachment = getLogoAttachment()
+          
+          const htmlContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f5f5f5;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 20px;">
+                <tr>
+                  <td align="center">
+                    <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                      
+                      <!-- Header -->
+                      <tr>
+                        <td style="background: linear-gradient(135deg, #21808D 0%, #1a6570 100%); padding: 40px 30px; text-align: center;">
+                          ${logoAttachment ? '<img src="cid:klh-logo" alt="KLH University" style="max-width: 120px; height: auto; margin-bottom: 20px;" />' : ''}
+                          <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Congratulations!</h1>
+                        </td>
+                      </tr>
+
+                      <!-- Content -->
+                      <tr>
+                        <td style="padding: 40px 30px;">
+                          <h2 style="color: #333333; margin: 0 0 20px; font-size: 24px;">Dear ${recipient.name},</h2>
+                          <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
+                            Congratulations! 🎉 We are delighted to present you with your certificate of completion. 
+                            This achievement is a testament to your dedication, hard work, and commitment to excellence.
+                          </p>
+                          <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 30px;">
+                            Your certificate is attached to this email. We encourage you to share this accomplishment 
+                            with your network and celebrate this milestone in your educational journey.
+                          </p>
+                          
+                          <div style="background-color: #f8f9fa; border-left: 4px solid #667eea; padding: 15px 20px; margin: 0 0 30px;">
+                            <p style="color: #333333; font-size: 14px; margin: 0; line-height: 1.5;">
+                              <strong>💡 Pro Tip:</strong> Download and save your certificate in a secure location. 
+                              You may need it for future reference, job applications, or further education opportunities.
+                            </p>
+                          </div>
+
+                          <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 10px;">
+                            We wish you continued success in all your future endeavors!
+                          </p>
+                          <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0;">
+                            <strong>Best regards,</strong><br/>
+                            <span style="color: #667eea; font-weight: 600;">KLH University Academic Team</span>
+                          </p>
+                        </td>
+                      </tr>
+
+                      <!-- Footer -->
+                      <tr>
+                        <td style="background-color: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #e0e0e0;">
+                          <p style="color: #666666; font-size: 14px; margin: 0 0 10px; line-height: 1.6;">
+                            <strong>Best regards,</strong><br/>
+                            Certificate Team<br/>
+                            KLH University
+                          </p>
+                          <p style="color: #999999; font-size: 12px; margin: 15px 0 0; line-height: 1.5;">
+                            This is an automated email. Please do not reply to this message.<br/>
+                            If you need assistance, please contact your program coordinator.
+                          </p>
+                        </td>
+                      </tr>
+                      
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </body>
+            </html>
+          `
+          
+          // Build attachments array
+          const attachments: any[] = []
+          if (logoAttachment) {
+            attachments.push(logoAttachment)
+          }
+          attachments.push({
+            filename: recipient.fileName,
+            content: buffer,
+            contentType: "image/png",
+          })
+
           const info = await pooledTransporter.sendMail({
             from: `"KLH University - Certificate Team" <${credentials?.email}>`,
             to: recipient.email,
             subject: `🎓 Congratulations ${recipient.name}! Your Certificate is Ready`,
-            html: `
-              <!DOCTYPE html>
-              <html>
-              <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              </head>
-              <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f5f5f5;">
-                <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 20px;">
-                  <tr>
-                    <td align="center">
-                      <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                        
-                        <!-- Header -->
-                        <tr>
-                      <td style="background: linear-gradient(135deg, #21808D 0%, #1a6570 100%); padding: 40px 30px; text-align: center;">
-                        <img src="cid:klh-logo" alt="KLH University" style="max-width: 120px; height: auto; margin-bottom: 20px;" />
-                        <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Congratulations!</h1>
-                      </td>
-                    </tr>
-
-                        <!-- Content -->
-                        <tr>
-                          <td style="padding: 40px 30px;">
-                            <h2 style="color: #333333; margin: 0 0 20px; font-size: 24px;">Dear ${recipient.name},</h2>
-                            <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
-                              Congratulations! 🎉 We are delighted to present you with your certificate of completion. 
-                              This achievement is a testament to your dedication, hard work, and commitment to excellence.
-                            </p>
-                            <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 30px;">
-                              Your certificate is attached to this email. We encourage you to share this accomplishment 
-                              with your network and celebrate this milestone in your educational journey.
-                            </p>
-                            
-                            <div style="background-color: #f8f9fa; border-left: 4px solid #667eea; padding: 15px 20px; margin: 0 0 30px;">
-                              <p style="color: #333333; font-size: 14px; margin: 0; line-height: 1.5;">
-                                <strong>💡 Pro Tip:</strong> Download and save your certificate in a secure location. 
-                                You may need it for future reference, job applications, or further education opportunities.
-                              </p>
-                            </div>
-
-                            <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 10px;">
-                              We wish you continued success in all your future endeavors!
-                            </p>
-                            <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0;">
-                              <strong>Best regards,</strong><br/>
-                              <span style="color: #667eea; font-weight: 600;">KLH University Academic Team</span>
-                            </p>
-                          </td>
-                        </tr>
-
-                        <!-- Footer -->
-                    <tr>
-                      <td style="background-color: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #e0e0e0;">
-                        <p style="color: #666666; font-size: 14px; margin: 0 0 10px; line-height: 1.6;">
-                          <strong>Best regards,</strong><br/>
-                          Certificate Team<br/>
-                          KLH University
-                        </p>
-                        <p style="color: #999999; font-size: 12px; margin: 15px 0 0; line-height: 1.5;">
-                          This is an automated email. Please do not reply to this message.<br/>
-                          If you need assistance, please contact your program coordinator.
-                        </p>
-                      </td>
-                    </tr>
-                        
-                      </table>
-                    </td>
-                  </tr>
-                </table>
-              </body>
-              </html>
-            `,
-            attachments: [
-              {
-                filename: "klh-logo.png",
-                path: path.join(process.cwd(), "public", "klh.png"),
-                cid: "klh-logo",
-              },
-              {
-                filename: recipient.fileName,
-                content: buffer,
-                contentType: "image/png",
-              },
-            ],
+            html: htmlContent,
+            attachments: attachments,
           })
 
           console.log(`[Pooled Email] ✅ Sent to ${recipient.email} - Message ID: ${info.messageId}`)
