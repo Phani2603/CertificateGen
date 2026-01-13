@@ -79,8 +79,8 @@ export function AchievementsSection({ userId }: AchievementsSectionProps) {
 
   if (isLoading) {
     return (
-      <Card className="p-6">
-        <div className="flex items-center justify-center py-8">
+      <Card className="p-4 sm:p-6 lg:p-8">
+        <div className="flex items-center justify-center py-12">
           <div className="w-8 h-8 border-4 border-[#21808D] border-t-transparent rounded-full animate-spin mx-auto"></div>
         </div>
       </Card>
@@ -88,62 +88,62 @@ export function AchievementsSection({ userId }: AchievementsSectionProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8">
       <div>
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          <Trophy className="w-6 h-6 text-[#FF5733]" />
+        <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold flex items-center gap-2 sm:gap-3">
+          <Trophy className="w-5 sm:w-6 h-5 sm:h-6 text-[#FF5733]" />
           Your Achievements
         </h2>
-        <p className="text-gray-600 text-sm mt-1">
+        <p className="text-gray-600 text-xs sm:text-sm mt-2">
           Track your learning progress and accomplishments
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Total Certificates</p>
-              <p className="text-3xl font-bold mt-1">{stats.totalCertificates}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+        <Card className="p-4 sm:p-5 lg:p-6 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs sm:text-sm text-gray-600 font-medium">Total Certificates</p>
+              <p className="text-2xl sm:text-3xl lg:text-4xl font-bold mt-2 text-gray-900">{stats.totalCertificates}</p>
             </div>
-            <div className="w-12 h-12 bg-[#21808D]/10 rounded-lg flex items-center justify-center">
-              <Award className="w-6 h-6 text-[#21808D]" />
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">This Month</p>
-              <p className="text-3xl font-bold mt-1">{stats.thisMonth}</p>
-            </div>
-            <div className="w-12 h-12 bg-[#8FD6BD]/20 rounded-lg flex items-center justify-center">
-              <Calendar className="w-6 h-6 text-[#8FD6BD]" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#21808D]/10 rounded-lg flex items-center justify-center shrink-0">
+              <Award className="w-5 sm:w-6 h-5 sm:h-6 text-[#21808D]" />
             </div>
           </div>
         </Card>
 
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Organizations</p>
-              <p className="text-3xl font-bold mt-1">{stats.organizations}</p>
+        <Card className="p-4 sm:p-5 lg:p-6 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs sm:text-sm text-gray-600 font-medium">This Month</p>
+              <p className="text-2xl sm:text-3xl lg:text-4xl font-bold mt-2 text-gray-900">{stats.thisMonth}</p>
             </div>
-            <div className="w-12 h-12 bg-[#FF5733]/10 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-[#FF5733]" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#8FD6BD]/20 rounded-lg flex items-center justify-center shrink-0">
+              <Calendar className="w-5 sm:w-6 h-5 sm:h-6 text-[#8FD6BD]" />
             </div>
           </div>
         </Card>
 
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Events</p>
-              <p className="text-3xl font-bold mt-1">{stats.categories}</p>
+        <Card className="p-4 sm:p-5 lg:p-6 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs sm:text-sm text-gray-600 font-medium">Organizations</p>
+              <p className="text-2xl sm:text-3xl lg:text-4xl font-bold mt-2 text-gray-900">{stats.organizations}</p>
             </div>
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-              <Trophy className="w-6 h-6 text-purple-600" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#FF5733]/10 rounded-lg flex items-center justify-center shrink-0">
+              <TrendingUp className="w-5 sm:w-6 h-5 sm:h-6 text-[#FF5733]" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-4 sm:p-5 lg:p-6 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs sm:text-sm text-gray-600 font-medium">Events</p>
+              <p className="text-2xl sm:text-3xl lg:text-4xl font-bold mt-2 text-gray-900">{stats.categories}</p>
+            </div>
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-lg flex items-center justify-center shrink-0">
+              <Trophy className="w-5 sm:w-6 h-5 sm:h-6 text-purple-600" />
             </div>
           </div>
         </Card>

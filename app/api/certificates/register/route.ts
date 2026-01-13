@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
       hasFieldConfig: !!fieldConfiguration,
       hasTemplateS3Key: !!templateS3Key,
       templateS3KeyValue: templateS3Key, // NEW: Log actual value
+      hasCertificateImages: certificates?.[0]?.certificateImage ? 'yes' : 'no', // NEW: Check for images
     })
 
     if (!certificates || !Array.isArray(certificates) || certificates.length === 0) {
@@ -76,6 +77,16 @@ export async function POST(request: NextRequest) {
         // Generate unique verification ID
         const verificationId = randomUUID()
 
+        // Log certificate data
+        const hasImage = !!cert.certificateImage
+        const imageSize = cert.certificateImage ? Math.round(cert.certificateImage.length / 1024) : 0
+        console.log(`[API /certificates/register] Processing cert for ${cert.recipientEmail}:`, {
+          hasTemplate: !!cert.templateS3Key,
+          templateS3Key: cert.templateS3Key,
+          hasFieldConfig: !!cert.fieldConfiguration,
+          fieldConfigCount: cert.fieldConfiguration?.length || 0,
+        })
+
         // Create issueDate ONCE and use it for both hash and storage
         const issueDate = new Date()
 
@@ -103,6 +114,8 @@ export async function POST(request: NextRequest) {
           clubName: cert.clubName,
           issueDate: issueDate,  // Same Date object used in hash
           isValid: true,
+          templateS3Key: cert.templateS3Key || null, // NEW: Store S3 key for template
+          fieldConfiguration: cert.fieldConfiguration || null, // NEW: Store field configuration
           metadata: {
             batchId,
             generatedBy,

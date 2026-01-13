@@ -13,6 +13,8 @@ export interface ICertificate extends Document {
   clubName: string
   issueDate: Date
   isValid: boolean
+  templateS3Key?: string // NEW: S3 key for certificate template
+  fieldConfiguration?: any[] // NEW: Field configuration for rendering certificate
   metadata?: {
     templateUsed?: string
     generatedBy?: string
@@ -85,6 +87,14 @@ const CertificateSchema = new Schema<ICertificate>(
     isValid: {
       type: Boolean,
       default: true,
+    },
+    templateS3Key: {
+      type: String,
+      default: null,
+    },
+    fieldConfiguration: {
+      type: Schema.Types.Mixed,
+      default: null,
     },
     metadata: {
       templateUsed: String,

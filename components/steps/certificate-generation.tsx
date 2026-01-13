@@ -154,6 +154,9 @@ export default function CertificateGeneration({
 
       const headers = lines[0].split(",").map((h) => h.trim().replace(/^["']|["']$/g, ""))
 
+      console.log("[CSV Upload] Headers detected:", headers)
+      console.log("[CSV Upload] Email column exists:", headers.some(h => h.toLowerCase() === 'email'))
+
       setCsvHeaders(headers)
 
       const data = lines.slice(1).map((line) => {
@@ -428,6 +431,16 @@ export default function CertificateGeneration({
           const emailField = Object.keys(row).find(key => key.toLowerCase() === 'email')
           const emailAddress = emailField ? row[emailField] : null
           
+          // Debug: Log email detection for first few rows
+          if (i < 2) {
+            console.log(`[Email Detection] Row ${i}:`, {
+              rowKeys: Object.keys(row),
+              emailField,
+              emailAddress,
+              allRowData: row
+            })
+          }
+          
           if (emailAddress && emailAddress.trim()) {
             // Try to get first and last name (case insensitive)
             const firstNameField = Object.keys(row).find(key => key.toLowerCase() === 'firstname')
@@ -478,6 +491,8 @@ export default function CertificateGeneration({
 
       // Register certificates in database FIRST to get verification IDs
       let registeredVerificationData: any[] = []
+      let updatedCertificates = generatedCertificates
+      
       if (selectedEvent && emailRecipients.length > 0) {
         try {
           console.log("[Certificate Registration] Registering certificates in database...")
@@ -495,7 +510,16 @@ export default function CertificateGeneration({
             eventDate: new Date().toISOString().split('T')[0],
             organizationName: organizationName,
             clubName: clubName,
+            templateS3Key: templateS3Key || null, // NEW: Include S3 key instead of image
+            fieldConfiguration: fields || null, // NEW: Include field configuration
           }))
+
+          console.log("[Certificate Registration] Templates to register:", {
+            count: certificatesToRegister.length,
+            templateS3Key: templateS3Key,
+            hasFields: !!fields,
+            fieldCount: fields?.length || 0,
+          })
 
           const response = await fetch('/api/certificates/register', {
             method: 'POST',
@@ -518,7 +542,7 @@ export default function CertificateGeneration({
             setVerificationData(result.certificates)
             
             // Map verification IDs to generated certificates for email inclusion
-            const updatedCertificates = generatedCertificates.map(genCert => {
+            updatedCertificates = generatedCertificates.map(genCert => {
               const verificationInfo = result.certificates.find(
                 (vc: any) => vc.recipientEmail === genCert.email
               )
@@ -532,10 +556,18 @@ export default function CertificateGeneration({
             console.log("[Certificate Registration] Verification data ready for ZIP creation")
           } else {
             console.warn("[Certificate Registration] Registration failed:", result.error)
+            // Still update the state with the certificates even if registration failed
+            setGeneratedCertificates(generatedCertificates)
           }
         } catch (error) {
           console.error("[Certificate Registration] Error registering certificates:", error)
+          // Still update the state with the certificates even if registration failed
+          setGeneratedCertificates(generatedCertificates)
         }
+      } else {
+        // No selectedEvent or no email recipients - still keep the generated certificates available
+        console.log("[Certificate Generation] No event selected or no email recipients - keeping certificates for manual send")
+        setGeneratedCertificates(generatedCertificates)
       }
 
       // NOW create organized folder structure with verification data
@@ -1331,6 +1363,7 @@ Generated: ${new Date().toLocaleString()}
         <Button
           onClick={sendEmailsOnly}
           disabled={generatedCertificates.length === 0 || isSendingMail || emailStatus === "sending"}
+          title={generatedCertificates.length === 0 ? "No certificates with email addresses found. Make sure your CSV has an 'Email' column." : ""}
           className="flex-1 bg-[#FF6B35] hover:bg-[#E55A2B] text-white disabled:opacity-50"
         >
           {isSendingMail ? (
@@ -1341,7 +1374,7 @@ Generated: ${new Date().toLocaleString()}
           ) : (
             <>
               <Mail className="w-4 h-4 mr-2" />
-              Send Emails
+              Send Emails {generatedCertificates.length > 0 ? `(${generatedCertificates.length})` : ""}
             </>
           )}
         </Button>
