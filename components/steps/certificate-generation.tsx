@@ -379,6 +379,11 @@ export default function CertificateGeneration({
       return
     }
 
+    // Warn users when generating a very large number of certificates
+    if (csvData.length >= 1000) {
+      toast.info(`Generating ${csvData.length} certificates. This may take a few minutes. We will process them in safe batches.`)
+    }
+
     setIsGenerating(true)
     setGenerationStatus("idle")
     setGeneratedCount(0)
@@ -491,18 +496,17 @@ export default function CertificateGeneration({
 
       // Register certificates in database FIRST to get verification IDs
       let registeredVerificationData: any[] = []
-      let updatedCertificates = generatedCertificates
-      
+
       if (selectedEvent && emailRecipients.length > 0) {
         try {
-          console.log("[Certificate Registration] Registering certificates in database...")
-          const batchId = `batch-${Date.now()}`
-          
+          console.log("[Certificate Registration] Registering certificates in database (batched)...")
+          const batchIdBase = `batch-${Date.now()}`
+
           // Get club name from clubs array using club ID from selectedEvent
           const selectedClub = clubs?.find(c => c.id === selectedEvent.club)
           const clubName = selectedClub?.name || 'Unknown Club'
           const organizationName = organization?.name || 'Unknown Organization'
-          
+
           const certificatesToRegister = emailRecipients.map(recipient => ({
             recipientName: recipient.name,
             recipientEmail: recipient.email,
@@ -510,8 +514,8 @@ export default function CertificateGeneration({
             eventDate: new Date().toISOString().split('T')[0],
             organizationName: organizationName,
             clubName: clubName,
-            templateS3Key: templateS3Key || null, // NEW: Include S3 key instead of image
-            fieldConfiguration: fields || null, // NEW: Include field configuration
+            templateS3Key: templateS3Key || null,
+            fieldConfiguration: fields || null,
           }))
 
           console.log("[Certificate Registration] Templates to register:", {
@@ -521,29 +525,47 @@ export default function CertificateGeneration({
             fieldCount: fields?.length || 0,
           })
 
-          const response = await fetch('/api/certificates/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              certificates: certificatesToRegister,
-              batchId,
-              generatedBy: localStorage.getItem('profileEmail') || 'anonymous',
-              eventId: selectedEvent.eventId, // NEW: Pass eventId for Event reference
-              fieldConfiguration: fields, // NEW: Pass field configuration to save in Event model
-              templateS3Key: templateS3Key, // NEW: Pass template S3 key (for reused templates)
-            }),
-          })
+          // Batch registration to avoid timeouts in production
+          const REGISTER_BATCH_SIZE = 200
+          const allRegistered: any[] = []
 
-          const result = await response.json()
-          
-          if (result.success && result.certificates) {
-            console.log(`[Certificate Registration] Successfully registered ${result.registered}/${result.total} certificates`)
-            registeredVerificationData = result.certificates
-            setVerificationData(result.certificates)
-            
+          for (let start = 0; start < certificatesToRegister.length; start += REGISTER_BATCH_SIZE) {
+            const end = Math.min(start + REGISTER_BATCH_SIZE, certificatesToRegister.length)
+            const batch = certificatesToRegister.slice(start, end)
+            const batchId = `${batchIdBase}-${Math.floor(start / REGISTER_BATCH_SIZE) + 1}`
+
+            console.log(`[Certificate Registration] Sending batch ${start + 1}-${end} of ${certificatesToRegister.length}`)
+
+            const response = await fetch('/api/certificates/register', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                certificates: batch,
+                batchId,
+                generatedBy: localStorage.getItem('profileEmail') || 'anonymous',
+                eventId: selectedEvent.eventId,
+                fieldConfiguration: fields,
+                templateS3Key: templateS3Key,
+              }),
+            })
+
+            const result = await response.json()
+
+            if (result.success && result.certificates) {
+              console.log(`[Certificate Registration] Batch registered ${result.registered}/${result.total}`)
+              allRegistered.push(...result.certificates)
+            } else {
+              console.warn("[Certificate Registration] Batch registration failed:", result.error)
+            }
+          }
+
+          registeredVerificationData = allRegistered
+          setVerificationData(allRegistered)
+
+          if (registeredVerificationData.length > 0) {
             // Map verification IDs to generated certificates for email inclusion
-            updatedCertificates = generatedCertificates.map(genCert => {
-              const verificationInfo = result.certificates.find(
+            const updatedCertificates = emailRecipients.map(genCert => {
+              const verificationInfo = registeredVerificationData.find(
                 (vc: any) => vc.recipientEmail === genCert.email
               )
               return {
@@ -555,24 +577,23 @@ export default function CertificateGeneration({
             setGeneratedCertificates(updatedCertificates)
             console.log("[Certificate Registration] Verification data ready for ZIP creation")
           } else {
-            console.warn("[Certificate Registration] Registration failed:", result.error)
-            // Still update the state with the certificates even if registration failed
-            setGeneratedCertificates(generatedCertificates)
+            console.warn("[Certificate Registration] No verification data returned from any batch")
+            setGeneratedCertificates(emailRecipients)
           }
         } catch (error) {
           console.error("[Certificate Registration] Error registering certificates:", error)
-          // Still update the state with the certificates even if registration failed
-          setGeneratedCertificates(generatedCertificates)
+          // Still keep the generated certificates available for manual use/email
+          setGeneratedCertificates(emailRecipients)
         }
       } else {
         // No selectedEvent or no email recipients - still keep the generated certificates available
         console.log("[Certificate Generation] No event selected or no email recipients - keeping certificates for manual send")
-        setGeneratedCertificates(generatedCertificates)
+        setGeneratedCertificates(emailRecipients)
       }
 
       // NOW create organized folder structure with verification data
       const certificatesRootFolder = zip.folder("certificates")
-      
+
       if (certificatesRootFolder && registeredVerificationData.length > 0) {
         console.log("[ZIP Creation] Creating organized folder structure...")
         // Add each certificate in its own folder with verification file
@@ -844,10 +865,32 @@ Generated: ${new Date().toLocaleString()}
 ╚══════════════════════════════════════════════════════════════════════════════╝
 `
         zip.file("README.txt", readmeContent)
-        
+
         console.log("[Verification] Created organized folder structure with individual folders per recipient")
       } else {
         console.warn("[ZIP Creation] No verification data available - certificates not organized into folders")
+
+        // Fallback: still include all generated certificates in a flat structure
+        if (certificatesRootFolder) {
+          console.log("[ZIP Creation] Adding raw certificates without verification data...")
+          for (let i = 0; i < emailRecipients.length; i++) {
+            const recipient = emailRecipients[i]
+            if (!recipient.certificateBlob) continue
+
+            try {
+              const certArrayBuffer = await recipient.certificateBlob.arrayBuffer()
+              const baseName = `${(recipient.fileName || `certificate_${String(i + 1).padStart(4, "0")}`).replace(/\.\w+$/, "")}`
+              const certFileName = `${baseName}.${outputFormat}`
+              certificatesRootFolder.file(certFileName, certArrayBuffer)
+            } catch (err) {
+              console.error("[ZIP Creation] Error adding certificate to fallback ZIP:", {
+                index: i,
+                email: recipient.email,
+                error: err instanceof Error ? err.message : err,
+              })
+            }
+          }
+        }
       }
 
       // Generate and download the ZIP
