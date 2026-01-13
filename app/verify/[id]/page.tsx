@@ -232,8 +232,8 @@ export default function VerificationPage() {
           Email: certificate.recipientEmail,
           event: certificate.eventName,
           Event: certificate.eventName,
-          date: certificate.eventDate,
-          Date: certificate.eventDate,
+          date: new Date(certificate.issueDate).toLocaleDateString(),
+          Date: new Date(certificate.issueDate).toLocaleDateString(),
           organization: certificate.organizationName,
           Organization: certificate.organizationName,
           club: certificate.clubName,
@@ -336,11 +336,11 @@ export default function VerificationPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
-        <Card className="bg-white p-8 rounded-2xl shadow-lg max-w-md w-full text-center">
+      <div className="min-h-screen w-full bg-linear-to-br from-slate-50 via-slate-100 to-slate-50 flex items-center justify-center p-4">
+        <Card className="bg-white border border-slate-200 shadow-xl p-8 rounded-3xl max-w-md w-full text-center">
           <Loader2 className="h-16 w-16 mx-auto mb-4 text-[#21808D] animate-spin" />
-          <h2 className="text-2xl font-bold mb-2">Verifying Certificate</h2>
-          <p className="text-gray-600">Please wait while we verify your certificate...</p>
+          <h2 className="text-2xl font-bold mb-2 text-slate-900">Verifying certificate</h2>
+          <p className="text-slate-500">Please wait while we verify your certificate...</p>
         </Card>
       </div>
     )
@@ -348,17 +348,17 @@ export default function VerificationPage() {
 
   if (error || !certificate) {
     return (
-      <div className="min-h-screen w-full bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
-        <Card className="bg-white p-8 rounded-2xl shadow-lg max-w-md w-full text-center">
+      <div className="min-h-screen w-full bg-linear-to-br from-slate-50 via-slate-100 to-slate-50 flex items-center justify-center p-4">
+        <Card className="bg-white border border-red-100 shadow-xl p-8 rounded-3xl max-w-md w-full text-center">
           <XCircle className="h-16 w-16 mx-auto mb-4 text-red-500" />
-          <h2 className="text-2xl font-bold mb-2 text-red-600">Verification Failed</h2>
-          <p className="text-gray-600 mb-6">{error || "Certificate not found or invalid."}</p>
+          <h2 className="text-2xl font-bold mb-2 text-red-600">Verification failed</h2>
+          <p className="text-slate-600 mb-6">{error || "Certificate not found or invalid."}</p>
           <Button 
             onClick={() => router.push("/")}
-            className="bg-[#21808D] hover:bg-[#1a6570] text-white"
+            className="bg-[#21808D] hover:bg-[#1a6570] text-white font-semibold"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Go Back Home
+            Go back home
           </Button>
         </Card>
       </div>
@@ -366,221 +366,255 @@ export default function VerificationPage() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-gray-50 to-gray-100 relative overflow-hidden">
-      {/* Decorative Background Pattern */}
-      <div
-        className="absolute inset-0 z-0 pointer-events-none opacity-30"
-        style={{
-          backgroundImage: `
-            repeating-linear-gradient(22.5deg, transparent, transparent 2px, rgba(75, 85, 99, 0.06) 2px, rgba(75, 85, 99, 0.06) 3px, transparent 3px, transparent 8px),
-            repeating-linear-gradient(67.5deg, transparent, transparent 2px, rgba(107, 114, 128, 0.05) 2px, rgba(107, 114, 128, 0.05) 3px, transparent 3px, transparent 8px)
-          `,
-        }}
-      />
+    <div className="min-h-screen w-full bg-linear-to-br from-slate-50 via-slate-100 to-slate-50 relative overflow-hidden">
+      {/* Subtle background pattern */}
+      <div className="pointer-events-none absolute inset-0 opacity-60">
+        <div className="absolute -top-20 -left-24 h-72 w-72 rounded-full bg-[#8FD6BD]/25 blur-3xl" />
+        <div className="absolute bottom-0 -right-24 h-80 w-80 rounded-full bg-[#21808D]/15 blur-3xl" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(148,163,184,0.12),transparent_55%)]" />
+      </div>
 
-      <div className="relative z-10 container mx-auto px-4 py-8 md:py-12">
+      <div className="relative z-10 max-w-6xl mx-auto px-4 py-8 md:py-12">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6 md:mb-10">
           <Button 
             variant="ghost" 
             onClick={() => router.push("/")}
-            className="text-gray-600 hover:text-gray-900"
+            className="text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-transparent hover:border-slate-200 px-3 md:px-4 rounded-full"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+            Back to home
           </Button>
           
           <div className="flex items-center gap-2">
-            <Image 
-              src="/c.svg" 
-              alt="CertificateHash Logo" 
-              width={40} 
-              height={40}
-              className="w-10 h-10"
-            />
-            <span className="font-bold text-xl hidden sm:inline">Forge</span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white border border-slate-200 shadow-md">
+              <Image 
+                src="/c.svg" 
+                alt="Forge" 
+                width={24} 
+                height={24}
+                className="w-5 h-5"
+              />
+            </div>
+            <div className="flex flex-col items-end">
+              <span className="font-semibold text-sm text-slate-900 tracking-tight">Forge</span>
+              <span className="text-[10px] uppercase tracking-[0.18em] text-slate-500">Certificate verification</span>
+            </div>
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="max-w-5xl mx-auto">
-          {/* Verification Status Banner */}
-          <Card className="bg-white p-6 md:p-8 rounded-2xl shadow-lg mb-6">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+        {/* Main verification card */}
+        <div className="relative">
+          <div className="absolute -inset-px rounded-[28px] bg-[conic-gradient(from_130deg_at_50%_0%,rgba(143,214,189,0.55),rgba(33,128,141,0.15),rgba(148,163,184,0.25),rgba(143,214,189,0.6))] opacity-60 blur-sm" />
+
+          <div className="relative rounded-[26px] bg-white border border-slate-200 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-xl p-5 md:p-8 lg:p-10">
+            {/* Status row */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 md:mb-8">
               <div className="flex items-center gap-4">
-                {certificate.isValid ? (
-                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                    <CheckCircle2 className="h-10 w-10 text-green-600" />
-                  </div>
-                ) : (
-                  <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-                    <XCircle className="h-10 w-10 text-red-600" />
-                  </div>
-                )}
+                <div className={`flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-2xl border ${
+                  certificate.isValid
+                    ? 'border-emerald-400/50 bg-emerald-500/10 text-emerald-300'
+                    : 'border-red-400/50 bg-red-500/10 text-red-300'
+                }`}>
+                  {certificate.isValid ? (
+                    <CheckCircle2 className="h-7 w-7" />
+                  ) : (
+                    <XCircle className="h-7 w-7" />
+                  )}
+                </div>
                 <div>
-                  <h1 className="text-2xl md:text-3xl font-bold">
-                    {certificate.isValid ? "Certificate Verified" : "Invalid Certificate"}
+                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500 mb-1">
+                    {certificate.isValid ? 'Verified certificate' : 'Verification error'}
+                  </p>
+                  <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900">
+                    {certificate.isValid ? 'This certificate is authentic.' : 'This certificate is not valid.'}
                   </h1>
-                  <p className="text-gray-600 mt-1">
+                  <p className="mt-1 text-sm text-slate-500 max-w-xl">
                     {certificate.isValid 
-                      ? "This certificate is authentic and has been verified." 
-                      : "This certificate could not be verified."}
+                      ? 'The details shown below are fetched directly from the issuer and can be used for audits, hiring, or academic verification.' 
+                      : 'The provided verification link or code did not match any active certificate in our system.'}
                   </p>
                 </div>
               </div>
-              
+
               {certificate.isValid && (
-                <Badge className="bg-green-100 text-green-700 text-lg px-4 py-2 hover:bg-green-100">
-                  Verified
-                </Badge>
+                <div className="flex items-center gap-3 self-start md:self-auto">
+                  <Badge className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1 rounded-full text-xs md:text-sm font-medium">
+                    Verified & live on-chain
+                  </Badge>
+                </div>
               )}
             </div>
-          </Card>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            {/* Certificate Details */}
-            <div className="md:col-span-2 space-y-6">
-              {/* Certificate Preview */}
-              <Card className="bg-white p-6 rounded-2xl shadow-lg">
-                <h2 className="text-xl font-bold mb-4">Certificate Preview</h2>
-                <div className="bg-gray-100 rounded-lg overflow-hidden border-2 border-gray-200">
-                  {templateUrl ? (
-                    <div className="relative">
-                      <canvas
-                        ref={canvasRef}
-                        className="w-full h-auto"
-                        style={{ display: certificateGenerated ? 'block' : 'none' }}
-                      />
-                      {!certificateGenerated && (
-                        <div className="aspect-[1.414/1] flex items-center justify-center">
-                          <div className="text-center p-8">
-                            <Loader2 className="h-20 w-20 mx-auto mb-4 text-[#21808D] animate-spin" />
-                            <p className="text-gray-500 mb-4">Rendering certificate...</p>
-                            <p className="text-sm text-gray-400">Please wait...</p>
+            {/* Content grid: preview + details */}
+            <div className="grid lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] gap-6 lg:gap-8 items-start">
+              {/* Left: certificate preview */}
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 shadow-inner overflow-hidden">
+                  <div className="px-4 pt-4 pb-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                      <p className="text-xs font-medium text-slate-700 tracking-wide">Certificate preview</p>
+                    </div>
+                    <p className="text-[11px] text-slate-500">
+                      {certificate.eventName}
+                    </p>
+                  </div>
+
+                  <div className="border-t border-slate-200 bg-white">
+                    {templateUrl ? (
+                      <div className="flex items-center justify-center p-3 md:p-4 lg:p-5">
+                        <div className="w-full rounded-xl bg-white border border-slate-200 overflow-hidden">
+                          <div className="relative flex items-center justify-center bg-slate-50">
+                            <canvas
+                              ref={canvasRef}
+                              className="w-full h-auto max-h-104 md:max-h-112"
+                              style={{ display: certificateGenerated ? 'block' : 'none' }}
+                            />
+                            {!certificateGenerated && (
+                              <div className="aspect-[1.414/1] w-full flex items-center justify-center">
+                                <div className="text-center px-6 py-10">
+                                  <Loader2 className="h-14 w-14 mx-auto mb-4 text-[#21808D] animate-spin" />
+                                  <p className="text-slate-600 mb-2 text-sm md:text-base">Rendering certificate layout…</p>
+                                  <p className="text-[11px] text-slate-500">We are reconstructing this certificate from the original template and fields.</p>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="aspect-[1.414/1] flex items-center justify-center">
-                      <div className="text-center p-8">
-                        <Award className="h-20 w-20 mx-auto mb-4 text-gray-400" />
-                        <p className="text-gray-500 mb-4">Certificate preview not available</p>
-                        <p className="text-sm text-gray-400">
-                          {certificate?.eventId 
-                            ? 'Loading template from storage...' 
-                            : 'This certificate was generated with an older version'}
-                        </p>
                       </div>
-                    </div>
-                  )}
+                    ) : (
+                      <div className="aspect-[1.414/1] flex items-center justify-center px-6 py-10">
+                        <div className="text-center max-w-sm mx-auto">
+                          <Award className="h-16 w-16 mx-auto mb-4 text-slate-400" />
+                          <p className="text-slate-800 mb-2 text-sm md:text-base font-medium">Template preview not available</p>
+                          <p className="text-xs md:text-sm text-slate-500">
+                            {certificate?.eventId 
+                              ? 'The template is being loaded from long-term storage. Try refreshing if it does not appear.' 
+                              : 'This certificate was issued before template previews were enabled. Metadata below is still fully verified.'}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="flex gap-3 mt-4">
+
+                <div className="flex flex-col sm:flex-row gap-3">
                   <Button 
-                    className="flex-1 bg-[#21808D] hover:bg-[#1a6570] text-white"
+                    className="flex-1 bg-[#21808D] hover:bg-[#1a6570] text-white font-semibold"
                     onClick={downloadCertificate}
                     disabled={!certificateGenerated}
                   >
                     <Download className="h-4 w-4 mr-2" />
-                    Download Certificate
+                    Download certificate
                   </Button>
-                  <Button variant="outline" className="flex-1 border-[#21808D] text-[#21808D] hover:bg-[#21808D] hover:text-white">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                  >
                     <Share2 className="h-4 w-4 mr-2" />
-                    Share
+                    Share verification
                   </Button>
                 </div>
-              </Card>
+              </div>
 
-              {/* Event Details */}
-              <Card className="bg-white p-6 rounded-2xl shadow-lg">
-                <h2 className="text-xl font-bold mb-4">Event Details</h2>
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <FileText className="h-5 w-5 text-[#21808D] mt-0.5 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-500">Event Name</p>
-                      <p className="font-semibold text-gray-900">{certificate.eventName}</p>
+              {/* Right: structured details */}
+              <div className="space-y-4">
+                {/* Recipient & event */}
+                <Card className="bg-white border border-slate-200 shadow-sm rounded-2xl">
+                  <div className="p-4 md:p-5 space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 mb-1">Recipient</p>
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-[#21808D]" />
+                          <p className="font-medium text-slate-900 text-sm md:text-base">{certificate.recipientName}</p>
+                        </div>
+                      </div>
+                      <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-medium text-slate-700 border border-slate-200">
+                        Issued • {certificate.issueDate}
+                      </span>
                     </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <Calendar className="h-5 w-5 text-[#21808D] mt-0.5 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-500">Event Date</p>
-                      <p className="font-semibold text-gray-900">{certificate.eventDate}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <Building2 className="h-5 w-5 text-[#21808D] mt-0.5 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-500">Organization</p>
-                      <p className="font-semibold text-gray-900">{certificate.organizationName}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <Award className="h-5 w-5 text-[#21808D] mt-0.5 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-500">Issued By</p>
-                      <p className="font-semibold text-gray-900">{certificate.clubName}</p>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            </div>
 
-            {/* Recipient Information */}
-            <div className="space-y-6">
-              <Card className="bg-white p-6 rounded-2xl shadow-lg">
-                <h2 className="text-xl font-bold mb-4">Recipient Information</h2>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Name</p>
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-[#21808D]" />
-                      <p className="font-semibold">{certificate.recipientName}</p>
+                    <div className="grid grid-cols-1 gap-3 border-t border-slate-200 pt-3 mt-1 text-sm">
+                      <div className="space-y-1">
+                        <p className="text-[11px] font-medium text-slate-500 uppercase tracking-[0.16em]">Email</p>
+                        <p className="text-slate-800 text-xs md:text-sm break-all">{certificate.recipientEmail}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[11px] font-medium text-slate-500 uppercase tracking-[0.16em]">Organization</p>
+                        <p className="text-slate-800 text-xs md:text-sm flex items-center gap-2">
+                          <Building2 className="h-3.5 w-3.5 text-slate-400" />
+                          {certificate.organizationName}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[11px] font-medium text-slate-500 uppercase tracking-[0.16em]">Issued by</p>
+                        <p className="text-slate-800 text-xs md:text-sm flex items-center gap-2">
+                          <Award className="h-3.5 w-3.5 text-slate-400" />
+                          {certificate.clubName}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Email</p>
-                    <p className="text-sm text-gray-700 break-all">{certificate.recipientEmail}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Issue Date</p>
-                    <p className="font-semibold">{certificate.issueDate}</p>
-                  </div>
-                </div>
-              </Card>
+                </Card>
 
-              <Card className="bg-white p-6 rounded-2xl shadow-lg">
-                <h2 className="text-xl font-bold mb-4">Verification Details</h2>
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Certificate ID</p>
-                    <p className="text-sm font-mono bg-gray-100 p-2 rounded break-all">
-                      {certificate.id}
-                    </p>
+                {/* Event details */}
+                <Card className="bg-white border border-slate-200 shadow-sm rounded-2xl">
+                  <div className="p-4 md:p-5 space-y-3 text-sm">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 mb-1">Event</p>
+                    <div className="flex items-start gap-3">
+                      <FileText className="h-4 w-4 text-[#8FD6BD] mt-0.5" />
+                      <div className="space-y-1">
+                        <p className="font-medium text-slate-900 text-sm md:text-base">{certificate.eventName}</p>
+                        <p className="text-xs md:text-sm text-slate-500">Event date: {certificate.eventDate}</p>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Verification Code</p>
-                    <p className="text-sm font-mono bg-gray-100 p-2 rounded break-all">
-                      {certificate.verificationCode}
-                    </p>
+                </Card>
+
+                {/* Verification payload */}
+                <Card className="bg-white border border-slate-200 shadow-sm rounded-2xl">
+                  <div className="p-4 md:p-5 space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 mb-1">Verification payload</p>
+                        <p className="text-xs text-slate-500">Use these values in hiring portals or academic systems.</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-2 space-y-2 text-xs md:text-[13px]">
+                      <div>
+                        <p className="text-[11px] font-medium text-slate-500 uppercase tracking-[0.18em] mb-1">Certificate ID</p>
+                        <p className="font-mono bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-900 break-all">
+                          {certificate.id}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-medium text-slate-500 uppercase tracking-[0.18em] mb-1">Verification code</p>
+                        <p className="font-mono bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-900 break-all">
+                          {certificate.verificationCode}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 mt-1 border-t border-slate-200">
+                      <p className="text-[11px] text-slate-500 leading-relaxed">
+                        This certificate is verified against a tamper-evident record maintained by the issuing organization. 
+                        Any mismatch between this page and a shared PDF/image should be treated as suspicious.
+                      </p>
+                    </div>
                   </div>
-                  <div className="pt-2 border-t">
-                    <p className="text-xs text-gray-500">
-                      This certificate has been digitally verified and is authentic.
-                    </p>
-                  </div>
-                </div>
-              </Card>
+                </Card>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="max-w-5xl mx-auto mt-8 text-center">
-          <p className="text-sm text-gray-500">
-            Powered by <span className="font-semibold text-[#21808D]">Forge</span> • 
-            Certificate Generation Platform
+        <div className="mt-8 text-center text-[11px] md:text-xs text-slate-500">
+          <p>
+            Powered by <span className="font-semibold text-slate-900">Forge</span> • Certificate generation & verification platform
           </p>
         </div>
       </div>
