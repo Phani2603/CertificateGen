@@ -183,8 +183,9 @@ export function MyCertificatesSection({ userId }: MyCertificatesSectionProps) {
         return null
       }
 
-      // Load template image
-      console.log(`[MyCertificates] Loading template from signed URL`)
+      // Load template image via proxy to avoid S3 CORS issues
+      const proxiedUrl = `/api/templates/proxy?url=${encodeURIComponent(templateData.signedUrl)}`
+      console.log(`[MyCertificates] Loading template via proxy`, { proxiedUrl })
       const img: HTMLImageElement = document.createElement('img')
       img.crossOrigin = 'anonymous'
       
@@ -255,11 +256,11 @@ export function MyCertificatesSection({ userId }: MyCertificatesSectionProps) {
         }
         
         img.onerror = () => {
-          console.error('[MyCertificates] Failed to load template image from:', templateData.signedUrl)
+          console.error('[MyCertificates] Failed to load template image from proxy:', proxiedUrl)
           resolve(null)
         }
-        
-        img.src = templateData.signedUrl
+
+        img.src = proxiedUrl
       })
     } catch (error) {
       console.error('[MyCertificates] Error rendering certificate:', error)
