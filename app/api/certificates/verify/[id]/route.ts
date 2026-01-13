@@ -76,7 +76,7 @@ export async function GET(
 
     console.log(`[Certificate Verification] Valid certificate found: ${id}`)
 
-    // Return certificate data
+    // Return certificate data including template and field configuration
     return NextResponse.json({
       success: true,
       valid: true,
@@ -90,7 +90,9 @@ export async function GET(
         clubName: certificate.clubName,
         issueDate: certificate.issueDate,
         verificationCode: `CERT-${certificate.verificationId.substring(0, 8).toUpperCase()}`,
-        eventId: certificate.eventId, // NEW: Return eventId for fetching template
+        eventId: certificate.eventId, // Return eventId for fetching template as fallback
+        templateS3Key: certificate.templateS3Key, // Template stored on certificate
+        fieldConfiguration: certificate.fieldConfiguration, // Field config stored on certificate
       },
     })
   } catch (error) {

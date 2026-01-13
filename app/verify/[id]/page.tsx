@@ -33,7 +33,9 @@ interface CertificateData {
   certificateUrl: string
   isValid: boolean
   verificationCode: string
-  eventId?: string // NEW: MongoDB ObjectId reference
+  eventId?: string // MongoDB ObjectId reference
+  templateS3Key?: string
+  fieldConfiguration?: FieldConfig[]
 }
 
 interface FieldConfig {
@@ -65,6 +67,9 @@ export default function VerificationPage() {
     const verifyCertificate = async () => {
       try {
         setLoading(true)
+        setTemplateUrl(null)
+        setFieldConfig([])
+        setCertificateGenerated(false)
         
         if (!params.id) {
           setError("Invalid verification link")
@@ -107,42 +112,33 @@ export default function VerificationPage() {
         
         console.log("[Verification] Certificate verified successfully:", result.certificate)
         
-        // NEW: If certificate has eventId, fetch Event to get template and field config
-        if (result.certificate.eventId) {
-          console.log("[Verification] Fetching event template:", result.certificate.eventId)
+        // Determine template and field configuration, preferring certificate snapshot first
+        let templateKey: string | undefined = result.certificate.templateS3Key
+        let effectiveFieldConfig: FieldConfig[] | undefined = result.certificate.fieldConfiguration as FieldConfig[] | undefined
+
+        // If missing on certificate, try to fetch from related event
+        if (result.certificate.eventId && (!templateKey || !effectiveFieldConfig?.length)) {
+          console.log("[Verification] Fetching event for template/fields:", result.certificate.eventId)
           try {
             const eventResponse = await fetch(`/api/events/${result.certificate.eventId}`)
             const eventData = await eventResponse.json()
-            
+
             console.log("[Verification] Event response:", eventData)
-            
+
             if (eventData.success && eventData.event) {
               console.log("[Verification] Event data:", {
                 hasTemplateS3Key: !!eventData.event.templateS3Key,
                 templateS3Key: eventData.event.templateS3Key,
                 hasFieldConfig: !!eventData.event.fieldConfiguration,
-                fieldConfigCount: eventData.event.fieldConfiguration?.length || 0
+                fieldConfigCount: eventData.event.fieldConfiguration?.length || 0,
               })
-              
-              // Get signed URL for template
-              if (eventData.event.templateS3Key) {
-                console.log("[Verification] Requesting signed URL for key:", eventData.event.templateS3Key)
-                const templateResponse = await fetch(
-                  `/api/templates/signed-url?key=${encodeURIComponent(eventData.event.templateS3Key)}`
-                )
-                const templateData = await templateResponse.json()
-                
-                console.log("[Verification] Signed URL response:", templateData)
-                
-                if (templateData.success && templateData.signedUrl) {
-                  console.log("[Verification] ✅ Got signed URL for template")
-                  setTemplateUrl(templateData.signedUrl)
-                  setFieldConfig(eventData.event.fieldConfiguration || [])
-                } else {
-                  console.warn("[Verification] ⚠️ Failed to get signed URL:", templateData.error)
-                }
-              } else {
-                console.warn("[Verification] ⚠️ No templateS3Key in event data")
+
+              if (!templateKey && eventData.event.templateS3Key) {
+                templateKey = eventData.event.templateS3Key
+              }
+
+              if ((!effectiveFieldConfig || !effectiveFieldConfig.length) && eventData.event.fieldConfiguration) {
+                effectiveFieldConfig = eventData.event.fieldConfiguration as FieldConfig[]
               }
             } else {
               console.warn("[Verification] ⚠️ Event API response not successful:", eventData)
@@ -150,8 +146,32 @@ export default function VerificationPage() {
           } catch (err) {
             console.error("[Verification] ❌ Error fetching event template:", err)
           }
+        } else if (!result.certificate.eventId) {
+          console.log("[Verification] No eventId in certificate, using certificate metadata only")
+        }
+
+        if (templateKey) {
+          try {
+            console.log("[Verification] Requesting signed URL for key:", templateKey)
+            const templateResponse = await fetch(
+              `/api/templates/signed-url?key=${encodeURIComponent(templateKey)}`
+            )
+            const templateData = await templateResponse.json()
+
+            console.log("[Verification] Signed URL response:", templateData)
+
+            if (templateData.success && templateData.signedUrl) {
+              console.log("[Verification] ✅ Got signed URL for template")
+              setTemplateUrl(templateData.signedUrl)
+              setFieldConfig(effectiveFieldConfig || [])
+            } else {
+              console.warn("[Verification] ⚠️ Failed to get signed URL:", templateData.error)
+            }
+          } catch (err) {
+            console.error("[Verification] ❌ Error getting template signed URL:", err)
+          }
         } else {
-          console.log("[Verification] No eventId in certificate, showing metadata only")
+          console.log("[Verification] No template key found for this certificate")
         }
         
       } catch (err) {
@@ -450,53 +470,33 @@ export default function VerificationPage() {
             <div className="grid lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] gap-6 lg:gap-8 items-start">
               {/* Left: certificate preview */}
               <div className="space-y-4">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 shadow-inner overflow-hidden">
-                  <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                      <p className="text-xs font-medium text-slate-700 tracking-wide">Certificate preview</p>
-                    </div>
-                    <p className="text-[11px] text-slate-500">
-                      {certificate.eventName}
-                    </p>
-                  </div>
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Certificate Preview</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{certificate.eventName}</p>
+                </div>
 
-                  <div className="border-t border-slate-200 bg-white">
-                    {templateUrl ? (
-                      <div className="flex items-center justify-center p-3 md:p-4 lg:p-5">
-                        <div className="w-full rounded-xl bg-white border border-slate-200 overflow-hidden">
-                          <div className="relative flex items-center justify-center bg-slate-50">
-                            <canvas
-                              ref={canvasRef}
-                              className="w-full h-auto max-h-104 md:max-h-112"
-                              style={{ display: certificateGenerated ? 'block' : 'none' }}
-                            />
-                            {!certificateGenerated && (
-                              <div className="aspect-[1.414/1] w-full flex items-center justify-center">
-                                <div className="text-center px-6 py-10">
-                                  <Loader2 className="h-14 w-14 mx-auto mb-4 text-[#21808D] animate-spin" />
-                                  <p className="text-slate-600 mb-2 text-sm md:text-base">Rendering certificate layout…</p>
-                                  <p className="text-[11px] text-slate-500">We are reconstructing this certificate from the original template and fields.</p>
-                                </div>
-                              </div>
-                            )}
+                <div className="mb-6 rounded-lg sm:rounded-xl overflow-hidden border border-gray-200 shadow-sm bg-gray-50">
+                  {templateUrl ? (
+                    <div className="flex items-center justify-center bg-white p-3 sm:p-4 lg:p-6">
+                      <canvas
+                        ref={canvasRef}
+                        className="w-full h-auto max-h-72 sm:max-h-96"
+                        style={{ display: certificateGenerated ? 'block' : 'none' }}
+                      />
+                      {!certificateGenerated && (
+                        <div className="h-48 sm:h-72 lg:h-96 bg-gray-100 flex items-center justify-center">
+                          <div className="flex flex-col items-center gap-2 sm:gap-3">
+                            <div className="w-7 h-7 sm:w-8 sm:h-8 border-3 border-[#21808D] border-t-transparent rounded-full animate-spin"></div>
+                            <span className="text-xs sm:text-sm text-gray-600 font-medium">Rendering certificate...</span>
                           </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="aspect-[1.414/1] flex items-center justify-center px-6 py-10">
-                        <div className="text-center max-w-sm mx-auto">
-                          <Award className="h-16 w-16 mx-auto mb-4 text-slate-400" />
-                          <p className="text-slate-800 mb-2 text-sm md:text-base font-medium">Template preview not available</p>
-                          <p className="text-xs md:text-sm text-slate-500">
-                            {certificate?.eventId 
-                              ? 'The template is being loaded from long-term storage. Try refreshing if it does not appear.' 
-                              : 'This certificate was issued before template previews were enabled. Metadata below is still fully verified.'}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="h-48 sm:h-72 lg:h-96 bg-linear-to-br from-[#21808D] to-[#8FD6BD] flex items-center justify-center">
+                      <Award className="w-16 sm:w-20 lg:w-24 h-16 sm:h-20 lg:h-24 text-white/60" />
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3">
