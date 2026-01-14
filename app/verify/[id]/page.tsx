@@ -2,7 +2,10 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import Image from "next/image"
+import Head from "next/head"
+import jsPDF from "jspdf"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -18,7 +21,11 @@ import {
   User,
   Award,
   ArrowLeft,
-  Loader2
+  Loader2,
+  LogIn,
+  Linkedin,
+  Send,
+  Mail
 } from "lucide-react"
 
 interface CertificateData {
@@ -55,6 +62,7 @@ interface FieldConfig {
 export default function VerificationPage() {
   const params = useParams()
   const router = useRouter()
+  const { data: session, status } = useSession()
   const [certificate, setCertificate] = useState<CertificateData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -62,6 +70,21 @@ export default function VerificationPage() {
   const [templateUrl, setTemplateUrl] = useState<string | null>(null)
   const [fieldConfig, setFieldConfig] = useState<FieldConfig[]>([])
   const [certificateGenerated, setCertificateGenerated] = useState(false)
+  const [downloadFormat, setDownloadFormat] = useState<"png" | "pdf">("png")
+  const isAuthenticated = status === "authenticated"
+
+  // Store current URL in sessionStorage when component mounts
+  useEffect(() => {
+    if (typeof window !== 'undefined' && params.id) {
+      sessionStorage.setItem('returnToVerification', window.location.pathname)
+    }
+    // Clear on unmount
+    return () => {
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('returnToVerification')
+      }
+    }
+  }, [params.id])
 
   useEffect(() => {
     const verifyCertificate = async () => {
@@ -332,26 +355,173 @@ export default function VerificationPage() {
     renderCertificate()
   }, [templateUrl, certificate, fieldConfig])
 
-  const downloadCertificate = () => {
-    if (!canvasRef.current || !certificateGenerated) {
-      console.warn("[Verification] Canvas not ready for download")
+  const downloadCertificate = async () => {
+    if (!isAuthenticated) {
+      toast.error('Please sign in to download certificates')
+      // Store current URL before redirecting
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('returnToVerification', window.location.pathname)
+      }
+      router.push('/login')
       return
     }
 
-    canvasRef.current.toBlob((blob) => {
-      if (!blob) return
-      
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `certificate-${certificate?.recipientName || 'verification'}.png`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
-      
-      console.log("[Verification] ✅ Certificate downloaded")
-    }, 'image/png')
+    if (!canvasRef.current || !certificateGenerated) {
+      console.warn("[Verification] Canvas not ready for download")
+      toast.error("Certificate is still loading, please wait...")
+      return
+    }
+
+    const fileName = `certificate-${certificate?.recipientName || 'verification'}`
+    const canvas = canvasRef.current
+
+    if (downloadFormat === 'pdf') {
+      try {
+        // Ensure canvas is fully rendered
+        await new Promise(resolve => setTimeout(resolve, 100))
+        
+        // Validate canvas has content
+        if (!canvas.width || !canvas.height) {
+          throw new Error('Canvas has no dimensions')
+        }
+        
+        // Get image data directly from original canvas (avoid CORS issues)
+        const imgData = canvas.toDataURL('image/jpeg', 0.95)
+        
+        // Validate image data
+        if (!imgData || imgData === 'data:,' || imgData.length < 100) {
+          throw new Error('Failed to generate image data from canvas')
+        }
+        
+        console.log('[PDF] Canvas dimensions:', canvas.width, 'x', canvas.height)
+        console.log('[PDF] Image data length:', imgData.length)
+        
+        // Calculate dimensions
+        const canvasWidth = canvas.width
+        const canvasHeight = canvas.height
+        const aspectRatio = canvasWidth / canvasHeight
+        
+        console.log('[PDF] Aspect ratio:', aspectRatio)
+        
+        // Determine orientation (most certificates are landscape)
+        const isLandscape = aspectRatio > 1
+        
+        // Create PDF with proper settings
+        const pdf = new jsPDF({
+          orientation: isLandscape ? 'l' : 'p',
+          unit: 'mm',
+          format: 'a4'
+        })
+        
+        // Get page dimensions
+        const pageWidth = pdf.internal.pageSize.getWidth()
+        const pageHeight = pdf.internal.pageSize.getHeight()
+        
+        console.log('[PDF] Page dimensions:', pageWidth, 'x', pageHeight)
+        
+        // Calculate image dimensions with margins
+        const margin = 10
+        const maxWidth = pageWidth - (2 * margin)
+        const maxHeight = pageHeight - (2 * margin)
+        
+        let imgWidth = maxWidth
+        let imgHeight = imgWidth / aspectRatio
+        
+        // If height exceeds, scale by height instead
+        if (imgHeight > maxHeight) {
+          imgHeight = maxHeight
+          imgWidth = imgHeight * aspectRatio
+        }
+        
+        // Center the image
+        const x = (pageWidth - imgWidth) / 2
+        const y = (pageHeight - imgHeight) / 2
+        
+        console.log('[PDF] Image position:', x, y, 'Size:', imgWidth, 'x', imgHeight)
+        
+        // Add image to PDF
+        pdf.addImage(imgData, 'JPEG', x, y, imgWidth, imgHeight)
+        
+        // Add verification link at bottom of page
+        const verificationUrl = `${window.location.origin}/verify/${certificate?.id}`
+        
+        pdf.setFontSize(10)
+        pdf.setTextColor(100, 100, 100)
+        
+        // Add "Verify this certificate" text
+        const bottomY = pageHeight - 5
+        pdf.text('Verify this certificate:', margin, bottomY)
+        
+        // Add clickable verification link
+        pdf.setTextColor(33, 128, 141) // Teal color
+        const linkX = margin + 45
+        pdf.textWithLink(verificationUrl, linkX, bottomY, { url: verificationUrl })
+        
+        // 🔑 CORRECT: Use arraybuffer (most reliable method)
+        const pdfArrayBuffer = pdf.output('arraybuffer')
+        
+        // Validate PDF was generated
+        if (!pdfArrayBuffer || pdfArrayBuffer.byteLength < 1000) {
+          throw new Error('Generated PDF is too small or invalid')
+        }
+        
+        console.log('[PDF] PDF size:', pdfArrayBuffer.byteLength, 'bytes')
+        
+        // Convert to Blob and download
+        const pdfBlob = new Blob([pdfArrayBuffer], { type: 'application/pdf' })
+        const url = URL.createObjectURL(pdfBlob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `${fileName}.pdf`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        
+        // Clean up
+        setTimeout(() => URL.revokeObjectURL(url), 100)
+        
+        console.log("[Verification] ✅ Certificate downloaded as PDF")
+        toast.success("Certificate downloaded as PDF")
+      } catch (error) {
+        console.error('[Verification] PDF generation failed:', error)
+        toast.error(`PDF generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      }
+    } else {
+      // PNG download
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          toast.error("Failed to generate PNG")
+          return
+        }
+        
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `${fileName}.png`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+        
+        console.log("[Verification] ✅ Certificate downloaded as PNG")
+        toast.success("Certificate downloaded as PNG")
+      }, 'image/png')
+    }
+  }
+
+  const handleShare = () => {
+    if (!isAuthenticated) {
+      toast.error('Please sign in to share certificates')
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('returnToVerification', window.location.pathname)
+      }
+      router.push('/login')
+      return
+    }
+    // Share functionality
+    const shareUrl = window.location.href
+    navigator.clipboard.writeText(shareUrl)
+    toast.success('Verification link copied to clipboard!')
   }
 
   if (loading) {
@@ -386,7 +556,38 @@ export default function VerificationPage() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-linear-to-br from-slate-50 via-slate-100 to-slate-50 relative overflow-hidden">
+    <>
+      <Head>
+        <meta name="screenshot" content="disabled" />
+        <meta name="screen-capture" content="disabled" />
+        
+        {/* Open Graph meta tags for rich LinkedIn/social sharing */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={typeof window !== 'undefined' ? window.location.href : ''} />
+        <meta property="og:title" content={`Certificate: ${certificate.eventName} - ${certificate.recipientName}`} />
+        <meta property="og:description" content={`${certificate.recipientName} has earned a certificate for ${certificate.eventName}, issued by ${certificate.organizationName} on ${certificate.issueDate}`} />
+        <meta property="og:image" content={certificate.certificateUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/api/certificates/${certificate.id}/image`} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        
+        {/* Twitter Card meta tags */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`Certificate: ${certificate.eventName}`} />
+        <meta name="twitter:description" content={`${certificate.recipientName} earned this certificate from ${certificate.organizationName}`} />
+        <meta name="twitter:image" content={certificate.certificateUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/api/certificates/${certificate.id}/image`} />
+        
+        {/* LinkedIn specific */}
+        <meta property="og:site_name" content="Forge Certificate Platform" />
+      </Head>
+      <div className="min-h-screen w-full bg-linear-to-br from-slate-50 via-slate-100 to-slate-50 relative overflow-hidden"
+        style={{
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          MozUserSelect: 'none',
+          msUserSelect: 'none',
+        }}
+        onContextMenu={(e) => e.preventDefault()} // Disable right-click
+      >
       {/* Subtle background pattern */}
       <div className="pointer-events-none absolute inset-0 opacity-60">
         <div className="absolute -top-20 -left-24 h-72 w-72 rounded-full bg-[#8FD6BD]/25 blur-3xl" />
@@ -499,23 +700,145 @@ export default function VerificationPage() {
                   )}
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Button 
-                    className="flex-1 bg-[#21808D] hover:bg-[#1a6570] text-white font-semibold"
-                    onClick={downloadCertificate}
-                    disabled={!certificateGenerated}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Download certificate
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="flex-1 border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900"
-                  >
-                    <Share2 className="h-4 w-4 mr-2" />
-                    Share verification
-                  </Button>
-                </div>
+                {isAuthenticated ? (
+                  <div className="space-y-3">
+                    {/* Format Selector */}
+                    <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-full sm:w-auto">
+                      <button
+                        onClick={() => setDownloadFormat('png')}
+                        className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                          downloadFormat === 'png'
+                            ? 'bg-white text-slate-900 shadow-sm'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        PNG
+                      </button>
+                      <button
+                        onClick={() => setDownloadFormat('pdf')}
+                        className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                          downloadFormat === 'pdf'
+                            ? 'bg-white text-slate-900 shadow-sm'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        PDF
+                      </button>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <Button 
+                        className="flex-1 bg-[#21808D] hover:bg-[#1a6570] text-white font-semibold"
+                        onClick={downloadCertificate}
+                        disabled={!certificateGenerated}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Download as {downloadFormat.toUpperCase()}
+                      </Button>
+                    </div>
+                    
+                    {/* Social Sharing Section */}
+                    <div className="pt-3 border-t border-gray-200">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Share Your Achievement</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-xs"
+                          onClick={() => {
+                            const verificationUrl = window.location.href
+                            
+                            // LinkedIn "Add Certification" deep link - goes directly to Add License/Certification form
+                            // This pre-fills all the certificate details in LinkedIn's profile form
+                            const issueDate = new Date(certificate.issueDate)
+                            const addToProfileUrl = `https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${encodeURIComponent(certificate.eventName)}&organizationName=${encodeURIComponent(certificate.organizationName)}&issueYear=${issueDate.getFullYear()}&issueMonth=${issueDate.getMonth() + 1}&certUrl=${encodeURIComponent(verificationUrl)}&certId=${certificate.id}`
+                            
+                            // Open LinkedIn Add Certification form
+                            window.open(addToProfileUrl, '_blank')
+                            
+                            toast.success('Opening LinkedIn - Add to your profile!')
+                          }}
+                        >
+                          <Linkedin className="w-3 h-3 mr-1.5" />
+                          Add to LinkedIn
+                        </Button>
+                        
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-xs"
+                          onClick={() => {
+                            const verificationUrl = window.location.href
+                            const text = `I've earned a certificate for ${certificate.eventName}! Check it out:`
+                            
+                            // Twitter/X share URL
+                            const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(verificationUrl)}`
+                            window.open(twitterUrl, '_blank', 'width=600,height=600')
+                            toast.success('Opening Twitter/X share')
+                          }}
+                        >
+                          <Share2 className="w-3 h-3 mr-1.5" />
+                          Twitter
+                        </Button>
+                        
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-xs"
+                          onClick={() => {
+                            const verificationUrl = window.location.href
+                            const text = `I've earned a certificate for ${certificate.eventName}! ${verificationUrl}`
+                            
+                            // WhatsApp share URL
+                            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`
+                            window.open(whatsappUrl, '_blank')
+                            toast.success('Opening WhatsApp')
+                          }}
+                        >
+                          <Send className="w-3 h-3 mr-1.5" />
+                          WhatsApp
+                        </Button>
+                        
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-xs"
+                          onClick={() => {
+                            const verificationUrl = window.location.href
+                            const subject = `Certificate: ${certificate.eventName}`
+                            const body = `I'm excited to share that I've earned a certificate for ${certificate.eventName}!\n\nYou can verify it here: ${verificationUrl}`
+                            
+                            // Email mailto link
+                            const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+                            window.location.href = mailtoUrl
+                            toast.success('Opening email client')
+                          }}
+                        >
+                          <Mail className="w-3 h-3 mr-1.5" />
+                          Email
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 text-center">
+                    <LogIn className="h-8 w-8 mx-auto mb-2 text-slate-400" />
+                    <p className="text-sm text-slate-600 mb-3">Sign in to download or share this certificate</p>
+                    <Button 
+                      className="w-full bg-[#21808D] hover:bg-[#1a6570] text-white font-semibold"
+                      onClick={() => {
+                        if (typeof window !== 'undefined') {
+                          sessionStorage.setItem('returnToVerification', window.location.pathname)
+                        }
+                        router.push('/login')
+                      }}
+                    >
+                      <LogIn className="h-4 w-4 mr-2" />
+                      Sign in
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {/* Right: structured details */}
@@ -619,5 +942,6 @@ export default function VerificationPage() {
         </div>
       </div>
     </div>
+    </>
   )
 }

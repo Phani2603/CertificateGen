@@ -32,6 +32,18 @@ function LoginContent() {
       if (status === "authenticated" && !isLoading && !hasCheckedRedirect) {
         setHasCheckedRedirect(true)
         
+        // Check if user was on a verification page before logging in
+        const returnToVerification = typeof window !== 'undefined' 
+          ? sessionStorage.getItem('returnToVerification') 
+          : null
+
+        if (returnToVerification) {
+          // Clear the stored URL and redirect back to verification page
+          sessionStorage.removeItem('returnToVerification')
+          router.push(returnToVerification)
+          return
+        }
+        
         // Handle Invite Token if present
         if (inviteToken) {
           try {

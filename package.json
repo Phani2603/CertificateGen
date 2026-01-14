@@ -55,6 +55,7 @@
     "embla-carousel-react": "8.5.1",
     "file-saver": "^2.0.5",
     "input-otp": "1.4.1",
+    "jspdf": "^4.0.0",
     "jszip": "latest",
     "lucide-react": "^0.454.0",
     "mongoose": "^9.0.2",
