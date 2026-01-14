@@ -648,7 +648,13 @@ export default function CertificateGeneration({
               // Add certificate to the folder
               const certArrayBuffer = await recipient.certificateBlob.arrayBuffer()
               const certFileName = `${folderName}.${outputFormat}`
-              recipientFolder.file(certFileName, certArrayBuffer)
+              // ✅ For PNG: use blob directly, for PDF: convert properly
+              if (outputFormat === 'png') {
+                recipientFolder.file(certFileName, certArrayBuffer)
+              } else {
+                // PDF: ensure it's added as binary ArrayBuffer
+                recipientFolder.file(certFileName, certArrayBuffer, { binary: true })
+              }
               
               // Create verification.txt in the same folder
               const selectedClub = clubs?.find(c => c.id === selectedEvent?.club)
