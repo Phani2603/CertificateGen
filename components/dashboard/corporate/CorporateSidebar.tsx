@@ -140,12 +140,25 @@ export function CorporateSidebar({
               </div>
             )}
           </button>
+          
+          {/* Sign out button - shown when sidebar is open, positioned better on mobile */}
           {sidebarOpen && (
-          <button 
-            onClick={() => signOut({ callbackUrl: '/login' })}
-            className="w-full flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors text-red-600 mt-2">
+            <button 
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              className="w-full flex items-center justify-center md:justify-start gap-2 px-3 py-2.5 rounded-lg bg-red-50 hover:bg-red-100 transition-colors text-red-600 mt-2 font-medium">
               <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
-              <span className="font-medium text-sm sm:text-base">Sign out</span>
+              <span className="text-sm sm:text-base">Sign out</span>
+            </button>
+          )}
+          
+          {/* Mobile-only sign out when sidebar closed */}
+          {!sidebarOpen && (
+            <button 
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              className="md:hidden w-full flex items-center justify-center p-2 rounded-lg hover:bg-red-50 transition-colors text-red-600 mt-2"
+              title="Sign out"
+            >
+              <LogOut className="h-5 w-5" />
             </button>
           )}
         </div>

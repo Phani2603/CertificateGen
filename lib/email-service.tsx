@@ -50,6 +50,8 @@ const createPooledEmailTransporter = async (credentials: { email: string; appPas
     // Determine SMTP settings based on email domain
     const isGmail = credentials.email.endsWith('@gmail.com')
     const isEducational = credentials.email.includes('.edu.in')
+    const isGoDaddy = credentials.email.includes('senement.com') || 
+                      credentials.email.includes('secureserver.net')
     
     let smtpConfig
     
@@ -65,6 +67,13 @@ const createPooledEmailTransporter = async (credentials: { email: string; appPas
         host: "smtp.gmail.com",
         port: 587,
         secure: false,
+      }
+    } else if (isGoDaddy) {
+      // GoDaddy/Workspace Email SMTP settings
+      smtpConfig = {
+        host: "smtpout.secureserver.net",
+        port: 465,
+        secure: true,
       }
     } else {
       throw new Error("Unsupported email domain")
@@ -108,6 +117,8 @@ const createEmailTransporter = async (credentials: { email: string; appPassword:
   // Determine SMTP settings based on email domain
   const isGmail = credentials.email.endsWith('@gmail.com')
   const isEducational = credentials.email.includes('.edu.in')
+  const isGoDaddy = credentials.email.includes('senement.com') || 
+                    credentials.email.includes('secureserver.net')
   
   let smtpConfig
   
@@ -123,6 +134,13 @@ const createEmailTransporter = async (credentials: { email: string; appPassword:
       port: 587,
       secure: false,
     }
+  } else if (isGoDaddy) {
+    // GoDaddy/Workspace Email SMTP settings
+    smtpConfig = {
+      host: "smtpout.secureserver.net",
+      port: 465,
+      secure: true,
+    }
   } else {
     throw new Error("Unsupported email domain")
   }
@@ -136,7 +154,7 @@ const createEmailTransporter = async (credentials: { email: string; appPassword:
   })
 }
 
-export type EmailProvider = "resend" | "gmail"
+export type EmailProvider = "resend" | "gmail" | "senement"
 export type SendingMode = "sequential" | "pooled"
 
 // Graceful shutdown handler
@@ -186,6 +204,26 @@ export async function sendCertificateEmail(
       
       // Try to get logo attachment
       const logoAttachment = getLogoAttachment()
+
+      // Build verification link section if verification URL is provided
+      const verificationSection = verificationUrl
+        ? `
+                      <div style="background-color: #e8f5e9; border-left: 4px solid #4caf50; padding: 20px; margin: 25px 0; border-radius: 4px;">
+                        <p style="color: #2e7d32; font-size: 15px; margin: 0 0 15px; line-height: 1.6;">
+                          <strong>🔐 Verify Your Certificate Online:</strong>
+                        </p>
+                        <p style="color: #333333; font-size: 14px; margin: 0 0 15px; line-height: 1.6;">
+                          You can verify the authenticity of your certificate anytime by visiting:
+                        </p>
+                        <a href="${verificationUrl}" style="display: inline-block; background-color: #4caf50; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; font-size: 14px; margin-top: 10px;">
+                          Verify Certificate
+                        </a>
+                        <p style="color: #666666; font-size: 12px; margin: 15px 0 0; line-height: 1.5;">
+                          Or copy this link: <span style="font-family: monospace; color: #2e7d32;">${verificationUrl}</span>
+                        </p>
+                      </div>
+        `
+        : ""
       
       const htmlContent = `
         <!DOCTYPE html>
@@ -225,6 +263,8 @@ export async function sendCertificateEmail(
                           <span style="font-family: monospace; color: #333;">${fileName}</span>
                         </p>
                       </div>
+
+                      ${verificationSection}
                       
                       <p style="color: #333333; font-size: 16px; margin: 0 0 20px; line-height: 1.6;">
                         This certificate is a testament to your hard work, dedication, and the knowledge you've gained. We are incredibly proud of your achievement and hope this milestone serves as a stepping stone to greater success in your future endeavors.
@@ -299,6 +339,159 @@ export async function sendCertificateEmail(
 
       console.log("[Email Service] Gmail Success! Message ID:", info.messageId)
       return { success: true, messageId: info.messageId, provider: "gmail" }
+    } else if (provider === "senement") {
+      // Send via Senement (GoDaddy SMTP)
+      if (!process.env.CORPORATE_EMAIL_USER || !process.env.CORPORATE_EMAIL_PASSWORD) {
+        throw new Error("Senement email configuration not found in environment variables")
+      }
+
+      const transporter = nodemailer.createTransport({
+        host: "smtpout.secureserver.net",
+        port: 465,
+        secure: true,
+        auth: {
+          user: process.env.CORPORATE_EMAIL_USER,
+          pass: process.env.CORPORATE_EMAIL_PASSWORD,
+        },
+      })
+
+      // Try to get logo attachment
+      const logoAttachment = getLogoAttachment()
+
+      // Build verification link section if verification URL is provided
+      const verificationSection = verificationUrl
+        ? `
+                      <div style="background-color: #e8f5e9; border-left: 4px solid #4caf50; padding: 20px; margin: 25px 0; border-radius: 4px;">
+                        <p style="color: #2e7d32; font-size: 15px; margin: 0 0 15px; line-height: 1.6;">
+                          <strong>🔐 Verify Your Certificate Online:</strong>
+                        </p>
+                        <p style="color: #333333; font-size: 14px; margin: 0 0 15px; line-height: 1.6;">
+                          You can verify the authenticity of your certificate anytime by visiting:
+                        </p>
+                        <a href="${verificationUrl}" style="display: inline-block; background-color: #4caf50; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; font-size: 14px; margin-top: 10px;">
+                          Verify Certificate
+                        </a>
+                        <p style="color: #666666; font-size: 12px; margin: 15px 0 0; line-height: 1.5;">
+                          Or copy this link: <span style="font-family: monospace; color: #2e7d32;">${verificationUrl}</span>
+                        </p>
+                      </div>
+        `
+        : ""
+
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f5f5f5;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 20px;">
+            <tr>
+              <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                  
+                  <!-- Header with Logo -->
+                  <tr>
+                    <td style="background: linear-gradient(135deg, #21808D 0%, #1a6570 100%); padding: 40px 30px; text-align: center;">
+                      ${logoAttachment ? '<img src="cid:klh-logo" alt="Senement" style="max-width: 120px; height: auto; margin-bottom: 20px;" />' : ''}
+                      <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Congratulations!</h1>
+                    </td>
+                  </tr>
+                  
+                  <!-- Main Content -->
+                  <tr>
+                    <td style="padding: 40px 30px;">
+                      <p style="color: #1a1a1a; font-size: 18px; margin: 0 0 20px; line-height: 1.6;">
+                        Dear <strong>${recipientName}</strong>,
+                      </p>
+                      
+                      <p style="color: #333333; font-size: 16px; margin: 0 0 20px; line-height: 1.6;">
+                        We are delighted to inform you that your certificate has been successfully generated and is attached to this email.
+                      </p>
+                      
+                      <div style="background-color: #f0f9fa; border-left: 4px solid #21808D; padding: 20px; margin: 25px 0; border-radius: 4px;">
+                        <p style="color: #1a6570; font-size: 15px; margin: 0; line-height: 1.6;">
+                          <strong>📎 Your certificate is attached as:</strong><br/>
+                          <span style="font-family: monospace; color: #333;">${fileName}</span>
+                        </p>
+                      </div>
+
+                      ${verificationSection}
+                      
+                      <p style="color: #333333; font-size: 16px; margin: 0 0 20px; line-height: 1.6;">
+                        This certificate is a testament to your hard work, dedication, and the knowledge you've gained. We are incredibly proud of your achievement and hope this milestone serves as a stepping stone to greater success in your future endeavors.
+                      </p>
+                      
+                      <p style="color: #333333; font-size: 16px; margin: 0 0 20px; line-height: 1.6;">
+                        Your commitment to learning and excellence has truly paid off. May this achievement inspire you to continue pursuing knowledge and reaching new heights in your academic and professional journey.
+                      </p>
+                      
+                      <!-- Tips Section -->
+                      <div style="background-color: #fffbf0; border: 1px solid #ffd700; padding: 20px; margin: 25px 0; border-radius: 8px;">
+                        <h3 style="color: #1a1a1a; margin: 0 0 15px; font-size: 16px;">💡 Important Tips:</h3>
+                        <ul style="color: #555; font-size: 14px; margin: 0; padding-left: 20px; line-height: 1.8;">
+                          <li>Download and save your certificate immediately</li>
+                          <li>Keep both digital and printed copies for your records</li>
+                          <li>You can print this on high-quality paper for framing</li>
+                          <li>Share your achievement on LinkedIn to enhance your profile</li>
+                        </ul>
+                      </div>
+                      
+                      <p style="color: #333333; font-size: 16px; margin: 25px 0 20px; line-height: 1.6;">
+                        If you have any questions or need assistance, please don't hesitate to reach out to us.
+                      </p>
+                      
+                      <p style="color: #333333; font-size: 16px; margin: 0 0 10px; line-height: 1.6;">
+                        <strong>Once again, congratulations on this well-deserved recognition!</strong>
+                      </p>
+                    </td>
+                  </tr>
+                  
+                  <!-- Footer -->
+                  <tr>
+                    <td style="background-color: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #e0e0e0;">
+                      <p style="color: #666666; font-size: 14px; margin: 0 0 10px; line-height: 1.6;">
+                        <strong>Best regards,</strong><br/>
+                        Certificate Team<br/>
+                        Senement
+                      </p>
+                      <p style="color: #999999; font-size: 12px; margin: 15px 0 0; line-height: 1.5;">
+                        This is an automated email. Please do not reply to this message.<br/>
+                        If you need assistance, please contact support.
+                      </p>
+                    </td>
+                  </tr>
+                  
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+
+      // Build attachments array
+      const attachments: any[] = []
+      if (logoAttachment) {
+        attachments.push(logoAttachment)
+      }
+      attachments.push({
+        filename: fileName,
+        content: buffer,
+        contentType: "image/png",
+      })
+
+      const info = await transporter.sendMail({
+        from: `"Senement - Certificate Team" <${process.env.CORPORATE_EMAIL_USER}>`,
+        to: email,
+        subject: `🎓 Congratulations ${recipientName}! Your Certificate is Ready`,
+        html: htmlContent,
+        attachments: attachments,
+      })
+
+      console.log("[Email Service] Senement Success! Message ID:", info.messageId)
+      return { success: true, messageId: info.messageId, provider: "senement" }
     } else {
       // Send via Resend (original code)
       const resendClient = getResend()
@@ -307,6 +500,26 @@ export async function sendCertificateEmail(
       }
       
       const base64 = buffer.toString("base64")
+
+      // Build verification link section if verification URL is provided
+      const verificationSectionResend = verificationUrl
+        ? `
+                        <div style="background-color: #e8f5e9; border-left: 4px solid #4caf50; padding: 20px; margin: 25px 0; border-radius: 4px;">
+                          <p style="color: #2e7d32; font-size: 15px; margin: 0 0 15px; line-height: 1.6;">
+                            <strong>🔐 Verify Your Certificate Online:</strong>
+                          </p>
+                          <p style="color: #333333; font-size: 14px; margin: 0 0 15px; line-height: 1.6;">
+                            You can verify the authenticity of your certificate anytime by visiting:
+                          </p>
+                          <a href="${verificationUrl}" style="display: inline-block; background-color: #4caf50; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; font-size: 14px; margin-top: 10px;">
+                            Verify Certificate
+                          </a>
+                          <p style="color: #666666; font-size: 12px; margin: 15px 0 0; line-height: 1.5;">
+                            Or copy this link: <span style="font-family: monospace; color: #2e7d32;">${verificationUrl}</span>
+                          </p>
+                        </div>
+          `
+        : ""
       
       console.log("[Email Service] From:", process.env.RESEND_FROM_EMAIL)
 
@@ -351,6 +564,8 @@ export async function sendCertificateEmail(
                             <span style="font-family: monospace; color: #333;">${fileName}</span>
                           </p>
                         </div>
+
+                        ${verificationSectionResend}
                         
                         <p style="color: #333333; font-size: 16px; margin: 0 0 20px; line-height: 1.6;">
                           This certificate is a testament to your hard work, dedication, and the knowledge you've gained. We are incredibly proud of your achievement and hope this milestone serves as a stepping stone to greater success in your future endeavors.

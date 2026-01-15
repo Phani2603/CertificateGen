@@ -107,6 +107,7 @@ export async function GET(request: NextRequest) {
         image: user.image,
         phone: user.phone || '',
         bio: user.bio || '',
+        bannerColor: user.bannerColor || '#21808D',
         userType: user.userType,
         organization: organizationData,
         privateOrg: privateOrgData,
@@ -139,7 +140,7 @@ export async function PUT(request: NextRequest) {
     await connectDB()
 
     const body = await request.json()
-    const { name, phone, bio, image, organization, userType } = body
+    const { name, phone, bio, image, organization, userType, bannerColor } = body
 
     const user = await User.findOne({ email: session.user.email })
 
@@ -156,6 +157,7 @@ export async function PUT(request: NextRequest) {
     if (bio !== undefined) user.bio = bio
     if (image !== undefined) user.image = image
     if (organization !== undefined) user.organization = organization
+    if (bannerColor !== undefined) user.bannerColor = bannerColor
     
     // Allow updating userType if it's not set or if explicitly allowed
     // This is mainly for the initial setup modal
@@ -174,6 +176,7 @@ export async function PUT(request: NextRequest) {
         image: user.image,
         phone: user.phone,
         bio: user.bio,
+        bannerColor: user.bannerColor,
         userType: user.userType,
         organization: user.organization,
       },

@@ -822,23 +822,28 @@ export default function VerificationPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 text-center">
-                    <LogIn className="h-8 w-8 mx-auto mb-2 text-slate-400" />
-                    <p className="text-sm text-slate-600 mb-3">Sign in to download or share this certificate</p>
-                    <Button 
-                      className="w-full bg-[#21808D] hover:bg-[#1a6570] text-white font-semibold"
-                      onClick={() => {
-                        if (typeof window !== 'undefined') {
+                  <div className="space-y-3">
+                    {/* Sign in prompt for non-authenticated users */}
+                    <div className="bg-gradient-to-br from-[#21808D]/10 to-[#8FD6BD]/10 border-2 border-[#21808D]/20 rounded-xl p-6 text-center">
+                      <LogIn className="h-10 w-10 mx-auto mb-3 text-[#21808D]" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Sign in to download & share</h3>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Create a free account to download certificates and share your achievements on social media.
+                      </p>
+                      <Button 
+                        onClick={() => {
                           sessionStorage.setItem('returnToVerification', window.location.pathname)
-                        }
-                        router.push('/login')
-                      }}
-                    >
-                      <LogIn className="h-4 w-4 mr-2" />
-                      Sign in
-                    </Button>
+                          router.push('/login')
+                        }}
+                        className="bg-[#21808D] hover:bg-[#1a6570] text-white font-semibold"
+                      >
+                        <LogIn className="h-4 w-4 mr-2" />
+                        Sign in to continue
+                      </Button>
+                    </div>
                   </div>
                 )}
+
               </div>
 
               {/* Right: structured details */}

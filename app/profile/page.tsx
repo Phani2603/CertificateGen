@@ -29,6 +29,7 @@ export default function ProfilePage() {
     bio: "",
     organization: "",
     image: "",
+    bannerColor: "#21808D",
   })
 
   // Redirect if not authenticated
@@ -53,7 +54,8 @@ export default function ProfilePage() {
               phone: data.user.phone || "",
               bio: data.user.bio || "",
               organization: data.user.organization || "",
-              image: data.user.image || "",
+              image: data.user.image || session?.user?.image || "",
+              bannerColor: data.user.bannerColor || "#21808D",
             })
           }
         } catch (error) {
@@ -86,6 +88,7 @@ export default function ProfilePage() {
           bio: formData.bio,
           organization: formData.organization,
           image: formData.image,
+          bannerColor: formData.bannerColor,
         }),
       })
 
@@ -171,9 +174,16 @@ export default function ProfilePage() {
     .toUpperCase() || "??"
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-gray-50">
+      {/* Banner with selected color */}
+      <div 
+        className="h-32 w-full" 
+        style={{ backgroundColor: formData.bannerColor }}
+      />
+      
+      <div className="py-8 px-4 -mt-16">
       <div className="max-w-3xl mx-auto">
-        <Link href="/dashboard" className="inline-flex items-center gap-2 text-gray-600 hover:text-[#21808D] mb-6">
+        <Link href="/dashboard" className="inline-flex items-center gap-2 text-white hover:text-gray-100 mb-6">
           <ArrowLeft className="h-4 w-4" />
           Back to Dashboard
         </Link>
@@ -300,6 +310,30 @@ export default function ProfilePage() {
               </p>
             </div>
 
+            {/* Banner Color */}
+            <div>
+              <Label htmlFor="bannerColor">Banner Color</Label>
+              <div className="flex gap-3 mt-2 items-center">
+                <input
+                  id="bannerColor"
+                  type="color"
+                  value={formData.bannerColor}
+                  onChange={(e) => setFormData({ ...formData, bannerColor: e.target.value })}
+                  className="h-10 w-20 rounded border border-gray-300 cursor-pointer"
+                />
+                <Input
+                  type="text"
+                  value={formData.bannerColor}
+                  onChange={(e) => setFormData({ ...formData, bannerColor: e.target.value })}
+                  placeholder="#21808D"
+                  className="flex-1"
+                />
+              </div>
+              <p className="text-sm text-gray-500 mt-1">
+                Choose a color for your profile banner
+              </p>
+            </div>
+
             {/* Action Buttons */}
             <div className="flex gap-4 pt-4">
               <Button
@@ -353,6 +387,7 @@ export default function ProfilePage() {
             </Button>
           </div>
         </Card>
+      </div>
       </div>
     </div>
   )

@@ -20,6 +20,16 @@ export async function POST(request: Request) {
       )
     }
 
+    // Validate Senement provider env vars
+    if (provider === "senement") {
+      if (!process.env.CORPORATE_EMAIL_USER || !process.env.CORPORATE_EMAIL_PASSWORD) {
+        return Response.json(
+          { success: false, error: "Senement email configuration missing in environment variables" },
+          { status: 500 }
+        )
+      }
+    }
+
     // Convert base64 strings back to Buffers for email attachment
     const processedRecipients = recipients.map((recipient: any) => ({
       email: recipient.email,
