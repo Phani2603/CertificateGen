@@ -18,10 +18,19 @@ export async function middleware(request: NextRequest) {
   const sessionToken = request.cookies.get("authjs.session-token") || 
                        request.cookies.get("__Secure-authjs.session-token")
   
+  // Public routes that don't require authentication
+  const publicApiRoutes = ["/api/certificates/verify"]
+  const isPublicApiRoute = publicApiRoutes.some(route => pathname.startsWith(route))
+  
   // Protected routes
   const protectedRoutes = ["/dashboard", "/individual-dashboard", "/create-organization", "/settings", "/api/certificates"]
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route)) ||
                           pathname.match(/^\/[\w-]+\/dashboard$/)
+  
+  // If route is public API, allow access
+  if (isPublicApiRoute) {
+    return NextResponse.next()
+  }
   
   // If route is protected and no session token, redirect to login
   if (isProtectedRoute && !sessionToken) {

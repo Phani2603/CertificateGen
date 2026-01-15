@@ -66,36 +66,104 @@ export async function POST(
     await invitation.save()
 
     // 4. Resend Email
-    const inviteUrl = `${process.env.NEXTAUTH_URL}/signup?invite=${newToken}`
+    const inviteUrl = `${process.env.NEXTAUTH_URL}/invitations/accept?token=${newToken}`
     
+    // Use GoDaddy SMTP for corporate invitations
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtpout.secureserver.net',
+      port: 465,
+      secure: true,
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_APP_PASSWORD,
+        user: process.env.CORPORATE_EMAIL_USER,
+        pass: process.env.CORPORATE_EMAIL_PASSWORD,
       },
     })
 
     await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+      from: `"Senement" <${process.env.CORPORATE_EMAIL_USER}>`,
       to: invitation.email,
-      subject: `Invitation Reminder: Join ${organization.name} on CertificateGen`,
+      subject: `Reminder: Invitation to join ${organization.name} on CertificateGen`,
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>Invitation Reminder</h2>
-          <p>You have been invited to join <strong>${organization.name}</strong> on CertificateGen.</p>
-          <p>This link is valid for 7 days.</p>
-          <div style="margin: 30px 0;">
-            <a href="${inviteUrl}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">
-              Accept Invitation
-            </a>
-          </div>
-          <p>Or copy and paste this link into your browser:</p>
-          <p><a href="${inviteUrl}">${inviteUrl}</a></p>
-          <p style="color: #666; font-size: 12px; margin-top: 30px;">
-            If you didn't expect this invitation, you can ignore this email.
-          </p>
-        </div>
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 20px;">
+            <tr>
+              <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                  
+                  <!-- Header -->
+                  <tr>
+                    <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
+                      <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Invitation Reminder</h1>
+                    </td>
+                  </tr>
+                  
+                  <!-- Main Content -->
+                  <tr>
+                    <td style="padding: 40px 30px;">
+                      <p style="color: #1a1a1a; font-size: 18px; margin: 0 0 20px; line-height: 1.6;">
+                        Hello,
+                      </p>
+                      
+                      <p style="color: #333333; font-size: 16px; margin: 0 0 20px; line-height: 1.6;">
+                        This is a friendly reminder that you have been invited to join <strong>${organization.name}</strong> on the Senement CertificateGen platform.
+                      </p>
+                      
+                      <div style="background-color: #f0f4ff; border-left: 4px solid #667eea; padding: 20px; margin: 25px 0; border-radius: 4px;">
+                        <p style="color: #333; font-size: 15px; margin: 0; line-height: 1.6;">
+                          ⏰ <strong>Don't miss out!</strong><br/>
+                          Your invitation is still active. Click below to accept and get started.
+                        </p>
+                      </div>
+                      
+                      <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+                        <tr>
+                          <td align="center">
+                            <a href="${inviteUrl}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);">Accept Invitation</a>
+                          </td>
+                        </tr>
+                      </table>
+                      
+                      <p style="color: #666666; font-size: 14px; margin: 25px 0 10px; line-height: 1.6; text-align: center;">
+                        Or copy and paste this link in your browser:
+                      </p>
+                      <p style="color: #667eea; font-size: 13px; margin: 0; line-height: 1.6; text-align: center; word-break: break-all;">
+                        ${inviteUrl}
+                      </p>
+                      
+                      <div style="background-color: #fff8e1; border: 1px solid #ffd700; padding: 15px; margin: 25px 0; border-radius: 6px;">
+                        <p style="color: #856404; font-size: 14px; margin: 0; line-height: 1.5;">
+                          ⏰ <strong>Note:</strong> This invitation link will expire in 7 days.
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                  
+                  <!-- Footer -->
+                  <tr>
+                    <td style="background-color: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #e0e0e0;">
+                      <p style="color: #666666; font-size: 14px; margin: 0 0 10px; line-height: 1.6;">
+                        <strong>Best regards,</strong><br/>
+                        The Senement Team
+                      </p>
+                      <p style="color: #999999; font-size: 12px; margin: 15px 0 0; line-height: 1.5;">
+                        This is an automated reminder email.<br/>
+                        If you didn't expect this invitation, you can safely ignore this email.
+                      </p>
+                    </td>
+                  </tr>
+                  
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
       `,
     })
 

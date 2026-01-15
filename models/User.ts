@@ -11,6 +11,7 @@ export interface IUser extends Document {
   bio?: string
   address?: string
   organization?: string
+  bannerColor?: string // Profile banner color
   organizationId?: mongoose.Types.ObjectId | IOrganization
   privateOrgId?: mongoose.Types.ObjectId // NEW: For corporate organizations
   userType?: 'corporate' | 'individual' | 'academic' | null // NEW: User type selection
@@ -58,6 +59,10 @@ const UserSchema = new Schema<IUser>(
     },
     organization: {
       type: String,
+    },
+    bannerColor: {
+      type: String,
+      default: '#21808D',
     },
     organizationId: {
       type: Schema.Types.ObjectId,

@@ -72,7 +72,7 @@ export default function CertificateGeneration({
   const [emailsSent, setEmailsSent] = useState(0)
   const [emailErrors, setEmailErrors] = useState<Array<{ email: string; error: string }>>([])
   const [isSendingMail, setIsSendingMail] = useState(false)
-  const [emailProvider, setEmailProvider] = useState<"resend" | "gmail">("resend")
+  const [emailProvider, setEmailProvider] = useState<"resend" | "gmail" | "senement">("resend")
   const [sendingMode, setSendingMode] = useState<"auto" | "sequential" | "pooled">("auto")
   const [showDevNav, setShowDevNav] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -304,6 +304,11 @@ export default function CertificateGeneration({
       console.log('[sendEmailsOnly] Not authenticated, showing DevNav again')
       setShowDevNav(true)
       return
+    }
+    
+    // For Senement, no credentials needed (uses env vars on server)
+    if (emailProvider === "senement") {
+      console.log('[sendEmailsOnly] Using Senement corporate email')
     }
     
     console.log('[sendEmailsOnly] Proceeding with email sending...')
@@ -1147,17 +1152,30 @@ Generated: ${new Date().toLocaleString()}
                     <label className="text-sm font-medium text-gray-700 mb-2 block">Email Provider</label>
                     <select
                       value={emailProvider}
-                      onChange={(e) => setEmailProvider(e.target.value as "resend" | "gmail")}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                      onChange={(e) => setEmailProvider(e.target.value as "resend" | "gmail" | "senement")}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white"
                     >
                       <option value="resend">Resend (Requires Domain)</option>
                       <option value="gmail">Gmail/Educational SMTP</option>
+                      <option value="senement">Senement Corporate (forge@senement.com)</option>
                     </select>
                     <div className="mt-2 space-y-2">
                       {emailProvider === "resend" ? (
                         <p className="text-xs text-gray-500">
                           Use onboarding@resend.dev for testing (limited to verified email)
                         </p>
+                      ) : emailProvider === "senement" ? (
+                        <div className="space-y-1">
+                          <div className="flex items-center space-x-2 text-xs">
+                            <CheckCircle className="w-3 h-3 text-green-500" />
+                            <span className="text-green-700">
+                              Sends from: forge@senement.com (Senement)
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            Professional corporate email • GoDaddy SMTP • Automatic configuration
+                          </p>
+                        </div>
                       ) : (
                         <div className="space-y-1">
                           {isAuthenticated ? (

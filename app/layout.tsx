@@ -1,6 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
-import {  Roboto } from "next/font/google"
+import {  Roboto,Caveat } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { getGoogleFontsUrl } from "@/lib/fonts"
 import { AuthProvider } from "@/components/auth-provider"
@@ -11,6 +11,7 @@ import "./globals.css"
 
 
 const roboto =Roboto({subsets:["cyrillic","latin"], weight:["100","200","800","600","500","300","400","700","900"]})
+const caveat =Caveat({subsets:["cyrillic","latin"], weight:["400","500","600","700"]})
 
 export const metadata: Metadata = {
   title: "CertificateHash",

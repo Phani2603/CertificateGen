@@ -196,7 +196,7 @@ export default function CorporateDashboard({ params }: PageProps) {
             <Button onClick={() => window.location.reload()} className="w-full bg-[#21808D]">
               Try Again
             </Button>
-            <Button variant="outline" onClick={() => window.location.href = '/'} className="w-full">
+            <Button variant="outline" onClick={() => window.location.href = '/individual-dashboard'} className="w-full">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Go to individual Dashboard
             </Button>
@@ -244,27 +244,28 @@ export default function CorporateDashboard({ params }: PageProps) {
             {/* Top Header */}
             <header className="flex items-center justify-between gap-3 md:gap-4 mb-4 md:mb-6 px-2 md:px-4 py-2 mt-14 md:mt-2">
               {/* Mobile Menu Button + Org Name / Active Event Indicator */}
-              {activeEvent ? (
-                <div className="flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-white rounded-lg md:rounded-xl shadow-sm border border-gray-200">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shrink-0"></div>
-                  <div className="text-xs md:text-sm flex-1 min-w-0">
-                    <span className="text-gray-500 hidden sm:inline">Active Event: </span>
-                    <span className="font-semibold text-gray-900 truncate">{activeEvent.eventName}</span>
+              <div className="flex items-center gap-2 md:gap-3">
+                {/* Mobile Menu Button - Always visible on mobile */}
+                <button 
+                  onClick={() => setSidebarOpen(true)}
+                  className="md:hidden p-2 -ml-2 hover:bg-gray-100 rounded-lg text-gray-600"
+                >
+                  <Menu className="h-6 w-6" />
+                </button>
+                
+                {/* Active Event or Org Name */}
+                {activeEvent ? (
+                  <div className="flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-white rounded-lg md:rounded-xl shadow-sm border border-gray-200">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shrink-0"></div>
+                    <div className="text-xs md:text-sm flex-1 min-w-0">
+                      <span className="text-gray-500 hidden sm:inline">Active Event: </span>
+                      <span className="font-semibold text-gray-900 truncate">{activeEvent.eventName}</span>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="md:hidden flex items-center gap-3">
-                  <button 
-                    onClick={() => setSidebarOpen(true)}
-                    className="p-2 -ml-2 hover:bg-gray-100 rounded-lg text-gray-600"
-                  >
-                    <Menu className="h-6 w-6" />
-                  </button>
+                ) : (
                   <span className="font-semibold text-gray-900">{orgData.name}</span>
-                </div>
-              )}
-              
-              {!activeEvent && <div className="hidden md:block" />}
+                )}
+              </div>
               
               <CorporateProfileOverlay
                 trigger={

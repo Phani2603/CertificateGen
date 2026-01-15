@@ -3,6 +3,8 @@ import { auth } from '@/auth'
 import connectDB from '@/lib/mongodb'
 import CertificateHistory from '@/models/CertificateHistory'
 import User from '@/models/User'
+import Event from '@/models/Event'
+import Club from '@/models/Club'
 
 // GET - Fetch certificate generation history with pagination
 export async function GET(request: NextRequest) {
