@@ -239,7 +239,7 @@ export default function NewLandingPage() {
 
             {/* 100 more + */}
             <div className="flex items-center justify-center">
-              <span className="text-sm lg:text-xl font-caveat font-semibold text-gray-900">100 more +</span>
+              <span className={`${caveat.className} text-sm lg:text-3xl font-bold text-gray-900`}>100 more +</span>
             </div>
           </div>
         </div>
