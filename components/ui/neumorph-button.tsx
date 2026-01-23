@@ -7,7 +7,7 @@ import { motion, type HTMLMotionProps } from "motion/react"
 
 const buttonVariants = cva(
   // Base styles
-  "justify-center px-4 text-sm font-medium font-poppins items-center transition-[box-shadow,background-color] disabled:cursor-not-allowed disabled:opacity-50 flex active:transition-none",
+  "justify-center px-4 text-sm font-medium items-center transition-[box-shadow,background-color] disabled:cursor-not-allowed disabled:opacity-50 flex active:transition-none",
   {
     variants: {
       intent: {
