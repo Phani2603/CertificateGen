@@ -91,6 +91,7 @@
   --fonts-lora: var(--font-lora), 'Lora', serif;
   --fonts-crimson: var(--font-crimson), 'Crimson Text', serif;
   --fonts-merriweather: var(--font-merriweather), 'Merriweather', serif;
+  --fonts-iceland:var(--font-iceland),'Iceland';
   
   /* Sans-Serif Fonts */
   --fonts-roboto: var(--font-roboto), 'Roboto', sans-serif;
@@ -107,6 +108,8 @@
   --fonts-pacifico: var(--font-pacifico), 'Pacifico', cursive;
   --fonts-dancing-script: var(--font-dancing-script), 'Dancing Script', cursive;
   --fonts-tangerine: var(--font-tangerine), 'Tangerine', cursive;
+  
+  --fonts-coda: var(--font-coda), 'Coda', sans-serif;
   
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -155,28 +158,25 @@
   }
 }
 
-/* Font Utility Classes */
-@layer utilities {
-  /* Serif Fonts */
-  .font-playfair { font-family: var(--fonts-playfair); }
-  .font-cormorant { font-family: var(--fonts-cormorant); }
-  .font-lora { font-family: var(--fonts-lora); }
-  .font-crimson { font-family: var(--fonts-crimson); }
-  .font-merriweather { font-family: var(--fonts-merriweather); }
-  .font-coda{ font-family: var(--fonts-coda);}
-  /* Sans-Serif Fonts */
-  .font-roboto { font-family: var(--fonts-roboto); }
-  .font-montserrat { font-family: var(--fonts-montserrat); }
-  .font-open-sans { font-family: var(--fonts-open-sans); }
-  .font-poppins { font-family: var(--fonts-poppins); }
-  .font-inter { font-family: var(--fonts-inter); }
-  .font-raleway { font-family: var(--fonts-raleway); }
-  
-  /* Script Fonts */
-  .font-caveat { font-family: var(--font-caveat), 'Caveat', cursive !important; }
-  .font-marck-script { font-family: var(--fonts-marck-script); }
-  .font-great-vibes { font-family: var(--fonts-great-vibes); }
-  .font-pacifico { font-family: var(--fonts-pacifico); }
-  .font-dancing-script { font-family: var(--fonts-dancing-script); }
-  .font-tangerine { font-family: var(--fonts-tangerine); }
-}
+/* Font Utility Classes - Direct CSS for Tailwind v4 */
+.font-playfair { font-family: var(--font-playfair), 'Playfair Display', serif !important; }
+.font-cormorant { font-family: var(--font-cormorant), 'Cormorant Garamond', serif !important; }
+.font-lora { font-family: var(--font-lora), 'Lora', serif !important; }
+.font-crimson { font-family: var(--font-crimson), 'Crimson Text', serif !important; }
+.font-merriweather { font-family: var(--font-merriweather), 'Merriweather', serif !important; }
+.font-coda { font-family: var(--font-coda), 'Coda', sans-serif !important; }
+
+.font-roboto { font-family: var(--font-roboto), 'Roboto', sans-serif !important; }
+.font-montserrat { font-family: var(--font-montserrat), 'Montserrat', sans-serif !important; }
+.font-open-sans { font-family: var(--font-open-sans), 'Open Sans', sans-serif !important; }
+.font-poppins { font-family: var(--font-poppins), 'Poppins', sans-serif !important; }
+.font-inter { font-family: var(--font-inter), 'Inter', sans-serif !important; }
+.font-raleway { font-family: var(--font-raleway), 'Raleway', sans-serif !important; }
+.font-iceland { font-family: var(--font-iceland), 'Iceland', sans-serif !important; }
+
+.font-caveat { font-family: var(--font-caveat), 'Caveat', cursive !important; }
+.font-marck-script { font-family: var(--font-marck-script), 'Marck Script', cursive !important; }
+.font-great-vibes { font-family: var(--font-great-vibes), 'Great Vibes', cursive !important; }
+.font-pacifico { font-family: var(--font-pacifico), 'Pacifico', cursive !important; }
+.font-dancing-script { font-family: var(--font-dancing-script), 'Dancing Script', cursive !important; }
+.font-tangerine { font-family: var(--font-tangerine), 'Tangerine', cursive !important; }
