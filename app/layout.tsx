@@ -19,6 +19,7 @@ import {
   Dancing_Script,
   Tangerine,
   Coda,
+  Iceland,
 } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { getGoogleFontsUrl } from "@/lib/fonts"
@@ -33,6 +34,12 @@ const playfairDisplay = Playfair_Display({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800", "900"],
   variable: "--font-playfair"
+})
+const iceland=Iceland({
+  subsets:["latin"],
+  weight:["400"],
+  variable:"--font-iceland"
+
 })
 
 const cormorantGaramond = Cormorant_Garamond({
@@ -108,6 +115,9 @@ const caveat = Caveat({
   variable: "--font-caveat"
 })
 
+// Export font classNames for direct use
+export { caveat }
+
 const marckScript = Marck_Script({
   subsets: ["latin"],
   weight: ["400"],
@@ -165,7 +175,7 @@ export default function RootLayout({
         {/* Explicit Caveat font load as backup */}
         <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&display=swap" rel="stylesheet" />
       </head>
-      <body className={`font-sans ${roboto.variable} ${playfairDisplay.variable} ${cormorantGaramond.variable} ${lora.variable} ${coda.variable} ${crimsonText.variable} ${merriweather.variable} ${montserrat.variable} ${openSans.variable} ${poppins.variable} ${inter.variable} ${raleway.variable} ${caveat.variable} ${marckScript.variable} ${greatVibes.variable} ${pacifico.variable} ${dancingScript.variable} ${tangerine.variable} antialiased`}>
+      <body className={`font-sans ${roboto.variable} ${playfairDisplay.variable} ${cormorantGaramond.variable} ${lora.variable} ${coda.variable} ${crimsonText.variable} ${merriweather.variable} ${montserrat.variable} ${openSans.variable} ${poppins.variable} ${inter.variable} ${raleway.variable} ${caveat.variable}${iceland.variable} ${marckScript.variable} ${greatVibes.variable} ${pacifico.variable} ${dancingScript.variable} ${tangerine.variable} antialiased`}>
         {/* Google Analytics */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-G1CV391NB5"

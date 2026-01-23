@@ -5,19 +5,26 @@ import { Menu, X } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import NeumorphButton from "@/components/ui/neumorph-button"
+import { Caveat } from "next/font/google"
+
+const caveat = Caveat({ 
+  subsets: ["latin"],
+  weight: ["400", "700"]
+})
+
 export default function NewLandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
-    <div className="min-h-screen bg-gray-50 font-poppins">
+    <div className="min-h-screen bg-gray-50 ">
       {/* Navigation */}
       <nav className="relative z-50 flex items-center justify-between px-6 py-4 lg:px-12 bg-gray-50">
         {/* Logo */}
-        <div className="flex items-center space-x-2">
-          <div className="text-2xl font-bold text-gray-900 font-poppins">
-            Certifio
+        <div className="flex flex-col items-center space-x-2">
+          <div className="text-2xl font-semibold text-gray-900 font-raleway">
+            Certiflo
           </div>
-          <div className="text-sm text-gray-600 font-medium font-poppins">
+          <div className="text-sm text-gray-600 font-medium font-pacifico">
             by SENEMENT
           </div>
         </div>
@@ -40,17 +47,19 @@ export default function NewLandingPage() {
 
         {/* Desktop Auth Buttons */}
         <div className="hidden md:flex items-center space-x-3">
-          <NeumorphButton className="px-6 py-2 bg-secondary text-primary font-medium font-poppins rounded-lg shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.7)] hover:shadow-[inset_1px_1px_3px_rgba(0,0,0,0.1),inset_-1px_-1px_3px_rgba(255,255,255,0.7)] transition-all duration-200">
+          <NeumorphButton size="small" intent="default" className=" shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.7)]  transition-all duration-50">
             Login
           </NeumorphButton>
-          <NeumorphButton className="px-4 py-1 bg-emerald-400 text-black font-medium font-poppins rounded-lg shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,0.7)] hover:shadow-[1px_1px_3px_rgba(0,0,0,0.1),-1px_-1px_3px_rgba(255,255,255,0.7)] transition-all duration-200">
+          <NeumorphButton size={"small"} intent={"primary"} className=" shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,0.7)] transition-all duration-50">
             Join Now
           </NeumorphButton>
         </div>
 
         {/* Mobile Menu Button */}
         <NeumorphButton
-          className="md:hidden p-2 bg-secondary rounded-lg shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.7)] hover:shadow-[inset_1px_1px_3px_rgba(0,0,0,0.1),inset_-1px_-1px_3px_rgba(255,255,255,0.7)] transition-all duration-200"
+        size={"small"}
+        intent={"secondary"}
+          className="md:hidden p-2 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.7)] transition-all duration-50"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         >
           {mobileMenuOpen ? (
@@ -76,11 +85,11 @@ export default function NewLandingPage() {
               <Link href="#" className="block text-gray hover:text-gray-900 transition-colors font-poppins">
                 Contact
               </Link>
-              <div className="pt-4 space-y-3">
-                <NeumorphButton className="w-full px-6 py-2 bg-secondary text-black font-medium font-poppins rounded-lg shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.7)] hover:shadow-[inset_1px_1px_3px_rgba(0,0,0,0.1),inset_-1px_-1px_3px_rgba(255,255,255,0.7)] transition-all duration-200">
+              <div className=" justify-center flex flex-row gap-4 pt-4 space-y-3">
+                <NeumorphButton size={"small"} intent={"secondary"} className="shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.7)]  transition-all duration-50">
                   Login
                 </NeumorphButton>
-                <NeumorphButton className="w-full px-6 py-2 bg-emerald-400 text-black font-medium font-poppins rounded-lg shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,0.7)] hover:shadow-[1px_1px_3px_rgba(0,0,0,0.1),-1px_-1px_3px_rgba(255,255,255,0.7)] transition-all duration-200">
+                <NeumorphButton size={"small"} intent={"primary"} className=" shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,0.7)]  transition-all duration-50">
                   Join Now
                 </NeumorphButton>
               </div>
@@ -97,10 +106,10 @@ export default function NewLandingPage() {
             <div className="space-y-6 lg:space-y-8 order-1">
               <div className="space-y-4 lg:space-y-6">
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl leading-tight">
-                  <div className="font-caveat font-caveat font-semibold text-4xl sm:text-5xl lg:text-6xl xl:text-7xl text-gray-900" style={{ fontFamily: 'var(--font-caveat, Caveat, cursive)' }}>
+                  <div className={`${caveat.className} font-semibold text-4xl sm:text-5xl lg:text-6xl xl:text-7xl text-gray-900`}>
                     Certificate Generation And
                   </div>
-                  <div className="font-caveat font-caveat font-semibold text-4xl sm:text-5xl lg:text-6xl xl:text-7xl mt-2 text-gray-900" style={{ fontFamily: 'var(--font-caveat, Caveat, cursive)' }}>
+                  <div className={`${caveat.className} font-semibold text-4xl sm:text-5xl lg:text-6xl xl:text-7xl mt-2 text-gray-900`}>
                     Issuance{" "}
                     <span className="relative inline-block">
                       Made Simple
@@ -117,11 +126,10 @@ export default function NewLandingPage() {
 
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 lg:gap-4">
-                <NeumorphButton className="px-6 lg:px-8 py-3 bg-emerald-400 text-black font-medium font-poppins text-base lg:text-lg rounded-lg shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,0.7)] hover:shadow-[1px_1px_3px_rgba(0,0,0,0.1),-1px_-1px_3px_rgba(255,255,255,0.7)] transition-all duration-200">
+                <NeumorphButton size="medium" intent ="primary" className="shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,0.7)] transition-all duration-50">
                   Contact Us
                 </NeumorphButton>
-                <NeumorphButton className="px-6 lg:px-8 py-3 bg-primary text-white font-medium font-poppins text-base lg:text-lg rounded-lg shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.7)] hover:shadow-[inset_1px_1px_3px_rgba(0,0,0,0.1),inset_-1px_-1px_3px_rgba(255,255,255,0.7)] transition-all duration-200">
-                  Create Certificate
+                <NeumorphButton intent={"default"} className="shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,0.7)]">                  Create Certificate
                 </NeumorphButton>
               </div>
 
@@ -156,7 +164,7 @@ export default function NewLandingPage() {
 
                   {/* Verified Badge */}
                   <div className="absolute top-4 lg:top-6 -right-2 lg:-right-3 bg-white rounded-xl p-1.5 lg:p-2 shadow-md">
-                    <div className="font-caveat text-base lg:text-lg font-semibold text-gray-900" style={{ fontFamily: 'var(--font-caveat, Caveat, cursive)' }}>Verified</div>
+                    <div className={`${caveat.className} text-base lg:text-lg font-semibold text-gray-900`}>Verified</div>
                   </div>
                 </div>
 
@@ -164,7 +172,7 @@ export default function NewLandingPage() {
                 <div className="hidden sm:block absolute -bottom-4 lg:-bottom-6 -right-4 lg:-right-6 bg-white rounded-lg shadow-md p-2.5 lg:p-3 w-40 lg:w-52 transform -rotate-1">
                   <div className="space-y-1.5 lg:space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="font-caveat text-lg lg:text-xl font-semibold" style={{ fontFamily: 'var(--font-caveat, Caveat, cursive)' }}>Issued</span>
+                      <span className={`${caveat.className} text-lg lg:text-xl font-semibold`}>Issued</span>
                       <div className="w-3 h-3 lg:w-4 lg:h-4 bg-emerald-400 rounded"></div>
                     </div>
                     
@@ -231,7 +239,7 @@ export default function NewLandingPage() {
 
             {/* 100 more + */}
             <div className="flex items-center justify-center">
-              <span className="text-sm lg:text-xl font-caveat font-semibold text-gray-900" style={{ fontFamily: 'var(--font-caveat, Caveat, cursive)' }}>100 more +</span>
+              <span className="text-sm lg:text-xl font-caveat font-semibold text-gray-900">100 more +</span>
             </div>
           </div>
         </div>

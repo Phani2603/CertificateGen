@@ -23,15 +23,15 @@ const buttonVariants = cva(
           "active:[box-shadow:inset_0px_-1.5px_0px_0px_#171310,_0px_0.5px_2px_0px_rgba(58,_33,_8,_70%)]",
         ],
         primary: [
-          "bg-[#2C7BE5]",
+          "bg-[#46D09B]",
           "text-[#fff]",
-          "hover:enabled:bg-[#3D8DF5]",
+          "hover:enabled:bg-[#00D492]",
           "disabled:bg-[#9FC3F5]",
-          "[box-shadow:inset_0px_-2.108433723449707px_0px_0px_#1A68D1,_0px_1.2048193216323853px_6.325301647186279px_0px_rgba(28,_100,_242,_58%)]",
-          "hover:enabled:[box-shadow:inset_0px_-2.53012px_0px_0px_#2C7BE5,_0px_1.44578px_7.59036px_0px_rgba(28,_100,_242,_64%)]",
+          "[box-shadow:inset_0px_-2.108433723449707px_0px_0px_#3BBF8E,_0px_1.2048193216323853px_6.325301647186279px_0px_rgba(70,_208,_155,_0.58)]",
+          "hover:enabled:[box-shadow:inset_0px_-2.53012px_0px_0px_#3ECF9A,_0px_1.44578px_7.59036px_0px_rgba(70,_208,_155,_0.64)]",
           "disabled:shadow-none",
-          "active:bg-[#1A68D1]",
-          "active:[box-shadow:inset_0px_-1.5px_0px_0px_#1554AB,_0px_0.5px_2px_0px_rgba(28,_100,_242,_70%)]",
+          "active:bg-[##00D492]",
+          "active:[box-shadow:inset_0px_-1.5px_0px_0px_#34A97C,_0px_0.5px_2px_0px_rgba(70,_208,_155,_0.70)]",
         ],
         secondary: [
           "bg-[#FFFFFF]",
@@ -59,9 +59,9 @@ const buttonVariants = cva(
         ],
       },
       size: {
-        small: ["text-xs", "py-1", "px-2", "h-9", "rounded-[8px]"],
-        medium: ["text-base", "py-2", "px-4", "h-11", "rounded-[9px]"],
-        large: ["text-lg", "py-3", "px-6", "h-14", "rounded-[11px]"],
+        small: ["text-xs", "py-1", "px-5", "h-7", "rounded-[5px]"],
+        medium: ["text-base", "py-2", "px-5", "h-9", "rounded-[9px]"],
+        large: ["text-lg", "py-3", "px-6", "h-11", "rounded-[11px]"],
       },
       fullWidth: {
         true: "w-full",
@@ -83,7 +83,7 @@ const buttonVariants = cva(
 
 export interface NeumorphButtonProps
   extends HTMLMotionProps<"button">,
-    VariantProps<typeof buttonVariants> {
+  VariantProps<typeof buttonVariants> {
   children: React.ReactNode
   loading?: boolean
 }
