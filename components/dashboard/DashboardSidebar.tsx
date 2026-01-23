@@ -61,7 +61,7 @@ export function DashboardSidebar({
           <div className="flex flex-col items-center w-full">
             <div className="w-18 h-18 rounded-xl overflow-hidden flex items-center justify-center">
               <Image 
-                src="/c.svg" 
+                src="/cflo1.png" 
                 alt="CertificateHash Logo" 
                 width={56} 
                 height={56}

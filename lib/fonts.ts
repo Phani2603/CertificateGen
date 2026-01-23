@@ -1,5 +1,6 @@
 export const CERTIFICATE_FONTS = [
   // Script Fonts (Professional)
+  { name: "Caveat", family: "Caveat", category: "Script", weights: [400, 700] },
   { name: "Marck Script", family: "Marck Script", category: "Script", weights: [400] },
   { name: "Great Vibes", family: "Great Vibes", category: "Script", weights: [400] },
   { name: "Pacifico", family: "Pacifico", category: "Script", weights: [400] },

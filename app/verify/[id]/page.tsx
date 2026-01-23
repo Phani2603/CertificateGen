@@ -610,7 +610,7 @@ export default function VerificationPage() {
           <div className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white border border-slate-200 shadow-md">
               <Image 
-                src="/c.svg" 
+                src="/cflo1.png" 
                 alt="Forge" 
                 width={24} 
                 height={24}

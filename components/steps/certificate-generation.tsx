@@ -1132,7 +1132,7 @@ Generated: ${new Date().toLocaleString()}
                       className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
                     >
                       <option value="png">PNG</option>
-                      <option value="pdf">PDF</option>
+                      {/*<option value="pdf">PDF</option>*/}
                     </select>
                   </div>
 
@@ -1155,8 +1155,8 @@ Generated: ${new Date().toLocaleString()}
                       onChange={(e) => setEmailProvider(e.target.value as "resend" | "gmail" | "senement")}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white"
                     >
-                      <option value="resend">Resend (Requires Domain)</option>
-                      <option value="gmail">Gmail/Educational SMTP</option>
+                     {/* <option value="resend">Resend (Requires Domain)</option>
+                      <option value="gmail">Gmail/Educational SMTP</option>*/}
                       <option value="senement">Senement Corporate (forge@senement.com)</option>
                     </select>
                     <div className="mt-2 space-y-2">

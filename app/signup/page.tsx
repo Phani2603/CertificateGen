@@ -111,7 +111,7 @@ function SignupContent() {
         {/* Right Side - Signup Form */}
         <Card className="bg-white p-8 md:p-12 shadow-xl">
           <div className="flex items-center gap-2 mb-8">
-            <Image src="/c.svg" alt="CertificateHash Logo" width={52} height={52} />
+            <Image src="/cflo1.png" alt="CertificateHash Logo" width={52} height={52} />
           </div>
 
           <h2 className="text-3xl font-bold mb-2">Create account</h2>
