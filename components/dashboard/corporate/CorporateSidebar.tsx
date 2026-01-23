@@ -61,7 +61,7 @@ export function CorporateSidebar({
           <div className="flex flex-col items-center w-full">
             <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden flex items-center justify-center">
               <Image 
-                src="/c.svg" 
+                src="/cflo1.png" 
                 alt="CertificateHash Logo" 
                 width={56} 
                 height={56}

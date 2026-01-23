@@ -297,7 +297,7 @@ export function OrganizationSection({
         <div className="text-center py-8 md:py-16 px-4">
           <div className="w-20 h-20 md:w-24 md:h-24 mx-auto mb-4 md:mb-6  rounded-xl md:rounded-2xl flex items-center justify-center">
             <Image
-              src="/c.svg"
+              src="/cflo1.png"
               alt="CertificateHash Logo"
               width={48}
               height={48}

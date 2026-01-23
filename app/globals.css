@@ -82,6 +82,32 @@
 
 @theme inline {
   --fonts-sans: 'Roboto', sans-serif;
+  --fonts-serif: 'Playfair Display', serif;
+  --fonts-mono: 'Courier New', monospace;
+  
+  /* Serif Fonts */
+  --fonts-playfair: var(--font-playfair), 'Playfair Display', serif;
+  --fonts-cormorant: var(--font-cormorant), 'Cormorant Garamond', serif;
+  --fonts-lora: var(--font-lora), 'Lora', serif;
+  --fonts-crimson: var(--font-crimson), 'Crimson Text', serif;
+  --fonts-merriweather: var(--font-merriweather), 'Merriweather', serif;
+  
+  /* Sans-Serif Fonts */
+  --fonts-roboto: var(--font-roboto), 'Roboto', sans-serif;
+  --fonts-montserrat: var(--font-montserrat), 'Montserrat', sans-serif;
+  --fonts-open-sans: var(--font-open-sans), 'Open Sans', sans-serif;
+  --fonts-poppins: var(--font-poppins), 'Poppins', sans-serif;
+  --fonts-inter: var(--font-inter), 'Inter', sans-serif;
+  --fonts-raleway: var(--font-raleway), 'Raleway', sans-serif;
+  
+  /* Script Fonts */
+  --fonts-caveat: var(--font-caveat), 'Caveat', cursive;
+  --fonts-marck-script: var(--font-marck-script), 'Marck Script', cursive;
+  --fonts-great-vibes: var(--font-great-vibes), 'Great Vibes', cursive;
+  --fonts-pacifico: var(--font-pacifico), 'Pacifico', cursive;
+  --fonts-dancing-script: var(--font-dancing-script), 'Dancing Script', cursive;
+  --fonts-tangerine: var(--font-tangerine), 'Tangerine', cursive;
+  
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -127,4 +153,30 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Font Utility Classes */
+@layer utilities {
+  /* Serif Fonts */
+  .font-playfair { font-family: var(--fonts-playfair); }
+  .font-cormorant { font-family: var(--fonts-cormorant); }
+  .font-lora { font-family: var(--fonts-lora); }
+  .font-crimson { font-family: var(--fonts-crimson); }
+  .font-merriweather { font-family: var(--fonts-merriweather); }
+  .font-coda{ font-family: var(--fonts-coda);}
+  /* Sans-Serif Fonts */
+  .font-roboto { font-family: var(--fonts-roboto); }
+  .font-montserrat { font-family: var(--fonts-montserrat); }
+  .font-open-sans { font-family: var(--fonts-open-sans); }
+  .font-poppins { font-family: var(--fonts-poppins); }
+  .font-inter { font-family: var(--fonts-inter); }
+  .font-raleway { font-family: var(--fonts-raleway); }
+  
+  /* Script Fonts */
+  .font-caveat { font-family: var(--font-caveat), 'Caveat', cursive !important; }
+  .font-marck-script { font-family: var(--fonts-marck-script); }
+  .font-great-vibes { font-family: var(--fonts-great-vibes); }
+  .font-pacifico { font-family: var(--fonts-pacifico); }
+  .font-dancing-script { font-family: var(--fonts-dancing-script); }
+  .font-tangerine { font-family: var(--fonts-tangerine); }
 }

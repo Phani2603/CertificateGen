@@ -39,7 +39,7 @@ export default function LandingPage() {
         <div className="container mx-auto px-3 md:px-7 py-4 md:py-5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Image
-              src="/c.svg"
+              src="/cflo1.png"
               alt="CertificateHash Logo"
               width={52}
               height={52} />
@@ -256,7 +256,7 @@ export default function LandingPage() {
             <div>
               <div className="flex items-center gap-2 mb-4">
               <Image
-                src="/c.svg"
+                src="/cflo1.png"
                 alt="CertificateHash Logo"
                 width={40}
                 height={40}
