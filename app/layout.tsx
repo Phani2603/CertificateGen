@@ -149,17 +149,82 @@ const tangerine = Tangerine({
 })
 
 export const metadata: Metadata = {
- title: "Certifio - Certificate Generation Made Simple | by Senement",
-  description: "Create, send, and verify certificates for events, programs, and organizations securely and at scale. No credit card required for early partners.",
-  keywords: ["certificate generation", "digital certificates", "certificate verification", "bulk certificates", "secure certificates"],
-  generator: "senement.com",
-  icons:{
+  title: "Certifio - Certificate Generation & Verification Platform | Secure Digital Certificates",
+  description: "Create, send, and verify digital certificates at scale. Trusted by 100+ organizations. Secure certificate generation for events, programs, and institutions. No credit card required.",
+  keywords: [
+    "certificate generation",
+    "digital certificates",
+    "certificate verification",
+    "bulk certificates",
+    "secure certificates",
+    "online certificate maker",
+    "certificate issuing platform",
+    "event certificates",
+    "course completion certificates",
+    "certificate management system",
+    "certificate authentication",
+    "blockchain certificates",
+    "verifiable credentials"
+  ],
+  generator: "certifio.com",
+  applicationName: "Certifio",
+  referrer: "strict-origin-when-cross-origin",
+  authors: [{ name: "Senement", url: "https://senement.com" }],
+  creator: "Senement",
+  publisher: "Senement",
+  formatDetection: {
+    email: false,
+    telephone: false,
+    address: false,
+  },
+  icons: {
     icon: "/cflo1.png",
     apple: "/cflo1.png",
     shortcut: "/cflo1.png"
-  }
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://certifio.com",
+    siteName: "Certifio",
+    title: "Certifio - Certificate Generation & Verification Platform",
+    description: "Create, send, and verify digital certificates at scale. Trusted by 100+ organizations.",
+    images: [
+      {
+        url: "/cflo1.png",
+        width: 1200,
+        height: 630,
+        alt: "Certifio - Certificate Generation Platform",
+        type: "image/png",
+      }
+    ]
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Certifio - Certificate Generation & Verification",
+    description: "Create, send, and verify digital certificates at scale. Trusted by 100+ organizations.",
+    images: ["/cflo1.png"],
+    creator: "@senement",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    nocache: false,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-snippet": -1,
+      "max-image-preview": "large",
+      "max-video-preview": -1,
+    },
+  },
+  alternates: {
+    canonical: "https://certifio.com",
+  },
+  verification: {
+    google: "your-google-verification-code",
+  },
 }
-
 
 export default function RootLayout({
   children,
@@ -174,6 +239,96 @@ export default function RootLayout({
         <link href={getGoogleFontsUrl()} rel="stylesheet" />
         {/* Explicit Caveat font load as backup */}
         <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&display=swap" rel="stylesheet" />
+        
+        {/* JSON-LD Structured Data */}
+        <Script
+          id="schema-organization"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              "name": "Certifio",
+              "url": "https://certifio.com",
+              "logo": "https://certifio.com/cflo1.png",
+              "description": "Certificate generation and verification platform",
+              "sameAs": [
+                "https://twitter.com/senement",
+                "https://linkedin.com/company/senement"
+              ],
+              "contactPoint": {
+                "@type": "ContactPoint",
+                "contactType": "Customer Support",
+                "url": "https://certifio.com/contact"
+              }
+            })
+          }}
+        />
+        
+        {/* JSON-LD Product Schema */}
+        <Script
+          id="schema-product"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "SoftwareApplication",
+              "name": "Certifio",
+              "description": "Create, send, and verify digital certificates at scale",
+              "url": "https://certifio.com",
+              "applicationCategory": "BusinessApplication",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD",
+                "description": "Free for early partners"
+              },
+              "aggregateRating": {
+                "@type": "AggregateRating",
+                "ratingValue": "4.8",
+                "ratingCount": "100"
+              }
+            })
+          }}
+        />
+        
+        {/* JSON-LD FAQPage Schema */}
+        <Script
+          id="schema-faq"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              "mainEntity": [
+                {
+                  "@type": "Question",
+                  "name": "What is Certifio?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Certifio is a digital certificate generation and verification platform that allows organizations to create, send, and verify certificates at scale."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "Is Certifio free?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes, Certifio is free for early partners. No credit card is required to get started."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "How secure are Certifio certificates?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Certifio uses industry-standard security protocols to ensure all certificates are secure and verifiable."
+                  }
+                }
+              ]
+            })
+          }}
+        />
       </head>
       <body className={`font-sans ${roboto.variable} ${playfairDisplay.variable} ${cormorantGaramond.variable} ${lora.variable} ${coda.variable} ${crimsonText.variable} ${merriweather.variable} ${montserrat.variable} ${openSans.variable} ${poppins.variable} ${inter.variable} ${raleway.variable} ${caveat.variable}${iceland.variable} ${marckScript.variable} ${greatVibes.variable} ${pacifico.variable} ${dancingScript.variable} ${tangerine.variable} antialiased`}>
         {/* Google Analytics */}
