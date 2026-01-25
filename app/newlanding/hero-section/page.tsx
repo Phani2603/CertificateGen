@@ -531,7 +531,7 @@ export default function NewLandingPage() {
         <div className="max-w-7xl mx-auto">
           {/* Section Header */}
           <div className="text-center mb-8 sm:mb-12 lg:mb-16">
-            <span className={`highlight-yellow inline-block rounded-3xl text-xl sm:text-2xl lg:text-3xl ${caveat.className} font-bold text-gray-900`}>
+            <span className={`highlight-yellow inline-block rounded-3xl text-3xl sm:text-3xl lg:text-5xl font-bold text-gray-900 max-w-2xl ${caveat.className}`}>
               Verified Certification Partner
             </span>
           </div>
