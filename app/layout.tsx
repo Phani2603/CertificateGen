@@ -150,9 +150,9 @@ const tangerine = Tangerine({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://certifio.com"),
-  title: "Certifio - Certificate Generation & Verification Platform | Secure Digital Certificates",
-  description: "Create, send, and verify digital certificates at scale. Trusted by 100+ organizations. Secure certificate generation for events, programs, and institutions. No credit card required.",
+  metadataBase: new URL("https://gocertiflo.com"),
+  title: "Certiflo - Certificate Generation Made Simple | by Senement",
+  description: "Create, send, and verify certificates for events, programs, and organizations securely and at scale. No credit card required for early partners.",
   keywords: [
     "certificate generation",
     "digital certificates",
@@ -168,8 +168,8 @@ export const metadata: Metadata = {
     "blockchain certificates",
     "verifiable credentials"
   ],
-  generator: "certifio.com",
-  applicationName: "Certifio",
+  generator: "gocertiflo.com",
+  applicationName: "Certiflo",
   referrer: "strict-origin-when-cross-origin",
   authors: [{ name: "Senement", url: "https://senement.com" }],
   creator: "Senement",
@@ -180,30 +180,41 @@ export const metadata: Metadata = {
     address: false,
   },
   icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
-    apple: "/cflo1.png",
+    icon: [
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon.ico" }
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }
+    ],
+    other: [
+      {
+        rel: "mask-icon",
+        url: "/cflo1.png",
+      }
+    ]
   },
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://certifio.com",
-    siteName: "Certifio",
-    title: "Certifio - Certificate Generation & Verification Platform",
+    url: "https://gocertiflo.com",
+    siteName: "Certiflo",
+    title: "Certiflo - Certificate Generation & Verification Platform",
     description: "Create, send, and verify digital certificates at scale. Trusted by 100+ organizations.",
     images: [
       {
         url: "/cflo1.png",
         width: 1200,
         height: 630,
-        alt: "Certifio - Certificate Generation Platform",
+        alt: "Certiflo - Certificate Generation Platform",
         type: "image/png",
       }
     ]
   },
   twitter: {
     card: "summary_large_image",
-    title: "Certifio - Certificate Generation & Verification",
+    title: "Certiflo - Certificate Generation & Verification",
     description: "Create, send, and verify digital certificates at scale. Trusted by 100+ organizations.",
     images: ["/cflo1.png"],
     creator: "@senement",
@@ -221,7 +232,7 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://certifio.com",
+    canonical: "https://gocertiflo.com",
   },
   verification: {
     google: "your-google-verification-code",
@@ -250,9 +261,9 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "Organization",
-              "name": "Certifio",
-              "url": "https://certifio.com",
-              "logo": "https://certifio.com/cflo1.png",
+              "name": "Certiflo",
+              "url": "https://gocertiflo.com",
+              "logo": "https://gocertiflo.com/cflo1.png",
               "description": "Certificate generation and verification platform",
               "sameAs": [
                 "https://twitter.com/senement",
@@ -261,7 +272,7 @@ export default function RootLayout({
               "contactPoint": {
                 "@type": "ContactPoint",
                 "contactType": "Customer Support",
-                "url": "https://certifio.com/contact"
+                "url": "https://gocertiflo.com/contact"
               }
             })
           }}
@@ -275,9 +286,9 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "SoftwareApplication",
-              "name": "Certifio",
+              "name": "Certiflo",
               "description": "Create, send, and verify digital certificates at scale",
-              "url": "https://certifio.com",
+              "url": "https://gocertiflo.com",
               "applicationCategory": "BusinessApplication",
               "offers": {
                 "@type": "Offer",
@@ -305,26 +316,26 @@ export default function RootLayout({
               "mainEntity": [
                 {
                   "@type": "Question",
-                  "name": "What is Certifio?",
+                  "name": "What is Certiflo?",
                   "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "Certifio is a digital certificate generation and verification platform that allows organizations to create, send, and verify certificates at scale."
+                    "text": "Certiflo is a digital certificate generation and verification platform that allows organizations to create, send, and verify certificates at scale."
                   }
                 },
                 {
                   "@type": "Question",
-                  "name": "Is Certifio free?",
+                  "name": "Is Certiflo free?",
                   "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "Yes, Certifio is free for early partners. No credit card is required to get started."
+                    "text": "Yes, Certiflo is free for early partners. No credit card is required to get started."
                   }
                 },
                 {
                   "@type": "Question",
-                  "name": "How secure are Certifio certificates?",
+                  "name": "How secure are Certiflo certificates?",
                   "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "Certifio uses industry-standard security protocols to ensure all certificates are secure and verifiable."
+                    "text": "Certiflo uses industry-standard security protocols to ensure all certificates are secure and verifiable."
                   }
                 }
               ]
