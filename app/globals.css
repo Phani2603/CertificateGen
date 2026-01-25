@@ -111,6 +111,14 @@
   
   --fonts-coda: var(--font-coda), 'Coda', sans-serif;
   
+  /* Custom Colors for Design */
+  --color-highlight-yellow: #FFFF00;
+  --color-highlight-yellow-light: #FFFACD;
+  --color-box-light: #F8F9FA;
+  --color-box-border: #E8E8E8;
+  --color-gradient-red: #FF6B67;
+  --color-gradient-blue: #7367FF;
+  
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -180,3 +188,93 @@
 .font-pacifico { font-family: var(--font-pacifico), 'Pacifico', cursive !important; }
 .font-dancing-script { font-family: var(--font-dancing-script), 'Dancing Script', cursive !important; }
 .font-tangerine { font-family: var(--font-tangerine), 'Tangerine', cursive !important; }
+
+/* Custom Highlight and Box Styles */
+.highlight-yellow {
+  background-color: #FFFF00;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-weight: 600;
+  color: #000;
+}
+
+.highlight-yellow-light {
+  background-color: #FFFACD;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.box-light {
+  background-color: #F8F9FA;
+  border: 1px solid #E8E8E8;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+
+.box-light-sm {
+  background-color: #F8F9FA;
+  border: 1px solid #E8E8E8;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.numbered-circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #374151;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.nav-tab {
+  padding: 0.5rem 1rem;
+  border-bottom: 2px solid transparent;
+  color: #4B5563;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: var(--font-poppins);
+}
+
+.nav-tab:hover {
+  color: #111827;
+}
+
+.nav-tab-active {
+  padding: 0.5rem 1rem;
+  border-bottom: 2px solid #111827;
+  color: #111827;
+  font-weight: 600;
+}
+
+.gradient-red-blue {
+  background: linear-gradient(90deg, #FFFFFF 0%, #FF6B67 47%, #7367FF 100%);
+}
+
+.gradient-red-blue-vertical {
+  background: linear-gradient(180deg, #FFFFFF 0%, #FF6B67 50%, #7367FF 100%);
+}
+
+.gradient-bg-subtle {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 1) 0%, 
+    rgba(255, 255, 255, 0.8) 24%, 
+    rgba(255, 102, 103, 0.15) 47%, 
+    rgba(115, 103, 255, 0.15) 81%, 
+    rgba(0, 0, 0, 0.05) 100%
+  );
+}
+
+.progress-bar-gradient {
+  background: linear-gradient(180deg, 
+    #7367FF 0%, 
+    #FF6B67 50%, 
+    rgba(255, 255, 255, 0) 100%
+  );
+}
