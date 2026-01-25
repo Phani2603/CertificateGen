@@ -1,7 +1,7 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { 
-  Roboto, 
+import {
+  Roboto,
   Caveat,
   Playfair_Display,
   Cormorant_Garamond,
@@ -27,6 +27,7 @@ import { AuthProvider } from "@/components/auth-provider"
 import { IslandAlertsProvider } from "@/components/ui/island-alerts"
 import { Toaster } from "@/components/ui/sonner"
 import Script from "next/script"
+import SmoothScroll from "@/components/smooth-scroll"
 import "./globals.css"
 
 // Serif Fonts
@@ -35,10 +36,10 @@ const playfairDisplay = Playfair_Display({
   weight: ["400", "500", "600", "700", "800", "900"],
   variable: "--font-playfair"
 })
-const iceland=Iceland({
-  subsets:["latin"],
-  weight:["400"],
-  variable:"--font-iceland"
+const iceland = Iceland({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-iceland"
 
 })
 
@@ -65,10 +66,10 @@ const merriweather = Merriweather({
   weight: ["300", "400", "700", "900"],
   variable: "--font-merriweather"
 })
-const coda =Coda({
-  subsets:["latin"],
-  weight:["400","800"],
-  variable:"--font-coda"
+const coda = Coda({
+  subsets: ["latin"],
+  weight: ["400", "800"],
+  variable: "--font-coda"
 })
 
 // Sans-Serif Fonts
@@ -149,6 +150,7 @@ const tangerine = Tangerine({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://certifio.com"),
   title: "Certifio - Certificate Generation & Verification Platform | Secure Digital Certificates",
   description: "Create, send, and verify digital certificates at scale. Trusted by 100+ organizations. Secure certificate generation for events, programs, and institutions. No credit card required.",
   keywords: [
@@ -178,9 +180,9 @@ export const metadata: Metadata = {
     address: false,
   },
   icons: {
-    icon: "/cflo1.png",
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
     apple: "/cflo1.png",
-    shortcut: "/cflo1.png"
   },
   openGraph: {
     type: "website",
@@ -239,7 +241,7 @@ export default function RootLayout({
         <link href={getGoogleFontsUrl()} rel="stylesheet" />
         {/* Explicit Caveat font load as backup */}
         <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&display=swap" rel="stylesheet" />
-        
+
         {/* JSON-LD Structured Data */}
         <Script
           id="schema-organization"
@@ -264,7 +266,7 @@ export default function RootLayout({
             })
           }}
         />
-        
+
         {/* JSON-LD Product Schema */}
         <Script
           id="schema-product"
@@ -291,7 +293,7 @@ export default function RootLayout({
             })
           }}
         />
-        
+
         {/* JSON-LD FAQPage Schema */}
         <Script
           id="schema-faq"
@@ -331,27 +333,29 @@ export default function RootLayout({
         />
       </head>
       <body className={`font-sans ${roboto.variable} ${playfairDisplay.variable} ${cormorantGaramond.variable} ${lora.variable} ${coda.variable} ${crimsonText.variable} ${merriweather.variable} ${montserrat.variable} ${openSans.variable} ${poppins.variable} ${inter.variable} ${raleway.variable} ${caveat.variable}${iceland.variable} ${marckScript.variable} ${greatVibes.variable} ${pacifico.variable} ${dancingScript.variable} ${tangerine.variable} antialiased`}>
-        {/* Google Analytics */}
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-G1CV391NB5"
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
+        <SmoothScroll>
+          {/* Google Analytics */}
+          <Script
+            src="https://www.googletagmanager.com/gtag/js?id=G-G1CV391NB5"
+            strategy="afterInteractive"
+          />
+          <Script id="google-analytics" strategy="afterInteractive">
+            {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
             gtag('config', 'G-G1CV391NB5');
           `}
-        </Script>
+          </Script>
 
-        <AuthProvider>
-          <IslandAlertsProvider>
-            {children}
-          </IslandAlertsProvider>
-        </AuthProvider>
-        <Toaster position="top-right" richColors />
-        <Analytics mode="production" />
+          <AuthProvider>
+            <IslandAlertsProvider>
+              {children}
+            </IslandAlertsProvider>
+          </AuthProvider>
+          <Toaster position="top-right" richColors />
+          <Analytics mode="production" />
+        </SmoothScroll>
       </body>
     </html>
   )
