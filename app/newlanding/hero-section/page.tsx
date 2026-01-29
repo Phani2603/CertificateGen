@@ -6,6 +6,9 @@ import Image from "next/image"
 import Link from "next/link"
 import NeumorphButton from "@/components/ui/neumorph-button"
 import { Caveat, Poppins } from "next/font/google"
+import { cn } from "@/lib/utils"
+import AnimatedContent from "@/components/AnimatedContent"
+import CookieConsent from "@/components/cookie-consent"
 
 const caveat = Caveat({
   subsets: ["latin"],
@@ -290,9 +293,21 @@ export default function NewLandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 ">
+    <div className="min-h-screen bg-gray-50 relative overflow-hidden">
+      {/* Dot Background - Moved to Top Level */}
+      <div
+        className={cn(
+          "absolute inset-0 z-0",
+          "[background-size:20px_20px]",
+          "[background-image:radial-gradient(#DEE0E4_1.4px,transparent_1px)]",
+        )}
+      />
+      {/* Radial gradient mask */}
+      <div className="pointer-events-none absolute inset-0 z-0 bg-gray-50 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
+
       {/* Navigation */}
-      <nav className="relative z-50 flex items-center justify-between px-6 py-4 lg:px-12 bg-gray-50">
+      {/* Navigation */}
+      <nav className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 lg:px-12 bg-transparent">
         {/* Logo */}
         <div className="flex flex-col items-center space-x-2">
           <div className="text-2xl font-semibold text-gray-900 font-raleway">
@@ -303,18 +318,18 @@ export default function NewLandingPage() {
           </div>
         </div>
 
-        {/* Navigation Links - Hidden on mobile */}
-        <div className="hidden md:flex items-center space-x-8">
-          <Link href="#" className="text-gray-600 hover:text-gray-900 transition-colors font-poppins">
+        {/* Navigation Links - Centered Pill */}
+        <div className="hidden md:flex absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 items-center space-x-1 bg-white p-2 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-100">
+          <Link href="https://senement.com" target="_blank" className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded-full hover:bg-gray-100 transition-all duration-200 font-poppins text-base font-medium">
             Senement
           </Link>
-          <Link href="#" className="text-gray-600 hover:text-gray-900 transition-colors font-poppins">
+          <Link href="/" target="_blank" className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded-full hover:bg-gray-100 transition-all duration-200 font-poppins text-base font-medium">
             Pricing
           </Link>
-          <Link href="#" className="text-gray-600 hover:text-gray-900 transition-colors font-poppins">
+          <Link href="#" className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded-full hover:bg-gray-100 transition-all duration-200 font-poppins text-base font-medium">
             Verify
           </Link>
-          <Link href="#" className="text-gray-600 hover:text-gray-900 transition-colors font-poppins">
+          <Link href="#" className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded-full hover:bg-gray-100 transition-all duration-200 font-poppins text-base font-medium">
             Contact
           </Link>
         </div>
@@ -373,106 +388,125 @@ export default function NewLandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <div className="px-6 py-8 lg:px-12 lg:py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            {/* Left Content */}
-            <div className="space-y-6 lg:space-y-8 order-1">
-              <div className="space-y-4 lg:space-y-6">
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl leading-tight">
-                  <div className={`${caveat.className} font-semibold text-4xl sm:text-5xl lg:text-6xl xl:text-7xl text-gray-900`}>
-                    Certificate Generation And
-                  </div>
-                  <div className={`${caveat.className} font-semibold text-4xl sm:text-5xl lg:text-6xl xl:text-7xl mt-2 text-gray-900`}>
-                    Issuance{" "}
-                    <span className="relative inline-block">
-                      Made Simple
-                      <div className="absolute -bottom-1 lg:-bottom-2 left-0 w-full h-6 lg:h-8 bg-emerald-400 rounded-full -z-10"></div>
-                    </span>
-                  </div>
-                </h1>
+      {/* Hero Section */}
+      <div className="relative w-full overflow-hidden">
 
-                <p className="text-medium lg:text-lg text-gray-900 max-w-lg leading-relaxed font-poppins">
-                  Create, Send, And Verify Certificates For Events, Programs, And Organizations, Securely
-                  And At Scale.
-                </p>
-              </div>
 
-              {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3 lg:gap-4">
-                <NeumorphButton size="medium" intent="primary" className="shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,0.7)] transition-all duration-50">
-                  Contact Us
-                </NeumorphButton>
-                <NeumorphButton intent={"default"} className="shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,0.7)]">                  Create Certificate
-                </NeumorphButton>
-              </div>
-
-              {/* Trust Badge */}
-              <div className="pt-2 lg:pt-4">
-                <p className="text-sm text-gray-500 font-poppins">
-                  No Credit Card Required • Free For Early Partners*
-                </p>
-              </div>
-            </div>
-
-            {/* Right Content - Certificate Preview */}
-            <div className="relative order-2">
-              <div className="relative max-w-xs sm:max-w-sm lg:max-w-md mx-auto lg:mx-0">
-                {/* Main Certificate Display using verifyimg.svg */}
-                <div className="relative">
-                  <Image
-                    src="/verifyimg.svg"
-                    alt="Certificate Verification Interface"
-                    width={400}
-                    height={320}
-                    className="w-full h-auto rounded-lg lg:rounded-xl shadow-lg lg:shadow-xl"
-                  />
-
-                  {/* Certificate Verified Badge */}
-                  <div className="absolute -top-2 -left-2 lg:-top-3 lg:-left-3 bg-emerald-100 rounded-full p-1.5 lg:p-2 shadow-md">
-                    <div className="flex items-center space-x-1">
-                      <div className="w-1.5 h-1.5 lg:w-2 lg:h-2 bg-emerald-500 rounded-full"></div>
-                      <span className="text-[10px] lg:text-xs font-medium text-emerald-700 font-poppins">Verified</span>
+        <div className="relative z-10 px-6 py-8 lg:px-12 lg:py-16">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+              {/* Left Content */}
+              <AnimatedContent
+                distance={60}
+                direction="vertical"
+                reverse={false}
+                className="space-y-6 lg:space-y-8 order-1"
+              >
+                <div className="space-y-4 lg:space-y-6">
+                  <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl leading-tight">
+                    <div className={`${caveat.className} font-semibold text-4xl sm:text-5xl lg:text-6xl xl:text-7xl text-gray-900`}>
+                      Certificate Generation And
                     </div>
-                  </div>
+                    <div className={`${caveat.className} font-semibold text-4xl sm:text-5xl lg:text-6xl xl:text-7xl mt-2 text-gray-900`}>
+                      Issuance{" "}
+                      <span className="relative inline-block">
+                        Made Simple
+                        <div className="absolute -bottom-1 lg:bottom-0 left-0 w-full h-6 lg:h-15 bg-emerald-400 rounded-full -z-10"></div>
+                      </span>
+                    </div>
+                  </h1>
 
-                  {/* Verified Badge */}
-                  <div className="absolute top-4 lg:top-6 -right-2 lg:-right-3 bg-white rounded-xl p-1.5 lg:p-2 shadow-md">
-                    <div className={`${caveat.className} text-base lg:text-lg font-semibold text-gray-900`}>Verified</div>
-                  </div>
+                  <p className="text-medium lg:text-lg text-gray-900 max-w-lg leading-relaxed font-poppins">
+                    Create, Send, And Verify Certificates For Events, Programs, And Organizations, Securely
+                    And At Scale.
+                  </p>
                 </div>
 
-                {/* Verification Panel - Hidden on small screens */}
-                <div className="hidden sm:block absolute -bottom-4 lg:-bottom-6 -right-4 lg:-right-6 bg-white rounded-lg shadow-md p-2.5 lg:p-3 w-40 lg:w-52 transform -rotate-1">
-                  <div className="space-y-1.5 lg:space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className={`${caveat.className} text-lg lg:text-xl font-semibold`}>Issued</span>
-                      <div className="w-3 h-3 lg:w-4 lg:h-4 bg-emerald-400 rounded"></div>
-                    </div>
+                {/* CTA Buttons */}
+                <div className="flex flex-col sm:flex-row gap-3 lg:gap-4">
+                  <NeumorphButton size="medium" intent="primary" className="shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,0.7)] transition-all duration-50">
+                    Contact Us
+                  </NeumorphButton>
+                  <NeumorphButton intent={"default"} className="shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,0.7)]">                  Create Certificate
+                  </NeumorphButton>
+                </div>
 
-                    <div className="space-y-0.5 lg:space-y-1">
-                      <div className="text-[10px] lg:text-xs text-gray-500 font-poppins">Recipient Info</div>
-                      <div className="space-y-0.5">
-                        <div className="h-0.5 lg:h-1 bg-gray-200 rounded w-full"></div>
-                        <div className="h-0.5 lg:h-1 bg-gray-200 rounded w-2/3"></div>
+                {/* Trust Badge */}
+                <div className="pt-2 lg:pt-4">
+                  <p className="text-sm text-gray-500 font-poppins">
+                    No Credit Card Required • Free For Early Partners*
+                  </p>
+                </div>
+              </AnimatedContent>
+
+              {/* Right Content - Certificate Preview */}
+              <AnimatedContent
+                distance={60}
+                direction="vertical"
+                reverse={false}
+                delay={0.2}
+                className="relative order-2"
+              >
+                <div className="relative max-w-xs sm:max-w-sm lg:max-w-md mx-auto lg:mx-0">
+                  {/* Main Certificate Display using verifyimg.svg */}
+                  <div className="relative">
+                    <Image
+                      src="/verifyimg.svg"
+                      alt="Certificate Verification Interface"
+                      width={400}
+                      height={320}
+                      className="w-full h-auto rounded-lg lg:rounded-xl shadow-lg lg:shadow-xl"
+                    />
+
+                    {/* Certificate Verified Badge */}
+                    <div className="absolute -top-2 -left-2 lg:-top-3 lg:-left-3 bg-emerald-100 rounded-full p-1.5 lg:p-2 shadow-md">
+                      <div className="flex items-center space-x-1">
+                        <div className="w-1.5 h-1.5 lg:w-2 lg:h-2 bg-emerald-500 rounded-full"></div>
+                        <span className="text-[10px] lg:text-xs font-medium text-emerald-700 font-poppins">Verified</span>
                       </div>
                     </div>
 
-                    <div className="space-y-0.5 lg:space-y-1">
-                      <div className="text-[10px] lg:text-xs text-gray-500 font-poppins">Verification</div>
-                      <div className="space-y-0.5">
-                        <div className="h-0.5 lg:h-1 bg-gray-200 rounded w-full"></div>
-                        <div className="h-0.5 lg:h-1 bg-gray-200 rounded w-3/4"></div>
-                        <div className="h-0.5 lg:h-1 bg-gray-200 rounded w-1/2"></div>
+                    {/* Verified Badge */}
+                    <div className="absolute top-4 lg:top-6 -right-2 lg:-right-3 bg-white rounded-xl p-1.5 lg:p-2 shadow-md">
+                      <div className={`${caveat.className} text-base lg:text-lg font-semibold text-gray-900`}>Verified</div>
+                    </div>
+                  </div>
+
+                  {/* Verification Panel - Hidden on small screens */}
+                  <div className="hidden sm:block absolute -bottom-4 lg:-bottom-6 -right-4 lg:-right-6 bg-white rounded-lg shadow-md p-2.5 lg:p-3 w-40 lg:w-52 transform -rotate-1">
+                    <div className="space-y-1.5 lg:space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className={`${caveat.className} text-lg lg:text-xl font-semibold`}>Issued</span>
+                        <div className="w-3 h-3 lg:w-4 lg:h-4 bg-emerald-400 rounded"></div>
+                      </div>
+
+                      <div className="space-y-0.5 lg:space-y-1">
+                        <div className="text-[10px] lg:text-xs text-gray-500 font-poppins">Recipient Info</div>
+                        <div className="space-y-0.5">
+                          <div className="h-0.5 lg:h-1 bg-gray-200 rounded w-full"></div>
+                          <div className="h-0.5 lg:h-1 bg-gray-200 rounded w-2/3"></div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-0.5 lg:space-y-1">
+                        <div className="text-[10px] lg:text-xs text-gray-500 font-poppins">Verification</div>
+                        <div className="space-y-0.5">
+                          <div className="h-0.5 lg:h-1 bg-gray-200 rounded w-full"></div>
+                          <div className="h-0.5 lg:h-1 bg-gray-200 rounded w-3/4"></div>
+                          <div className="h-0.5 lg:h-1 bg-gray-200 rounded w-1/2"></div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              </AnimatedContent>
             </div>
           </div>
         </div>
+
       </div>
+
+
 
       {/* Trust Section */}
       <div className="px-6 py-12 lg:py-16 bg-gray-50 border-t border-gray-200">
@@ -633,7 +667,7 @@ export default function NewLandingPage() {
                 <div className="h-32 lg:h-40 flex items-center justify-center">
                   <Image src="/Vector.svg" alt="Your Time" width={100} height={100} className="w-auto h-full max-h-28 lg:max-h-42 object-contain" />
                 </div>
-                <p className="font-poppins text-gray-600 text-sm lg:text-base leading-relaxed px-2">
+                <p className="font-poppins text-gray-900 text-sm lg:text-base leading-relaxed px-2">
                   Generate and send thousands of <span className="text-[#B33259] font-semibold">certificates in minutes,</span> not days.
                 </p>
               </div>
@@ -651,7 +685,7 @@ export default function NewLandingPage() {
                 <div className="h-32 lg:h-40 flex items-center justify-center">
                   <Image src="/cost-optimization-concept-idea-financial-marketing-strategy-cost-income-balance-spending-cost-reduction-while-maximizing-business-value-isolated-flat-illustration-vector 1.svg" alt="Cost & Efforts" width={120} height={120} className="w-auto h-full max-h-28 lg:max-h-42 object-contain" />
                 </div>
-                <p className="font-poppins text-gray-600 text-sm lg:text-base leading-relaxed px-2">
+                <p className="font-poppins text-gray-900 text-sm lg:text-base leading-relaxed px-2">
                   Eliminate printing, logistics, and reissue expenses. <span className="text-[#B33259] font-semibold">No Excel chaos, no name corrections,</span> no repeated follow-ups.
                 </p>
               </div>
@@ -669,7 +703,7 @@ export default function NewLandingPage() {
                 <div className="h-32 lg:h-40 flex items-center justify-center">
                   <Image src="/risk 1.svg" alt="Risk" width={100} height={100} className="w-auto h-full max-h-32 lg:max-h-42 object-contain" />
                 </div>
-                <p className="font-poppins text-gray-600 text-sm lg:text-base leading-relaxed px-2">
+                <p className="font-poppins text-gray-900 text-sm lg:text-base leading-relaxed px-2">
                   Prevent fake, duplicated, or altered certificates. Reduce <span className="text-[#B33259] font-semibold">'Is this certificate valid?'</span> and 'Please resend' queries.
                 </p>
               </div>
@@ -694,6 +728,8 @@ export default function NewLandingPage() {
 
         </div>
       </div>
-    </div>
+      {/* Cookie Consent Banner */}
+      <CookieConsent />
+    </div >
   )
 }
