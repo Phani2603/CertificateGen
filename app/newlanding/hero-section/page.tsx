@@ -9,6 +9,8 @@ import { Caveat, Poppins } from "next/font/google"
 import { cn } from "@/lib/utils"
 import AnimatedContent from "@/components/AnimatedContent"
 import CookieConsent from "@/components/cookie-consent"
+import ScrollRevealSection from "@/components/ScrollRevealSection"
+import { SectionSeparator } from "@/components/ui/section-separator"
 
 const caveat = Caveat({
   subsets: ["latin"],
@@ -296,438 +298,506 @@ export default function NewLandingPage() {
     <div className="min-h-screen bg-gray-50 relative overflow-hidden">
       {/* Dot Background - Moved to Top Level */}
       <div
-        className={cn(
-          "absolute inset-0 z-0",
-          "[background-size:20px_20px]",
-          "[background-image:radial-gradient(#DEE0E4_1.4px,transparent_1px)]",
-        )}
-      />
-      {/* Radial gradient mask */}
-      <div className="pointer-events-none absolute inset-0 z-0 bg-gray-50 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
-
-      {/* Navigation */}
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 lg:px-12 bg-transparent">
-        {/* Logo */}
-        <div className="flex flex-col items-center space-x-2">
-          <div className="text-2xl font-semibold text-gray-900 font-raleway">
-            Certiflo
-          </div>
-          <div className="text-sm text-gray-600 font-medium font-pacifico">
-            by SENEMENT
-          </div>
-        </div>
-
-        {/* Navigation Links - Centered Pill */}
-        <div className="hidden md:flex absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 items-center space-x-1 bg-white p-2 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-100">
-          <Link href="https://senement.com" target="_blank" className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded-full hover:bg-gray-100 transition-all duration-200 font-poppins text-base font-medium">
-            Senement
-          </Link>
-          <Link href="/" target="_blank" className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded-full hover:bg-gray-100 transition-all duration-200 font-poppins text-base font-medium">
-            Pricing
-          </Link>
-          <Link href="#" className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded-full hover:bg-gray-100 transition-all duration-200 font-poppins text-base font-medium">
-            Verify
-          </Link>
-          <Link href="#" className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded-full hover:bg-gray-100 transition-all duration-200 font-poppins text-base font-medium">
-            Contact
-          </Link>
-        </div>
-
-        {/* Desktop Auth Buttons */}
-        <div className="hidden md:flex items-center space-x-3">
-          <NeumorphButton size="small" intent="default" className=" shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.7)]  transition-all duration-50">
-            Login
-          </NeumorphButton>
-          <NeumorphButton size={"small"} intent={"primary"} className=" shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,0.7)] transition-all duration-50">
-            Join Now
-          </NeumorphButton>
-        </div>
-
-        {/* Mobile Menu Button */}
-        <NeumorphButton
-          size={"small"}
-          intent={"secondary"}
-          className="md:hidden p-2 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.7)] transition-all duration-50"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        >
-          {mobileMenuOpen ? (
-            <X className="h-6 w-6 text-gray-900" />
-          ) : (
-            <Menu className="h-6 w-6 text-gray-900" />
+        className="relative bg-[#F9FAFB] overflow-hidden pb-12 sm:pb-20 lg:pb-28"
+        style={{
+          borderBottomLeftRadius: '30% 100px',
+          borderBottomRightRadius: '30% 100px'
+        }}
+      >
+        {/* Dot Background - Scoped to this container with Top Focus & Faded Edges */}
+        <div
+          className={cn(
+            "absolute inset-x-0 top-0 h-full z-0", // restored full height but masked
+            "[background-size:20px_20px]",
+            "[background-image:radial-gradient(#c5c8c9_1.2px,transparent_1px)]",
+            "[mask-image:radial-gradient(ellipse_60%_80%_at_50%_0%,black_40%,transparent_100%)]" // Fades out at edges and bottom, focused at top
           )}
-        </NeumorphButton>
+        />
 
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="absolute top-full left-0 right-0 bg-gray-50 border-t border-gray-200 shadow-lg md:hidden">
-            <div className="px-6 py-4 space-y-4">
-              <Link href="#" className="block text-gray hover:text-gray-900 transition-colors font-poppins">
-                Senement
-              </Link>
-              <Link href="#" className="block text-gray hover:text-gray-900 transition-colors font-poppins">
-                Pricing
-              </Link>
-              <Link href="#" className="block text-gray hover:text-gray-900 transition-colors font-poppins">
-                Verify
-              </Link>
-              <Link href="#" className="block text-gray hover:text-gray-900 transition-colors font-poppins">
-                Contact
-              </Link>
-              <div className=" justify-center flex flex-row gap-4 pt-4 space-y-3">
-                <NeumorphButton size={"small"} intent={"secondary"} className="shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.7)]  transition-all duration-50">
-                  Login
-                </NeumorphButton>
-                <NeumorphButton size={"small"} intent={"primary"} className=" shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,0.7)]  transition-all duration-50">
-                  Join Now
-                </NeumorphButton>
+
+        {/* Navigation */}
+        {/* Navigation */}
+        <nav className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 lg:px-12 bg-transparent">
+          {/* Logo */}
+          <div className="flex flex-col items-center space-x-2">
+            <div className="text-2xl font-semibold text-gray-900 font-raleway">
+              Certiflo
+            </div>
+            <div className="text-sm text-gray-600 font-medium font-pacifico">
+              by SENEMENT
+            </div>
+          </div>
+
+          {/* Navigation Links - Centered Pill */}
+          <div className="hidden md:flex absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 items-center space-x-1 bg-white p-2 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-100">
+            <Link href="https://senement.com" target="_blank" className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded-full hover:bg-gray-100 transition-all duration-200 font-poppins text-base font-medium">
+              Senement
+            </Link>
+            <Link href="/" target="_blank" className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded-full hover:bg-gray-100 transition-all duration-200 font-poppins text-base font-medium">
+              Pricing
+            </Link>
+            <Link href="#" className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded-full hover:bg-gray-100 transition-all duration-200 font-poppins text-base font-medium">
+              Verify
+            </Link>
+            <Link href="#" className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded-full hover:bg-gray-100 transition-all duration-200 font-poppins text-base font-medium">
+              Contact
+            </Link>
+          </div>
+
+          {/* Desktop Auth Buttons */}
+          <div className="hidden md:flex items-center space-x-3">
+            <NeumorphButton size="small" intent="default" className=" shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.7)]  transition-all duration-50">
+              Login
+            </NeumorphButton>
+            <NeumorphButton size={"small"} intent={"primary"} className=" shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,0.7)] transition-all duration-50">
+              Join Now
+            </NeumorphButton>
+          </div>
+
+          {/* Mobile Menu Button */}
+          <NeumorphButton
+            size={"small"}
+            intent={"secondary"}
+            className="md:hidden p-2 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.7)] transition-all duration-50"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? (
+              <X className="h-6 w-6 text-gray-900" />
+            ) : (
+              <Menu className="h-6 w-6 text-gray-900" />
+            )}
+          </NeumorphButton>
+
+          {/* Mobile Menu */}
+          {mobileMenuOpen && (
+            <div className="absolute top-full left-0 right-0 bg-gray-50 border-t border-gray-200 shadow-lg md:hidden">
+              <div className="px-6 py-4 space-y-4">
+                <Link href="#" className="block text-gray hover:text-gray-900 transition-colors font-poppins">
+                  Senement
+                </Link>
+                <Link href="#" className="block text-gray hover:text-gray-900 transition-colors font-poppins">
+                  Pricing
+                </Link>
+                <Link href="#" className="block text-gray hover:text-gray-900 transition-colors font-poppins">
+                  Verify
+                </Link>
+                <Link href="#" className="block text-gray hover:text-gray-900 transition-colors font-poppins">
+                  Contact
+                </Link>
+                <div className=" justify-center flex flex-row gap-4 pt-4 space-y-3">
+                  <NeumorphButton size={"small"} intent={"secondary"} className="shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.7)]  transition-all duration-50">
+                    Login
+                  </NeumorphButton>
+                  <NeumorphButton size={"small"} intent={"primary"} className=" shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,0.7)]  transition-all duration-50">
+                    Join Now
+                  </NeumorphButton>
+                </div>
+              </div>
+            </div>
+          )}
+        </nav>
+
+        {/* Hero Section */}
+        {/* Hero Section */}
+        <div className="relative w-full overflow-hidden">
+
+
+          <div className="relative z-10 px-6 py-8 lg:px-12 lg:py-16">
+            <div className="max-w-7xl mx-auto">
+              <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+                {/* Left Content */}
+                {/* Left Content */}
+                <div className="space-y-6 lg:space-y-8 order-1">
+                  <AnimatedContent
+                    distance={60}
+                    direction="vertical"
+                    reverse={false}
+                    delay={0}
+                  >
+                    <div className="space-y-4 lg:space-y-6">
+                      <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl leading-tight">
+                        <div className={`${caveat.className} font-semibold text-4xl sm:text-5xl lg:text-6xl xl:text-7xl text-gray-900`}>
+                          Certificate Generation And
+                        </div>
+                        <div className={`${caveat.className} font-semibold text-4xl sm:text-5xl lg:text-6xl xl:text-7xl mt-2 text-gray-900`}>
+                          Issuance{" "}
+                          <span className="relative inline-block">
+                            Made Simple
+                            <div className="absolute -bottom-1 lg:bottom-0 left-0 w-full h-6 lg:h-15 bg-emerald-400 rounded-full -z-10"></div>
+                          </span>
+                        </div>
+                      </h1>
+
+                      <p className="text-medium lg:text-lg text-gray-900 max-w-lg leading-relaxed font-poppins">
+                        Create, Send, And Verify Certificates For Events, Programs, And Organizations, Securely
+                        And At Scale.
+                      </p>
+                    </div>
+                  </AnimatedContent>
+
+                  {/* CTA Buttons */}
+                  <AnimatedContent
+                    distance={40}
+                    direction="vertical"
+                    reverse={false}
+                    delay={0.2}
+                  >
+                    <div className="flex flex-col sm:flex-row gap-3 lg:gap-4">
+                      <NeumorphButton size="medium" intent="primary" className="shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,0.7)] transition-all duration-50">
+                        Contact Us
+                      </NeumorphButton>
+                      <NeumorphButton intent={"default"} className="shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,0.7)]">                  Create Certificate
+                      </NeumorphButton>
+                    </div>
+                  </AnimatedContent>
+
+                  {/* Trust Badge */}
+                  <AnimatedContent
+                    distance={40}
+                    direction="vertical"
+                    reverse={false}
+                    delay={0.3}
+                  >
+                    <div className="pt-2 lg:pt-4">
+                      <p className="text-sm text-gray-500 font-poppins">
+                        No Credit Card Required • Free For Early Partners*
+                      </p>
+                    </div>
+                  </AnimatedContent>
+                </div>
+
+                {/* Right Content - Certificate Preview */}
+                <AnimatedContent
+                  distance={60}
+                  direction="vertical"
+                  reverse={false}
+                  delay={0.2}
+                  className="relative order-2"
+                >
+                  <div className="relative max-w-xs sm:max-w-sm lg:max-w-md mx-auto lg:mx-0">
+                    {/* Main Certificate Display using verifyimg.svg */}
+                    <div className="relative">
+                      <Image
+                        src="/verifyimg.svg"
+                        alt="Certificate Verification Interface"
+                        width={400}
+                        height={320}
+                        className="w-full h-auto rounded-lg lg:rounded-xl shadow-lg lg:shadow-xl"
+                      />
+
+                      {/* Certificate Verified Badge */}
+                      <div className="absolute -top-2 -left-2 lg:-top-3 lg:-left-3 bg-emerald-100 rounded-full p-1.5 lg:p-2 shadow-md">
+                        <div className="flex items-center space-x-1">
+                          <div className="w-1.5 h-1.5 lg:w-2 lg:h-2 bg-emerald-500 rounded-full"></div>
+                          <span className="text-[10px] lg:text-xs font-medium text-emerald-700 font-poppins">Verified</span>
+                        </div>
+                      </div>
+
+                      {/* Verified Badge */}
+                      <div className="absolute top-4 lg:top-6 -right-2 lg:-right-3 bg-white rounded-xl p-1.5 lg:p-2 shadow-md">
+                        <div className={`${caveat.className} text-base lg:text-lg font-semibold text-gray-900`}>Verified</div>
+                      </div>
+                    </div>
+
+                    {/* Verification Panel - Hidden on small screens */}
+                    <div className="hidden sm:block absolute -bottom-4 lg:-bottom-6 -right-4 lg:-right-6 bg-white rounded-lg shadow-md p-2.5 lg:p-3 w-40 lg:w-52 transform -rotate-1">
+                      <div className="space-y-1.5 lg:space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className={`${caveat.className} text-lg lg:text-xl font-semibold`}>Issued</span>
+                          <div className="w-3 h-3 lg:w-4 lg:h-4 bg-emerald-400 rounded"></div>
+                        </div>
+
+                        <div className="space-y-0.5 lg:space-y-1">
+                          <div className="text-[10px] lg:text-xs text-gray-500 font-poppins">Recipient Info</div>
+                          <div className="space-y-0.5">
+                            <div className="h-0.5 lg:h-1 bg-gray-200 rounded w-full"></div>
+                            <div className="h-0.5 lg:h-1 bg-gray-200 rounded w-2/3"></div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-0.5 lg:space-y-1">
+                          <div className="text-[10px] lg:text-xs text-gray-500 font-poppins">Verification</div>
+                          <div className="space-y-0.5">
+                            <div className="h-0.5 lg:h-1 bg-gray-200 rounded w-full"></div>
+                            <div className="h-0.5 lg:h-1 bg-gray-200 rounded w-3/4"></div>
+                            <div className="h-0.5 lg:h-1 bg-gray-200 rounded w-1/2"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </AnimatedContent>
               </div>
             </div>
           </div>
-        )}
-      </nav>
 
-      {/* Hero Section */}
-      {/* Hero Section */}
-      <div className="relative w-full overflow-hidden">
+          {/* Verified Badge - Positioned at Bottom Center of the Curved Container */}
+          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-30 w-full flex justify-center pointer-events-none">
+            <AnimatedContent
+              distance={40}
+              direction="vertical"
+              reverse={false}
+              delay={0.6}
+              className="inline-block pointer-events-auto"
+            >
+              <div className="bg-white/90 backdrop-blur-sm border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.06)] rounded-full py-2 px-6 flex items-center space-x-2">
+                <div className="w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                <span className={`${caveat.className} text-lg sm:text-xl font-bold text-gray-800 pt-1`}>
+                  Verified Certification Partner
+                </span>
+              </div>
+            </AnimatedContent>
+          </div>
+        </div>
+
+      </div>
 
 
-        <div className="relative z-10 px-6 py-8 lg:px-12 lg:py-16">
+      {/* Trust Section - Outside the Grid */}
+      <ScrollRevealSection>
+        <div className="px-6 py-12 lg:py-16 bg-gray-50">
           <div className="max-w-7xl mx-auto">
-            <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-              {/* Left Content */}
-              <AnimatedContent
-                distance={60}
-                direction="vertical"
-                reverse={false}
-                className="space-y-6 lg:space-y-8 order-1"
-              >
-                <div className="space-y-4 lg:space-y-6">
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl leading-tight">
-                    <div className={`${caveat.className} font-semibold text-4xl sm:text-5xl lg:text-6xl xl:text-7xl text-gray-900`}>
-                      Certificate Generation And
-                    </div>
-                    <div className={`${caveat.className} font-semibold text-4xl sm:text-5xl lg:text-6xl xl:text-7xl mt-2 text-gray-900`}>
-                      Issuance{" "}
-                      <span className="relative inline-block">
-                        Made Simple
-                        <div className="absolute -bottom-1 lg:bottom-0 left-0 w-full h-6 lg:h-15 bg-emerald-400 rounded-full -z-10"></div>
-                      </span>
-                    </div>
-                  </h1>
 
-                  <p className="text-medium lg:text-lg text-gray-900 max-w-lg leading-relaxed font-poppins">
-                    Create, Send, And Verify Certificates For Events, Programs, And Organizations, Securely
-                    And At Scale.
-                  </p>
+
+            {/* Logos Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-4 lg:gap-6 items-center justify-center">
+              {/* Senement */}
+              <div className="flex items-center justify-center">
+                <span className="text-sm lg:text-lg font-extrabold text-gray-900 font-coda">Senement</span>
+              </div>
+
+              {/* Visey */}
+              <div className="flex items-center justify-center">
+                <span className="text-sm lg:text-lg font-extrabold text-gray-900 font-coda">Visey</span>
+              </div>
+
+              {/* KL University */}
+              <div className="flex items-center justify-center">
+                <span className="text-sm lg:text-lg font-extrabold text-gray-900 font-coda">KL University</span>
+              </div>
+
+              {/* S-Nest */}
+              <div className="flex items-center justify-center">
+                <span className="text-sm lg:text-lg font-extrabold text-gray-900 font-coda">S-Nest</span>
+              </div>
+
+              {/* Student Tribe */}
+              <div className="flex items-center justify-center">
+                <span className="text-sm lg:text-lg font-extrabold text-gray-900 font-coda">Student Tribe</span>
+              </div>
+
+              {/* Hashing Events */}
+              <div className="flex items-center justify-center">
+                <span className="text-sm lg:text-lg font-extrabold text-gray-900 font-coda">Hashing Events</span>
+              </div>
+
+              {/* 100 more + */}
+              <div className="flex items-center justify-center">
+                <span className={`${caveat.className} text-sm lg:text-3xl font-bold text-gray-900`}>100 more +</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ScrollRevealSection>
+
+      {/* First Separator - Wide (Extending beyond the vertical grid) */}
+      <div className="max-w-full mx-auto px-0">
+        <SectionSeparator className="my-0 " />
+      </div>
+
+      {/* Continuous Grid Wrapper for Trust, Tabs, and Savings */}
+      <div className="relative bg-gray-50 border-gray-200">
+        {/* The Continuous Vertical Grid Lines */}
+        <div className="absolute inset-0 max-w-[90%] mx-auto dashed-y-custom pointer-events-none z-0"></div>
+
+        <div className="relative z-10">
+
+          {/* Interactive Tabbed Section */}
+          <ScrollRevealSection>
+            <div className="px-6 py-12 sm:py-16 lg:py-20">
+              <style jsx>{styles}</style>
+              <div className="max-w-[88%] mx-auto">
+                {/* Section Header */}
+                <div className="text-center mb-8 sm:mb-12 lg:mb-16">
+                  <span className={`highlight-yellow inline-block rounded-3xl text-3xl sm:text-3xl lg:text-5xl font-bold text-gray-900 max-w-2xl ${caveat.className}`}>
+                    Verified Certification Partner
+                  </span>
                 </div>
 
-                {/* CTA Buttons */}
-                <div className="flex flex-col sm:flex-row gap-3 lg:gap-4">
-                  <NeumorphButton size="medium" intent="primary" className="shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,0.7)] transition-all duration-50">
-                    Contact Us
-                  </NeumorphButton>
-                  <NeumorphButton intent={"default"} className="shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,0.7)]">                  Create Certificate
-                  </NeumorphButton>
-                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 sm:gap-8 lg:gap-12 lg:items-center">
+                  {/* Left Navigation */}
+                  <div className="lg:col-span-1">
+                    <div className="tab-button-container space-y-2 sm:space-y-3">
+                      <div className={`tab-progress-bar ${activeTab === "howItWorks" ? "step-1" :
+                        activeTab === "forWhom" ? "step-2" : "step-3"
+                        }`}></div>
 
-                {/* Trust Badge */}
-                <div className="pt-2 lg:pt-4">
-                  <p className="text-sm text-gray-500 font-poppins">
-                    No Credit Card Required • Free For Early Partners*
-                  </p>
-                </div>
-              </AnimatedContent>
-
-              {/* Right Content - Certificate Preview */}
-              <AnimatedContent
-                distance={60}
-                direction="vertical"
-                reverse={false}
-                delay={0.2}
-                className="relative order-2"
-              >
-                <div className="relative max-w-xs sm:max-w-sm lg:max-w-md mx-auto lg:mx-0">
-                  {/* Main Certificate Display using verifyimg.svg */}
-                  <div className="relative">
-                    <Image
-                      src="/verifyimg.svg"
-                      alt="Certificate Verification Interface"
-                      width={400}
-                      height={320}
-                      className="w-full h-auto rounded-lg lg:rounded-xl shadow-lg lg:shadow-xl"
-                    />
-
-                    {/* Certificate Verified Badge */}
-                    <div className="absolute -top-2 -left-2 lg:-top-3 lg:-left-3 bg-emerald-100 rounded-full p-1.5 lg:p-2 shadow-md">
-                      <div className="flex items-center space-x-1">
-                        <div className="w-1.5 h-1.5 lg:w-2 lg:h-2 bg-emerald-500 rounded-full"></div>
-                        <span className="text-[10px] lg:text-xs font-medium text-emerald-700 font-poppins">Verified</span>
+                      <div className="text-xs text-gray-400 font-poppins mb-4 sm:mb-6 uppercase tracking-wider font-medium">
+                        {activeTab === "howItWorks" ? "Why Choose Us" :
+                          activeTab === "forWhom" ? "How It Works" :
+                            "For Whom Is It"}
                       </div>
-                    </div>
 
-                    {/* Verified Badge */}
-                    <div className="absolute top-4 lg:top-6 -right-2 lg:-right-3 bg-white rounded-xl p-1.5 lg:p-2 shadow-md">
-                      <div className={`${caveat.className} text-base lg:text-lg font-semibold text-gray-900`}>Verified</div>
+                      <button
+                        onClick={() => setActiveTab("howItWorks")}
+                        className={`tab-button-gradient w-full text-left px-4 sm:px-5 py-3 sm:py-4 rounded-xl transition-all duration-200 font-poppins text-sm sm:text-base ${activeTab === "howItWorks"
+                          ? "active bg-white shadow-md text-gray-900 font-semibold"
+                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                          }`}
+                      >
+                        How It Works
+                      </button>
+
+                      <button
+                        onClick={() => setActiveTab("forWhom")}
+                        className={`tab-button-gradient w-full text-left px-4 sm:px-5 py-3 sm:py-4 rounded-xl transition-all duration-200 font-poppins text-sm sm:text-base ${activeTab === "forWhom"
+                          ? "active bg-white shadow-md text-gray-900 font-semibold"
+                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                          }`}
+                      >
+                        For Whom Is It
+                      </button>
+
+                      <button
+                        onClick={() => setActiveTab("whyChoose")}
+                        className={`tab-button-gradient w-full text-left px-4 sm:px-5 py-3 sm:py-4 rounded-xl transition-all duration-200 font-poppins text-sm sm:text-base ${activeTab === "whyChoose"
+                          ? "active bg-white shadow-md text-gray-900 font-semibold"
+                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                          }`}
+                      >
+                        Why Choose Us
+                      </button>
                     </div>
                   </div>
 
-                  {/* Verification Panel - Hidden on small screens */}
-                  <div className="hidden sm:block absolute -bottom-4 lg:-bottom-6 -right-4 lg:-right-6 bg-white rounded-lg shadow-md p-2.5 lg:p-3 w-40 lg:w-52 transform -rotate-1">
-                    <div className="space-y-1.5 lg:space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className={`${caveat.className} text-lg lg:text-xl font-semibold`}>Issued</span>
-                        <div className="w-3 h-3 lg:w-4 lg:h-4 bg-emerald-400 rounded"></div>
-                      </div>
+                  {/* Main Content Area */}
+                  <div className="lg:col-span-1">
+                    <div className="gradient-border relative bg-white rounded-2xl lg:rounded-3xl shadow-lg overflow-hidden">
+                      {/* Subtle gradient overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/10 via-transparent to-pink-50/10 pointer-events-none"></div>
 
-                      <div className="space-y-0.5 lg:space-y-1">
-                        <div className="text-[10px] lg:text-xs text-gray-500 font-poppins">Recipient Info</div>
-                        <div className="space-y-0.5">
-                          <div className="h-0.5 lg:h-1 bg-gray-200 rounded w-full"></div>
-                          <div className="h-0.5 lg:h-1 bg-gray-200 rounded w-2/3"></div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-0.5 lg:space-y-1">
-                        <div className="text-[10px] lg:text-xs text-gray-500 font-poppins">Verification</div>
-                        <div className="space-y-0.5">
-                          <div className="h-0.5 lg:h-1 bg-gray-200 rounded w-full"></div>
-                          <div className="h-0.5 lg:h-1 bg-gray-200 rounded w-3/4"></div>
-                          <div className="h-0.5 lg:h-1 bg-gray-200 rounded w-1/2"></div>
-                        </div>
+                      {/* Content */}
+                      <div className="relative z-10 p-6 sm:p-8 lg:p-12">
+                        {renderTabContent()}
                       </div>
                     </div>
                   </div>
                 </div>
-              </AnimatedContent>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-
-
-      {/* Trust Section */}
-      <div className="px-6 py-12 lg:py-16 bg-gray-50 border-t border-gray-200">
-        <div className="max-w-7xl mx-auto">
-
-
-          {/* Logos Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-4 lg:gap-6 items-center justify-center">
-            {/* Senement */}
-            <div className="flex items-center justify-center">
-              <span className="text-sm lg:text-lg font-extrabold text-gray-900 font-coda">Senement</span>
-            </div>
-
-            {/* Visey */}
-            <div className="flex items-center justify-center">
-              <span className="text-sm lg:text-lg font-extrabold text-gray-900 font-coda">Visey</span>
-            </div>
-
-            {/* KL University */}
-            <div className="flex items-center justify-center">
-              <span className="text-sm lg:text-lg font-extrabold text-gray-900 font-coda">KL University</span>
-            </div>
-
-            {/* S-Nest */}
-            <div className="flex items-center justify-center">
-              <span className="text-sm lg:text-lg font-extrabold text-gray-900 font-coda">S-Nest</span>
-            </div>
-
-            {/* Student Tribe */}
-            <div className="flex items-center justify-center">
-              <span className="text-sm lg:text-lg font-extrabold text-gray-900 font-coda">Student Tribe</span>
-            </div>
-
-            {/* Hashing Events */}
-            <div className="flex items-center justify-center">
-              <span className="text-sm lg:text-lg font-extrabold text-gray-900 font-coda">Hashing Events</span>
-            </div>
-
-            {/* 100 more + */}
-            <div className="flex items-center justify-center">
-              <span className={`${caveat.className} text-sm lg:text-3xl font-bold text-gray-900`}>100 more +</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      {/* Heading */}
-      <div className="text-center mb-8 lg:mb-12">
-        <p className="text-xs lg:text-sm text-gray-500 font-poppins tracking-wide uppercase mb-2">
-          Trusted By Event Organizers & Institutions
-        </p>
-      </div>
-
-      {/* Interactive Tabbed Section */}
-      <div className="px-6 py-12 sm:py-16 lg:py-20 bg-gray-50">
-        <style jsx>{styles}</style>
-        <div className="max-w-7xl mx-auto">
-          {/* Section Header */}
-          <div className="text-center mb-8 sm:mb-12 lg:mb-16">
-            <span className={`highlight-yellow inline-block rounded-3xl text-3xl sm:text-3xl lg:text-5xl font-bold text-gray-900 max-w-2xl ${caveat.className}`}>
-              Verified Certification Partner
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 sm:gap-8 lg:gap-12 lg:items-center">
-            {/* Left Navigation */}
-            <div className="lg:col-span-1">
-              <div className="tab-button-container space-y-2 sm:space-y-3">
-                <div className={`tab-progress-bar ${activeTab === "howItWorks" ? "step-1" :
-                  activeTab === "forWhom" ? "step-2" : "step-3"
-                  }`}></div>
-
-                <div className="text-xs text-gray-400 font-poppins mb-4 sm:mb-6 uppercase tracking-wider font-medium">
-                  {activeTab === "howItWorks" ? "Why Choose Us" :
-                    activeTab === "forWhom" ? "How It Works" :
-                      "For Whom Is It"}
-                </div>
-
-                <button
-                  onClick={() => setActiveTab("howItWorks")}
-                  className={`tab-button-gradient w-full text-left px-4 sm:px-5 py-3 sm:py-4 rounded-xl transition-all duration-200 font-poppins text-sm sm:text-base ${activeTab === "howItWorks"
-                    ? "active bg-white shadow-md text-gray-900 font-semibold"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
-                >
-                  How It Works
-                </button>
-
-                <button
-                  onClick={() => setActiveTab("forWhom")}
-                  className={`tab-button-gradient w-full text-left px-4 sm:px-5 py-3 sm:py-4 rounded-xl transition-all duration-200 font-poppins text-sm sm:text-base ${activeTab === "forWhom"
-                    ? "active bg-white shadow-md text-gray-900 font-semibold"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
-                >
-                  For Whom Is It
-                </button>
-
-                <button
-                  onClick={() => setActiveTab("whyChoose")}
-                  className={`tab-button-gradient w-full text-left px-4 sm:px-5 py-3 sm:py-4 rounded-xl transition-all duration-200 font-poppins text-sm sm:text-base ${activeTab === "whyChoose"
-                    ? "active bg-white shadow-md text-gray-900 font-semibold"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
-                >
-                  Why Choose Us
-                </button>
               </div>
             </div>
+          </ScrollRevealSection>
 
-            {/* Main Content Area */}
-            <div className="lg:col-span-1">
-              <div className="gradient-border relative bg-white rounded-2xl lg:rounded-3xl shadow-lg overflow-hidden">
-                {/* Subtle gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/10 via-transparent to-pink-50/10 pointer-events-none"></div>
+          <div className="max-w-[90%] mx-auto px-0">
+            <SectionSeparator />
+          </div>
 
-                {/* Content */}
-                <div className="relative z-10 p-6 sm:p-8 lg:p-12">
-                  {renderTabContent()}
+          {/* What You Save Section */}
+          <ScrollRevealSection>
+            <div className="px-6 py-12 sm:py-16 lg:py-24 overflow-hidden relative">
+              <div className="max-w-[88%] mx-auto relative z-10">
+                {/* Section Header */}
+                <div className="text-center mb-16 lg:mb-24">
+                  <h2 className={`${caveat.className} text-4xl sm:text-5xl lg:text-7xl font-bold text-gray-900 relative inline-block`}>
+                    What You Save ?
+                    {/* Decorative Underline */}
+                    <div className="absolute -bottom-6 lg:-bottom-6 left-1/2 transform -translate-x-1/2 w-48 lg:w-84">
+                      <Image src="/underline-1.svg" alt="Underline" width={200} height={20} className="w-full h-auto" />
+                    </div>
+                  </h2>
                 </div>
+
+                {/* Grid Layout */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12 relative">
+
+                  {/* Desktop Connector - Time & Cost */}
+                  <div className="hidden lg:block absolute -bottom-35 -left-96 -right-1 h-24 z-0 pointer-events-none">
+                    <Image src="/time-cost.svg" alt="Connector" layout="fill" objectFit="contain" className="opacity-80" />
+                  </div>
+
+
+                  {/* Column 1: Your Time */}
+                  <div className="relative group text-center px-4">
+                    {/* Background Decoration */}
+                    <div className="absolute inset-0 -z-10 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity duration-300">
+                      <Image src="/bg-lines-img1.svg" alt="Background Lines" width={300} height={300} className="w-full max-w-[280px] lg:max-w-[340px]" />
+                    </div>
+
+                    <div className="relative z-10 space-y-8 lg:space-y-10">
+                      <h3 className="font-poppins font-semibold text-2xl lg:text-3xl text-gray-900">Your Time</h3>
+                      <div className="h-32 lg:h-40 flex items-center justify-center">
+                        <Image src="/Vector.svg" alt="Your Time" width={100} height={100} className="w-auto h-full max-h-28 lg:max-h-42 object-contain" />
+                      </div>
+                      <p className="font-poppins text-gray-900 text-sm lg:text-base leading-relaxed px-2">
+                        Generate and send thousands of <span className="text-[#B33259] font-semibold">certificates in minutes,</span> not days.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Column 2: Cost & Efforts */}
+                  <div className="relative group text-center px-4 mt-8 lg:mt-0">
+                    {/* Background Decoration */}
+                    <div className="absolute inset-0 -z-10 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity duration-300">
+                      <Image src="/bg-lines-img2.svg" alt="Background Lines" width={300} height={300} className="w-full max-w-[280px] lg:max-w-[340px]" />
+                    </div>
+
+                    <div className="relative z-10 space-y-8 lg:space-y-10">
+                      <h3 className="font-poppins font-semibold text-2xl lg:text-3xl text-gray-900">Cost & Efforts</h3>
+                      <div className="h-32 lg:h-40 flex items-center justify-center">
+                        <Image src="/cost-optimization-concept-idea-financial-marketing-strategy-cost-income-balance-spending-cost-reduction-while-maximizing-business-value-isolated-flat-illustration-vector 1.svg" alt="Cost & Efforts" width={120} height={120} className="w-auto h-full max-h-28 lg:max-h-42 object-contain" />
+                      </div>
+                      <p className="font-poppins text-gray-900 text-sm lg:text-base leading-relaxed px-2">
+                        Eliminate printing, logistics, and reissue expenses. <span className="text-[#B33259] font-semibold">No Excel chaos, no name corrections,</span> no repeated follow-ups.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Column 3: Risk */}
+                  <div className="relative group text-center px-4 mt-8 lg:mt-0">
+                    {/* Background Decoration */}
+                    <div className="absolute inset-0 -z-10 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity duration-300">
+                      <Image src="/bg-lines-img3.svg" alt="Background Lines" width={300} height={300} className="w-full max-w-[280px] lg:max-w-[340px]" />
+                    </div>
+
+                    <div className="relative z-10 space-y-8 lg:space-y-10">
+                      <h3 className="font-poppins font-semibold text-2xl lg:text-3xl text-gray-900">Risk</h3>
+                      <div className="h-32 lg:h-40 flex items-center justify-center">
+                        <Image src="/risk 1.svg" alt="Risk" width={100} height={100} className="w-auto h-full max-h-32 lg:max-h-42 object-contain" />
+                      </div>
+                      <p className="font-poppins text-gray-900 text-sm lg:text-base leading-relaxed px-2">
+                        Prevent fake, duplicated, or altered certificates. Reduce <span className="text-[#B33259] font-semibold">'Is this certificate valid?'</span> and 'Please resend' queries.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Desktop Connector - Risk Arrow */}
+                  <div className="hidden lg:block absolute -bottom-36 right-[10%] w-30 h-30 z-0 pointer-events-none rotate-12">
+                    <Image src="/arrow.svg" alt="Arrow" width={100} height={100} className="w-full h-full text-[#8B4513]" />
+                  </div>
+
+                </div>
+
+                {/* Bottom Summary */}
+                <div className="mt-12 lg:mt-36 flex flex-col lg:flex-row items-center justify-center gap-6 lg:gap-66 text-center">
+                  <p className="font-poppins text-gray-900 text-base lg:text-lg font-medium max-w-xs">
+                    What usually takes 6-10 hours of manual certificate work is done in minutes with Certiflo.
+                  </p>
+                  <p className={`$ font-poppins text-gray-900 text-base lg:text-lg text-left font-medium max-w-lg `}>
+                    Save your events legitimacy.
+                  </p>
+                </div>
+
               </div>
             </div>
+          </ScrollRevealSection>
+          <div className="max-w-[90%] mx-auto px-0">
+            <SectionSeparator />
           </div>
         </div>
       </div>
 
-      {/* What You Save Section */}
-      <div className="px-6 py-12 sm:py-16 lg:py-24 bg-gray-50 overflow-hidden relative">
-        <div className="max-w-7xl mx-auto relative z-10">
-          {/* Section Header */}
-          <div className="text-center mb-16 lg:mb-24">
-            <h2 className={`${caveat.className} text-4xl sm:text-5xl lg:text-7xl font-bold text-gray-900 relative inline-block`}>
-              What You Save ?
-              {/* Decorative Underline */}
-              <div className="absolute -bottom-6 lg:-bottom-6 left-1/2 transform -translate-x-1/2 w-48 lg:w-84">
-                <Image src="/underline-1.svg" alt="Underline" width={200} height={20} className="w-full h-auto" />
-              </div>
-            </h2>
-          </div>
+      {/* Padding for bottom spacing - Outside Grid */}
+      <div className="pb-12 bg-gray-50"></div>
 
-          {/* Grid Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12 relative">
-
-            {/* Desktop Connector - Time & Cost */}
-            <div className="hidden lg:block absolute -bottom-35 -left-96 -right-1 h-24 z-0 pointer-events-none">
-              <Image src="/time-cost.svg" alt="Connector" layout="fill" objectFit="contain" className="opacity-80" />
-            </div>
-
-
-            {/* Column 1: Your Time */}
-            <div className="relative group text-center px-4">
-              {/* Background Decoration */}
-              <div className="absolute inset-0 -z-10 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity duration-300">
-                <Image src="/bg-lines-img1.svg" alt="Background Lines" width={300} height={300} className="w-full max-w-[280px] lg:max-w-[340px]" />
-              </div>
-
-              <div className="relative z-10 space-y-8 lg:space-y-10">
-                <h3 className="font-poppins font-semibold text-2xl lg:text-3xl text-gray-900">Your Time</h3>
-                <div className="h-32 lg:h-40 flex items-center justify-center">
-                  <Image src="/Vector.svg" alt="Your Time" width={100} height={100} className="w-auto h-full max-h-28 lg:max-h-42 object-contain" />
-                </div>
-                <p className="font-poppins text-gray-900 text-sm lg:text-base leading-relaxed px-2">
-                  Generate and send thousands of <span className="text-[#B33259] font-semibold">certificates in minutes,</span> not days.
-                </p>
-              </div>
-            </div>
-
-            {/* Column 2: Cost & Efforts */}
-            <div className="relative group text-center px-4 mt-8 lg:mt-0">
-              {/* Background Decoration */}
-              <div className="absolute inset-0 -z-10 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity duration-300">
-                <Image src="/bg-lines-img2.svg" alt="Background Lines" width={300} height={300} className="w-full max-w-[280px] lg:max-w-[340px]" />
-              </div>
-
-              <div className="relative z-10 space-y-8 lg:space-y-10">
-                <h3 className="font-poppins font-semibold text-2xl lg:text-3xl text-gray-900">Cost & Efforts</h3>
-                <div className="h-32 lg:h-40 flex items-center justify-center">
-                  <Image src="/cost-optimization-concept-idea-financial-marketing-strategy-cost-income-balance-spending-cost-reduction-while-maximizing-business-value-isolated-flat-illustration-vector 1.svg" alt="Cost & Efforts" width={120} height={120} className="w-auto h-full max-h-28 lg:max-h-42 object-contain" />
-                </div>
-                <p className="font-poppins text-gray-900 text-sm lg:text-base leading-relaxed px-2">
-                  Eliminate printing, logistics, and reissue expenses. <span className="text-[#B33259] font-semibold">No Excel chaos, no name corrections,</span> no repeated follow-ups.
-                </p>
-              </div>
-            </div>
-
-            {/* Column 3: Risk */}
-            <div className="relative group text-center px-4 mt-8 lg:mt-0">
-              {/* Background Decoration */}
-              <div className="absolute inset-0 -z-10 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity duration-300">
-                <Image src="/bg-lines-img3.svg" alt="Background Lines" width={300} height={300} className="w-full max-w-[280px] lg:max-w-[340px]" />
-              </div>
-
-              <div className="relative z-10 space-y-8 lg:space-y-10">
-                <h3 className="font-poppins font-semibold text-2xl lg:text-3xl text-gray-900">Risk</h3>
-                <div className="h-32 lg:h-40 flex items-center justify-center">
-                  <Image src="/risk 1.svg" alt="Risk" width={100} height={100} className="w-auto h-full max-h-32 lg:max-h-42 object-contain" />
-                </div>
-                <p className="font-poppins text-gray-900 text-sm lg:text-base leading-relaxed px-2">
-                  Prevent fake, duplicated, or altered certificates. Reduce <span className="text-[#B33259] font-semibold">'Is this certificate valid?'</span> and 'Please resend' queries.
-                </p>
-              </div>
-            </div>
-
-            {/* Desktop Connector - Risk Arrow */}
-            <div className="hidden lg:block absolute -bottom-36 right-[10%] w-30 h-30 z-0 pointer-events-none rotate-12">
-              <Image src="/arrow.svg" alt="Arrow" width={100} height={100} className="w-full h-full text-[#8B4513]" />
-            </div>
-
-          </div>
-
-          {/* Bottom Summary */}
-          <div className="mt-12 lg:mt-36 flex flex-col lg:flex-row items-center justify-center gap-6 lg:gap-66 text-center">
-            <p className="font-poppins text-gray-900 text-base lg:text-lg font-medium max-w-xs">
-              What usually takes 6-10 hours of manual certificate work is done in minutes with Certiflo.
-            </p>
-            <p className={`$ font-poppins text-gray-900 text-base lg:text-lg text-left font-medium max-w-lg `}>
-              Save your events legitimacy.
-            </p>
-          </div>
-
-        </div>
-      </div>
       {/* Cookie Consent Banner */}
       <CookieConsent />
     </div >

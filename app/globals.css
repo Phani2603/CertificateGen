@@ -84,15 +84,15 @@
   --fonts-sans: 'Roboto', sans-serif;
   --fonts-serif: 'Playfair Display', serif;
   --fonts-mono: 'Courier New', monospace;
-  
+
   /* Serif Fonts */
   --fonts-playfair: var(--font-playfair), 'Playfair Display', serif;
   --fonts-cormorant: var(--font-cormorant), 'Cormorant Garamond', serif;
   --fonts-lora: var(--font-lora), 'Lora', serif;
   --fonts-crimson: var(--font-crimson), 'Crimson Text', serif;
   --fonts-merriweather: var(--font-merriweather), 'Merriweather', serif;
-  --fonts-iceland:var(--font-iceland),'Iceland';
-  
+  --fonts-iceland: var(--font-iceland), 'Iceland';
+
   /* Sans-Serif Fonts */
   --fonts-roboto: var(--font-roboto), 'Roboto', sans-serif;
   --fonts-montserrat: var(--font-montserrat), 'Montserrat', sans-serif;
@@ -100,7 +100,7 @@
   --fonts-poppins: var(--font-poppins), 'Poppins', sans-serif;
   --fonts-inter: var(--font-inter), 'Inter', sans-serif;
   --fonts-raleway: var(--font-raleway), 'Raleway', sans-serif;
-  
+
   /* Script Fonts */
   --fonts-caveat: var(--font-caveat), 'Caveat', cursive;
   --fonts-marck-script: var(--font-marck-script), 'Marck Script', cursive;
@@ -108,9 +108,9 @@
   --fonts-pacifico: var(--font-pacifico), 'Pacifico', cursive;
   --fonts-dancing-script: var(--font-dancing-script), 'Dancing Script', cursive;
   --fonts-tangerine: var(--font-tangerine), 'Tangerine', cursive;
-  
+
   --fonts-coda: var(--font-coda), 'Coda', sans-serif;
-  
+
   /* Custom Colors for Design */
   --color-highlight-yellow: #FFFF00;
   --color-highlight-yellow-light: #FFFACD;
@@ -118,7 +118,7 @@
   --color-box-border: #E8E8E8;
   --color-gradient-red: #FF6B67;
   --color-gradient-blue: #7367FF;
-  
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -161,33 +161,88 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
 }
 
 /* Font Utility Classes - Direct CSS for Tailwind v4 */
-.font-playfair { font-family: var(--font-playfair), 'Playfair Display', serif !important; }
-.font-cormorant { font-family: var(--font-cormorant), 'Cormorant Garamond', serif !important; }
-.font-lora { font-family: var(--font-lora), 'Lora', serif !important; }
-.font-crimson { font-family: var(--font-crimson), 'Crimson Text', serif !important; }
-.font-merriweather { font-family: var(--font-merriweather), 'Merriweather', serif !important; }
-.font-coda { font-family: var(--font-coda), 'Coda', sans-serif !important; }
+.font-playfair {
+  font-family: var(--font-playfair), 'Playfair Display', serif !important;
+}
 
-.font-roboto { font-family: var(--font-roboto), 'Roboto', sans-serif !important; }
-.font-montserrat { font-family: var(--font-montserrat), 'Montserrat', sans-serif !important; }
-.font-open-sans { font-family: var(--font-open-sans), 'Open Sans', sans-serif !important; }
-.font-poppins { font-family: var(--font-poppins), 'Poppins', sans-serif !important; }
-.font-inter { font-family: var(--font-inter), 'Inter', sans-serif !important; }
-.font-raleway { font-family: var(--font-raleway), 'Raleway', sans-serif !important; }
-.font-iceland { font-family: var(--font-iceland), 'Iceland', sans-serif !important; }
+.font-cormorant {
+  font-family: var(--font-cormorant), 'Cormorant Garamond', serif !important;
+}
 
-.font-caveat { font-family: var(--font-caveat), 'Caveat', cursive !important; }
-.font-marck-script { font-family: var(--font-marck-script), 'Marck Script', cursive !important; }
-.font-great-vibes { font-family: var(--font-great-vibes), 'Great Vibes', cursive !important; }
-.font-pacifico { font-family: var(--font-pacifico), 'Pacifico', cursive !important; }
-.font-dancing-script { font-family: var(--font-dancing-script), 'Dancing Script', cursive !important; }
-.font-tangerine { font-family: var(--font-tangerine), 'Tangerine', cursive !important; }
+.font-lora {
+  font-family: var(--font-lora), 'Lora', serif !important;
+}
+
+.font-crimson {
+  font-family: var(--font-crimson), 'Crimson Text', serif !important;
+}
+
+.font-merriweather {
+  font-family: var(--font-merriweather), 'Merriweather', serif !important;
+}
+
+.font-coda {
+  font-family: var(--font-coda), 'Coda', sans-serif !important;
+}
+
+.font-roboto {
+  font-family: var(--font-roboto), 'Roboto', sans-serif !important;
+}
+
+.font-montserrat {
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif !important;
+}
+
+.font-open-sans {
+  font-family: var(--font-open-sans), 'Open Sans', sans-serif !important;
+}
+
+.font-poppins {
+  font-family: var(--font-poppins), 'Poppins', sans-serif !important;
+}
+
+.font-inter {
+  font-family: var(--font-inter), 'Inter', sans-serif !important;
+}
+
+.font-raleway {
+  font-family: var(--font-raleway), 'Raleway', sans-serif !important;
+}
+
+.font-iceland {
+  font-family: var(--font-iceland), 'Iceland', sans-serif !important;
+}
+
+.font-caveat {
+  font-family: var(--font-caveat), 'Caveat', cursive !important;
+}
+
+.font-marck-script {
+  font-family: var(--font-marck-script), 'Marck Script', cursive !important;
+}
+
+.font-great-vibes {
+  font-family: var(--font-great-vibes), 'Great Vibes', cursive !important;
+}
+
+.font-pacifico {
+  font-family: var(--font-pacifico), 'Pacifico', cursive !important;
+}
+
+.font-dancing-script {
+  font-family: var(--font-dancing-script), 'Dancing Script', cursive !important;
+}
+
+.font-tangerine {
+  font-family: var(--font-tangerine), 'Tangerine', cursive !important;
+}
 
 /* Custom Highlight and Box Styles */
 .highlight-yellow {
@@ -262,19 +317,38 @@
 }
 
 .gradient-bg-subtle {
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 1) 0%, 
-    rgba(255, 255, 255, 0.8) 24%, 
-    rgba(255, 102, 103, 0.15) 47%, 
-    rgba(115, 103, 255, 0.15) 81%, 
-    rgba(0, 0, 0, 0.05) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 1) 0%,
+      rgba(255, 255, 255, 0.8) 24%,
+      rgba(255, 102, 103, 0.15) 47%,
+      rgba(115, 103, 255, 0.15) 81%,
+      rgba(0, 0, 0, 0.05) 100%);
 }
 
 .progress-bar-gradient {
-  background: linear-gradient(180deg, 
-    #7367FF 0%, 
-    #FF6B67 50%, 
-    rgba(255, 255, 255, 0) 100%
-  );
+  background: linear-gradient(180deg,
+      #7367FF 0%,
+      #FF6B67 50%,
+      rgba(255, 255, 255, 0) 100%);
+}
+
+/* Custom Dashed Separators - Refined for "Dashed Grid" look */
+.dashed-x-custom {
+  background-image: linear-gradient(to right, #d1d5db 50%, transparent 50%);
+  /* #d1d5db matches diagonal pattern */
+  background-position: top;
+  background-size: 24px 1px;
+  /* Tighter gap (12px dash, 12px gap) */
+  background-repeat: repeat-x;
+}
+
+.dashed-y-custom {
+  background-image:
+    linear-gradient(to bottom, #d1d5db 50%, transparent 50%),
+    linear-gradient(to bottom, #d1d5db 50%, transparent 50%);
+  /* #d1d5db matches diagonal pattern */
+  background-position: left top, right top;
+  background-size: 1px 24px;
+  /* Tighter gap (12px dash, 12px gap) */
+  background-repeat: repeat-y;
 }
