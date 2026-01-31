@@ -352,3 +352,63 @@
   /* Tighter gap (12px dash, 12px gap) */
   background-repeat: repeat-y;
 }
+
+/* =========================
+   GLASS DESIGN TOKENS
+========================= */
+
+:root {
+  --glass-bg: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --glass-highlight: rgba(255, 255, 255, 0.6);
+  --glass-shadow: 0 30px 60px rgba(0, 0, 0, 0.65);
+  --glass-inner-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  --glass-blur: 32px;
+}
+
+.glass-surface {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-inner-shadow), var(--glass-shadow);
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.glass-highlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(to right,
+      transparent,
+      var(--glass-highlight),
+      transparent);
+  height: 1px;
+  top: 0;
+}
+
+.glass-motion {
+  transition:
+    backdrop-filter 300ms ease,
+    border-color 300ms ease,
+    transform 300ms ease;
+}
+
+.glass-motion:hover {
+  backdrop-filter: blur(40px);
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-2px);
+}
+
+.glass-noise {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.06;
+  background-image: url("/noise.png");
+}

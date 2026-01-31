@@ -181,17 +181,17 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/cflo1.png", sizes: "32x32", type: "image/png" },
-      { url: "/cflo1.png", sizes: "16x16", type: "image/png" },
-      { url: "/cflo1.png" }
+      { url: "/cflo1.svg", sizes: "32x32", type: "image/png" },
+      { url: "/cflo1.svg", sizes: "16x16", type: "image/png" },
+      { url: "/cflo1.svg" }
     ],
     apple: [
-      { url: "/cflo1.png", sizes: "180x180", type: "image/png" }
+      { url: "/cflo1.svg", sizes: "180x180", type: "image/png" }
     ],
     other: [
       {
         rel: "mask-icon",
-        url: "/cflo1.png",
+        url: "/cflo1.svg",
       }
     ]
   },
@@ -204,7 +204,7 @@ export const metadata: Metadata = {
     description: "Create, send, and verify digital certificates at scale. Trusted by 100+ organizations.",
     images: [
       {
-        url: "/cflo1.png",
+        url: "/cflo1.svg",
         width: 1200,
         height: 630,
         alt: "Certiflo - Certificate Generation Platform",
@@ -216,7 +216,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Certiflo - Certificate Generation & Verification",
     description: "Create, send, and verify digital certificates at scale. Trusted by 100+ organizations.",
-    images: ["/cflo1.png"],
+    images: ["/cflo1.svg"],
     creator: "@senement",
   },
   robots: {
@@ -263,7 +263,7 @@ export default function RootLayout({
               "@type": "Organization",
               "name": "Certiflo",
               "url": "https://gocertiflo.com",
-              "logo": "https://gocertiflo.com/cflo1.png",
+              "logo": "https://gocertiflo.com/cflo1.svg",
               "description": "Certificate generation and verification platform",
               "sameAs": [
                 "https://twitter.com/senement",

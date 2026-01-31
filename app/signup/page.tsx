@@ -18,14 +18,14 @@ function SignupContent() {
   const searchParams = useSearchParams()
   const { status } = useSession()
   const inviteToken = searchParams.get('invite')
-  
+
   // Redirect authenticated users with invite to the accept page
   useEffect(() => {
     if (status === "authenticated" && inviteToken) {
       router.replace(`/invitations/accept?token=${encodeURIComponent(inviteToken)}`)
     }
   }, [status, inviteToken, router])
-  
+
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [formData, setFormData] = useState({
@@ -35,7 +35,7 @@ function SignupContent() {
     userType: "" as "corporate" | "individual" | "",
   })
   const [agreedToTerms, setAgreedToTerms] = useState(false)
-  
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
@@ -94,7 +94,7 @@ function SignupContent() {
           <p className="text-xl text-gray-600 mb-8">
             Join organizations worldwide and start creating verified certificates in minutes.
           </p>
-          
+
           {/* Stats */}
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-[#FF5733] text-white p-6 rounded-2xl">
@@ -111,7 +111,7 @@ function SignupContent() {
         {/* Right Side - Signup Form */}
         <Card className="bg-white p-8 md:p-12 shadow-xl">
           <div className="flex items-center gap-2 mb-8">
-            <Image src="/cflo1.png" alt="CertificateHash Logo" width={52} height={52} />
+            <Image src="/cflo1.svg" alt="CertificateHash Logo" width={52} height={52} />
           </div>
 
           <h2 className="text-3xl font-bold mb-2">Create account</h2>
@@ -123,8 +123,8 @@ function SignupContent() {
           </p>
 
           {/* OAuth Buttons */}
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="w-full mb-4 border-gray-300 hover:bg-gray-50 h-12"
             onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
             type="button"
@@ -150,14 +150,14 @@ function SignupContent() {
             Continue with Google
           </Button>
 
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="w-full mb-6 border-gray-300 hover:bg-gray-50 h-12"
             onClick={() => signIn('github', { callbackUrl: '/dashboard' })}
             type="button"
           >
             <svg className="mr-3 h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
             </svg>
             Continue with GitHub
           </Button>
@@ -181,8 +181,8 @@ function SignupContent() {
                   onClick={() => setFormData(prev => ({ ...prev, userType: "corporate" }))}
                   className={cn(
                     "flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all hover:border-[#21808D]",
-                    formData.userType === "corporate" 
-                      ? "border-[#21808D] bg-[#21808D]/5" 
+                    formData.userType === "corporate"
+                      ? "border-[#21808D] bg-[#21808D]/5"
                       : "border-gray-200 bg-white"
                   )}
                 >
@@ -197,14 +197,14 @@ function SignupContent() {
                   </div>
                   <span className="text-sm font-medium text-center">Corporate/Business</span>
                 </button>
-                
+
                 <button
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, userType: "individual" }))}
                   className={cn(
                     "flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all hover:border-[#21808D]",
-                    formData.userType === "individual" 
-                      ? "border-[#21808D] bg-[#21808D]/5" 
+                    formData.userType === "individual"
+                      ? "border-[#21808D] bg-[#21808D]/5"
                       : "border-gray-200 bg-white"
                   )}
                 >
@@ -276,8 +276,8 @@ function SignupContent() {
 
             {/* Terms & Policies Acceptance */}
             <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <Checkbox 
-                id="terms" 
+              <Checkbox
+                id="terms"
                 checked={agreedToTerms}
                 onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
                 className="mt-1"
@@ -308,8 +308,8 @@ function SignupContent() {
               </div>
             </div>
 
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full h-12 bg-[#21808D] hover:bg-[#1a6370] text-white font-semibold"
               disabled={isLoading || !formData.userType || !agreedToTerms}
             >

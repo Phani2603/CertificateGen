@@ -42,7 +42,7 @@ export function CorporateSidebar({
     <>
       {/* Mobile Backdrop Overlay */}
       {sidebarOpen && (
-        <div 
+        <div
           className="md:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-30 transition-opacity duration-300"
           onClick={() => setSidebarOpen(false)}
         />
@@ -50,21 +50,19 @@ export function CorporateSidebar({
 
       {/* Sidebar */}
       <aside
-        className={`${
-          sidebarOpen ? "w-64" : "w-20"
-        } bg-green-300/60 backdrop-blur-2xl rounded-r-2xl sm:rounded-r-3xl border-r border-gray-200 transition-all duration-300 flex flex-col shadow-sm fixed md:sticky md:top-0 min-h-screen md:h-screen z-40 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-        } overflow-y-auto pb-24 md:overflow-visible md:pb-0`}
+        className={`${sidebarOpen ? "w-64" : "w-20"
+          } bg-green-300/60 backdrop-blur-2xl rounded-r-2xl sm:rounded-r-3xl border-r border-gray-200 transition-all duration-300 flex flex-col shadow-sm fixed md:sticky md:top-0 min-h-screen md:h-screen z-40 ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+          } overflow-y-auto pb-24 md:overflow-visible md:pb-0`}
       >
         {/* Logo */}
         <div className="p-2 sm:p-3 flex items-center">
           <div className="flex flex-col items-center w-full">
             <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden flex items-center justify-center">
-              <Image 
-                src="/cflo1.png" 
-                alt="CertificateHash Logo" 
-                width={56} 
-                height={56}
+              <Image
+                src="/cflo1.svg"
+                alt="CertificateHash Logo"
+                width={46}
+                height={46}
                 className="w-full h-full object-contain"
               />
             </div>
@@ -78,9 +76,9 @@ export function CorporateSidebar({
               <p className="text-[9px] sm:text-[10px] font-semibold text-[#21808D] uppercase tracking-wider mb-1">Organization</p>
               <p className="font-bold text-gray-900 truncate text-xs sm:text-sm" title={orgName}>{orgName}</p>
               {orgWebsite && (
-                <a 
-                  href={orgWebsite} 
-                  target="_blank" 
+                <a
+                  href={orgWebsite}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs text-gray-500 hover:text-[#21808D] truncate block mt-1 hover:underline"
                 >
@@ -102,18 +100,17 @@ export function CorporateSidebar({
                       setCurrentPage(item.id)
                       if (window.innerWidth < 768) setSidebarOpen(false)
                     }}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                      currentPage === item.id
-                        ? "bg-[#21808D] text-white"
-                        : "text-gray-700 hover:bg-gray-100"
-                    }`}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${currentPage === item.id
+                      ? "bg-[#21808D] text-white"
+                      : "text-gray-700 hover:bg-gray-100"
+                      }`}
                   >
-                    <Image 
-                      src={item.imageSrc} 
-                      alt={item.label} 
-                      width={24} 
-                      height={24} 
-                      className="h-5 w-5 sm:h-6 sm:w-6 shrink-0" 
+                    <Image
+                      src={item.imageSrc}
+                      alt={item.label}
+                      width={24}
+                      height={24}
+                      className="h-5 w-5 sm:h-6 sm:w-6 shrink-0"
                     />
                     {sidebarOpen && <span className="font-medium text-sm sm:text-base md:text-lg">{item.label}</span>}
                   </button>
@@ -140,20 +137,20 @@ export function CorporateSidebar({
               </div>
             )}
           </button>
-          
+
           {/* Sign out button - shown when sidebar is open, positioned better on mobile */}
           {sidebarOpen && (
-            <button 
+            <button
               onClick={() => signOut({ callbackUrl: '/login' })}
               className="w-full flex items-center justify-center md:justify-start gap-2 px-3 py-2.5 rounded-lg bg-red-50 hover:bg-red-100 transition-colors text-red-600 mt-2 font-medium">
               <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
               <span className="text-sm sm:text-base">Sign out</span>
             </button>
           )}
-          
+
           {/* Mobile-only sign out when sidebar closed */}
           {!sidebarOpen && (
-            <button 
+            <button
               onClick={() => signOut({ callbackUrl: '/login' })}
               className="md:hidden w-full flex items-center justify-center p-2 rounded-lg hover:bg-red-50 transition-colors text-red-600 mt-2"
               title="Sign out"

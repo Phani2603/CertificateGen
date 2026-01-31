@@ -21,7 +21,7 @@ export function IndividualHeader({ userName, userEmail, userImage }: IndividualH
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/individual-dashboard" className="flex items-center gap-2">
-            <Image src="/cflo1.png" alt="Logo" width={40} height={40} />
+            <Image src="/cflo1.svg" alt="Logo" width={40} height={40} />
             <span className="font-bold text-xl">GetCertificates</span>
           </Link>
 
