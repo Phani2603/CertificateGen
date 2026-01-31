@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { Menu, X } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import NeumorphButton from "@/components/ui/neumorph-button"
@@ -11,6 +10,10 @@ import AnimatedContent from "@/components/AnimatedContent"
 import CookieConsent from "@/components/cookie-consent"
 import ScrollRevealSection from "@/components/ScrollRevealSection"
 import { SectionSeparator } from "@/components/ui/section-separator"
+import ReadyToStart from "@/components/ready-to-start"
+import SiteFooterGlassmorphism from "@/components/site-footer-glassmorphism"
+import ScrollToTop from "@/components/scroll-to-top"
+import MobileNav from "@/components/mobile-nav"
 
 const caveat = Caveat({
   subsets: ["latin"],
@@ -196,7 +199,6 @@ const styles = `
 `
 
 export default function NewLandingPage() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [activeTab, setActiveTab] = useState("howItWorks")
 
   const renderTabContent = () => {
@@ -317,89 +319,59 @@ export default function NewLandingPage() {
 
         {/* Navigation */}
         {/* Navigation */}
-        <nav className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 lg:px-12 bg-transparent">
-          {/* Logo */}
-          <div className="flex flex-col items-center space-x-2">
-            <div className="text-2xl font-semibold text-gray-900 font-raleway">
-              Certiflo
-            </div>
-            <div className="text-sm text-gray-600 font-medium font-pacifico">
-              by SENEMENT
-            </div>
+        {/* ============================== */}
+        {/* UNIFIED NAVIGATION             */}
+        {/* ============================== */}
+        <nav className="hidden md:flex fixed top-0 left-0 right-0 w-full z-50 items-center justify-between px-6 py-4 lg:px-12 bg-transparent pointer-events-none">
+
+          {/* LOGO */}
+          <div className="pointer-events-auto">
+            <Link href="/" className="flex flex-col items-center cursor-pointer group">
+              <div className="text-2xl font-semibold text-gray-900 font-raleway group-hover:opacity-80 transition-opacity">
+                Certiflo
+              </div>
+              <div className="text-sm text-gray-600 font-medium font-pacifico group-hover:opacity-80 transition-opacity">
+                by SENEMENT
+              </div>
+            </Link>
           </div>
 
-          {/* Navigation Links - Centered Pill */}
-          <div className="hidden md:flex absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 items-center space-x-1 bg-white p-2 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-100">
-            <Link href="https://senement.com" target="_blank" className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded-full hover:bg-gray-100 transition-all duration-200 font-poppins text-base font-medium">
+          {/* DESKTOP CENTER LINKS (Absolute Centered) */}
+          <div className="hidden md:flex absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 items-center space-x-1 bg-white p-1.5 rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.05)] border border-gray-100 pointer-events-auto">
+            <Link href="https://senement.com" target="_blank" className="text-gray-600 hover:text-black px-5 py-2 rounded-full hover:bg-gray-50 transition-all duration-200 text-sm font-medium">
               Senement
             </Link>
-            <Link href="/" target="_blank" className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded-full hover:bg-gray-100 transition-all duration-200 font-poppins text-base font-medium">
+            <Link href="/" className="text-gray-600 hover:text-black px-5 py-2 rounded-full hover:bg-gray-50 transition-all duration-200 text-sm font-medium">
               Pricing
             </Link>
-            <Link href="#" className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded-full hover:bg-gray-100 transition-all duration-200 font-poppins text-base font-medium">
+            <Link href="#" className="text-gray-600 hover:text-black px-5 py-2 rounded-full hover:bg-gray-50 transition-all duration-200 text-sm font-medium">
               Verify
             </Link>
-            <Link href="#" className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded-full hover:bg-gray-100 transition-all duration-200 font-poppins text-base font-medium">
+            <Link href="#" className="text-gray-600 hover:text-black px-5 py-2 rounded-full hover:bg-gray-50 transition-all duration-200 text-sm font-medium">
               Contact
             </Link>
           </div>
 
-          {/* Desktop Auth Buttons */}
-          <div className="hidden md:flex items-center space-x-3">
-            <NeumorphButton size="small" intent="default" className=" shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.7)]  transition-all duration-50">
+          {/* DESKTOP RIGHT ACTIONS */}
+          <div className="hidden md:flex items-center gap-3 pointer-events-auto">
+            <button className="px-5 py-2 text-sm font-semibold text-gray-700 hover:text-black transition-colors">
               Login
-            </NeumorphButton>
-            <NeumorphButton size={"small"} intent={"primary"} className=" shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,0.7)] transition-all duration-50">
+            </button>
+            <button className="px-5 py-2 text-sm font-semibold text-white bg-black rounded-full hover:bg-gray-800 transition-colors shadow-lg active:scale-95 transform duration-100">
               Join Now
-            </NeumorphButton>
+            </button>
           </div>
 
-          {/* Mobile Menu Button */}
-          <NeumorphButton
-            size={"small"}
-            intent={"secondary"}
-            className="md:hidden p-2 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.7)] transition-all duration-50"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? (
-              <X className="h-6 w-6 text-gray-900" />
-            ) : (
-              <Menu className="h-6 w-6 text-gray-900" />
-            )}
-          </NeumorphButton>
 
-          {/* Mobile Menu */}
-          {mobileMenuOpen && (
-            <div className="absolute top-full left-0 right-0 bg-gray-50 border-t border-gray-200 shadow-lg md:hidden">
-              <div className="px-6 py-4 space-y-4">
-                <Link href="#" className="block text-gray hover:text-gray-900 transition-colors font-poppins">
-                  Senement
-                </Link>
-                <Link href="#" className="block text-gray hover:text-gray-900 transition-colors font-poppins">
-                  Pricing
-                </Link>
-                <Link href="#" className="block text-gray hover:text-gray-900 transition-colors font-poppins">
-                  Verify
-                </Link>
-                <Link href="#" className="block text-gray hover:text-gray-900 transition-colors font-poppins">
-                  Contact
-                </Link>
-                <div className=" justify-center flex flex-row gap-4 pt-4 space-y-3">
-                  <NeumorphButton size={"small"} intent={"secondary"} className="shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.7)]  transition-all duration-50">
-                    Login
-                  </NeumorphButton>
-                  <NeumorphButton size={"small"} intent={"primary"} className=" shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,0.7)]  transition-all duration-50">
-                    Join Now
-                  </NeumorphButton>
-                </div>
-              </div>
-            </div>
-          )}
+
         </nav>
 
+        {/* MOBILE NAVIGATION */}
+        <MobileNav />
+
         {/* Hero Section */}
         {/* Hero Section */}
-        <div className="relative w-full overflow-hidden">
+        <div className="relative w-full mt-10 overflow-hidden">
 
 
           <div className="relative z-10 px-6 py-8 lg:px-12 lg:py-16">
@@ -606,7 +578,7 @@ export default function NewLandingPage() {
       </div>
 
       {/* Continuous Grid Wrapper for Trust, Tabs, and Savings */}
-      <div className="relative bg-gray-50 border-gray-200">
+      <div className="relative bg-gray-50 border-gray-200 overflow-hidden">
         {/* The Continuous Vertical Grid Lines */}
         <div className="absolute inset-0 max-w-[90%] mx-auto dashed-y-custom pointer-events-none z-0"></div>
 
@@ -770,8 +742,8 @@ export default function NewLandingPage() {
                   </div>
 
                   {/* Desktop Connector - Risk Arrow */}
-                  <div className="hidden lg:block absolute -bottom-36 right-[10%] w-30 h-30 z-0 pointer-events-none rotate-12">
-                    <Image src="/arrow.svg" alt="Arrow" width={100} height={100} className="w-full h-full text-[#8B4513]" />
+                  <div className="hidden lg:block absolute -bottom-40 right-[10%] w-36 h-36 z-0 pointer-events-none -rotate-15">
+                    <Image src="/1212121.svg" alt="Arrow" width={150} height={150} className="w-full h-full text-[#8B4513]" />
                   </div>
 
                 </div>
@@ -792,14 +764,28 @@ export default function NewLandingPage() {
           <div className="max-w-[90%] mx-auto px-0">
             <SectionSeparator />
           </div>
+
+          <ScrollRevealSection>
+            <div className="max-w-[90%] mx-auto px-0">
+              <ReadyToStart />
+            </div>
+          </ScrollRevealSection>
+
+          {/* Closing Separator - Outside scroll reveal, no bottom margin to stop grid lines perfectly */}
+          <div className="max-w-[90%] mx-auto px-0">
+            <SectionSeparator />
+          </div>
+
         </div>
       </div>
 
-      {/* Padding for bottom spacing - Outside Grid */}
-      <div className="pb-12 bg-gray-50"></div>
+      <div className="bg-gray-50 h-24"></div>
+
+      <SiteFooterGlassmorphism />
 
       {/* Cookie Consent Banner */}
       <CookieConsent />
+      <ScrollToTop />
     </div >
   )
 }

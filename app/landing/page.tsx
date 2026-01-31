@@ -39,10 +39,10 @@ export default function LandingPage() {
         <div className="container mx-auto px-3 md:px-7 py-4 md:py-5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Image
-              src="/cflo1.png"
+              src="/cflo1.svg"
               alt="CertificateHash Logo"
-              width={52}
-              height={52} />
+              width={42}
+              height={42} />
           </div>
           <nav className="hidden md:flex items-center gap-6 lg:gap-8">
             <Link href="#features" className="text-sm lg:text-base text-gray-600 hover:text-[#21808D] transition">
@@ -51,7 +51,7 @@ export default function LandingPage() {
             <Link href="#how-it-works" className="text-sm lg:text-base text-gray-600 hover:text-[#21808D] transition">
               How It Works
             </Link>
-    
+
           </nav>
           <div className="flex items-center gap-2 md:gap-4">
             <Link href="/login" className="">
@@ -125,10 +125,10 @@ export default function LandingPage() {
             <div className="p-6 md:p-8 bg-[#f6f6f6] rounded-2xl hover:shadow-lg transition">
               <div className="w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center mb-4 md:mb-6">
                 <Image
-                src="/8.svg"
-                alt="Verified Certificates Icon"
-                width={64}
-                height={64}
+                  src="/8.svg"
+                  alt="Verified Certificates Icon"
+                  width={64}
+                  height={64}
 
                 />
               </div>
@@ -141,10 +141,10 @@ export default function LandingPage() {
             <div className="p-6 md:p-8 bg-[#f6f6f6] rounded-2xl hover:shadow-lg transition">
               <div className="w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center mb-4 md:mb-6">
                 <Image
-                src="/9.svg"
-                alt="Verified Certificates Icon"
-                width={64}
-                height={64}
+                  src="/9.svg"
+                  alt="Verified Certificates Icon"
+                  width={64}
+                  height={64}
 
                 />
               </div>
@@ -157,10 +157,10 @@ export default function LandingPage() {
             <div className="p-6 md:p-8 bg-[#f6f6f6] rounded-2xl hover:shadow-lg transition">
               <div className="w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center mb-4 md:mb-6">
                 <Image
-                src="/10.svg"
-                alt="Verified Certificates Icon"
-                width={64}
-                height={64}
+                  src="/10.svg"
+                  alt="Verified Certificates Icon"
+                  width={64}
+                  height={64}
 
                 />
               </div>
@@ -255,12 +255,12 @@ export default function LandingPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-              <Image
-                src="/cflo1.png"
-                alt="CertificateHash Logo"
-                width={40}
-                height={40}
-              />
+                <Image
+                  src="/cflo1.svg"
+                  alt="CertificateHash Logo"
+                  width={36}
+                  height={36}
+                />
               </div>
               <p className="text-gray-600  text-lg sm:hidden md:block">
                 Professional certificate generation and verification platform.

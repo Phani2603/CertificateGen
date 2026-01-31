@@ -12,7 +12,7 @@ interface DashboardSidebarProps {
   setSidebarOpen: (open: boolean) => void
   currentPage: Page
   setCurrentPage: (page: Page) => void
-  selectedEvent: {club: string, eventId: string, eventName: string} | null
+  selectedEvent: { club: string, eventId: string, eventName: string } | null
   userImage?: string | null
   userName?: string | null
   userEmail?: string | null
@@ -42,7 +42,7 @@ export function DashboardSidebar({
     <>
       {/* Mobile Backdrop Overlay */}
       {sidebarOpen && (
-        <div 
+        <div
           className="md:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-30 transition-opacity duration-300"
           onClick={() => setSidebarOpen(false)}
         />
@@ -50,21 +50,19 @@ export function DashboardSidebar({
 
       {/* Sidebar */}
       <aside
-        className={`${
-          sidebarOpen ? "w-64" : "w-20"
-        } bg-green-300/60 backdrop-blur-2xl rounded-r-3xl border-r border-gray-200 transition-all duration-300 flex flex-col shadow-sm fixed md:sticky md:top-0 min-h-screen md:h-screen z-40 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-        }`}
+        className={`${sidebarOpen ? "w-64" : "w-20"
+          } bg-green-300/60 backdrop-blur-2xl rounded-r-3xl border-r border-gray-200 transition-all duration-300 flex flex-col shadow-sm fixed md:sticky md:top-0 min-h-screen md:h-screen z-40 ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+          }`}
       >
         {/* Logo */}
         <div className="p-2 flex items-center ">
           <div className="flex flex-col items-center w-full">
             <div className="w-18 h-18 rounded-xl overflow-hidden flex items-center justify-center">
-              <Image 
-                src="/cflo1.png" 
-                alt="CertificateHash Logo" 
-                width={56} 
-                height={56}
+              <Image
+                src="/cflo1.svg"
+                alt="CertificateHash Logo"
+                width={46}
+                height={46}
                 className="w-full h-full object-contain"
               />
             </div>
@@ -80,11 +78,10 @@ export function DashboardSidebar({
                 <li key={item.id}>
                   <button
                     onClick={() => setCurrentPage(item.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                      currentPage === item.id
-                        ? "bg-[#21808D] text-white"
-                        : "text-gray-700 hover:bg-gray-100"
-                    }`}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${currentPage === item.id
+                      ? "bg-[#21808D] text-white"
+                      : "text-gray-700 hover:bg-gray-100"
+                      }`}
                   >
                     {item.imageSrc ? (
                       <Image src={item.imageSrc} alt={item.label} width={24} height={24} className="shrink-0" />
@@ -117,9 +114,9 @@ export function DashboardSidebar({
             )}
           </button>
           {sidebarOpen && (
-          <button 
-            onClick={() => signOut({ callbackUrl: '/login' })}
-            className="w-full flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors text-red-600 mt-2">
+            <button
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              className="w-full flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors text-red-600 mt-2">
               <LogOut className="h-5 w-5" />
               <span className="font-medium">Sign out</span>
             </button>
