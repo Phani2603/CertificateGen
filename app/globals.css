@@ -1,6 +1,61 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
+/* Custom Local Fonts */
+@font-face {
+  font-family: 'BespokeSerif-Light';
+  src: url('/fonts/BespokeSerif_Complete/Fonts/WEB/fonts/BespokeSerif-Light.woff2') format('woff2'),
+    url('/fonts/BespokeSerif_Complete/Fonts/WEB/fonts/BespokeSerif-Light.woff') format('woff');
+  font-weight: 300;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'BespokeSerif-Regular';
+  src: url('/fonts/BespokeSerif_Complete/Fonts/WEB/fonts/BespokeSerif-Regular.woff2') format('woff2'),
+    url('/fonts/BespokeSerif_Complete/Fonts/WEB/fonts/BespokeSerif-Regular.woff') format('woff');
+  font-weight: 400;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'BespokeSerif-Medium';
+  src: url('/fonts/BespokeSerif_Complete/Fonts/WEB/fonts/BespokeSerif-Medium.woff2') format('woff2'),
+    url('/fonts/BespokeSerif_Complete/Fonts/WEB/fonts/BespokeSerif-Medium.woff') format('woff');
+  font-weight: 500;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'BespokeSerif-Bold';
+  src: url('/fonts/BespokeSerif_Complete/Fonts/WEB/fonts/BespokeSerif-Bold.woff2') format('woff2'),
+    url('/fonts/BespokeSerif_Complete/Fonts/WEB/fonts/BespokeSerif-Bold.woff') format('woff');
+  font-weight: 700;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'BespokeSerif-Extrabold';
+  src: url('/fonts/BespokeSerif_Complete/Fonts/WEB/fonts/BespokeSerif-Extrabold.woff2') format('woff2'),
+    url('/fonts/BespokeSerif_Complete/Fonts/WEB/fonts/BespokeSerif-Extrabold.woff') format('woff');
+  font-weight: 800;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'RX100-Regular';
+  src: url('/fonts/RX100_Complete/Fonts/WEB/fonts/RX100-Regular.woff2') format('woff2'),
+    url('/fonts/RX100_Complete/Fonts/WEB/fonts/RX100-Regular.woff') format('woff');
+  font-weight: 400;
+  font-display: swap;
+  font-style: normal;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 :root {
@@ -244,6 +299,31 @@
   font-family: var(--font-tangerine), 'Tangerine', cursive !important;
 }
 
+/* Custom Local Fonts */
+.font-bespoke-serif {
+  font-family: 'BespokeSerif-Regular', serif !important;
+}
+
+.font-bespoke-serif-light {
+  font-family: 'BespokeSerif-Light', serif !important;
+}
+
+.font-bespoke-serif-medium {
+  font-family: 'BespokeSerif-Medium', serif !important;
+}
+
+.font-bespoke-serif-bold {
+  font-family: 'BespokeSerif-Bold', serif !important;
+}
+
+.font-bespoke-serif-extrabold {
+  font-family: 'BespokeSerif-Extrabold', serif !important;
+}
+
+.font-rx100 {
+  font-family: 'RX100-Regular', sans-serif !important;
+}
+
 /* Custom Highlight and Box Styles */
 .highlight-yellow {
   background-color: #FFFF00;
@@ -411,4 +491,18 @@
   pointer-events: none;
   opacity: 0.06;
   background-image: url("/noise.png");
+}
+
+/* Marquee Animation for Problem Cards */
+@keyframes marquee-down {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(500%);
+  }
+}
+
+.animate-marquee-down {
+  animation: marquee-down 2s linear infinite;
 }

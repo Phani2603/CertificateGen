@@ -61,8 +61,8 @@ export function CorporateSidebar({
               <Image
                 src="/cflo1.svg"
                 alt="CertificateHash Logo"
-                width={46}
-                height={46}
+                width={42}
+                height={42}
                 className="w-full h-full object-contain"
               />
             </div>

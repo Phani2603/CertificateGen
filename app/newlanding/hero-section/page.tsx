@@ -14,6 +14,7 @@ import ReadyToStart from "@/components/ready-to-start"
 import SiteFooterGlassmorphism from "@/components/site-footer-glassmorphism"
 import ScrollToTop from "@/components/scroll-to-top"
 import MobileNav from "@/components/mobile-nav"
+import NewLandingDesktopNav from "@/components/newlanding-desktop-nav"
 
 const caveat = Caveat({
   subsets: ["latin"],
@@ -322,49 +323,8 @@ export default function NewLandingPage() {
         {/* ============================== */}
         {/* UNIFIED NAVIGATION             */}
         {/* ============================== */}
-        <nav className="hidden md:flex fixed top-0 left-0 right-0 w-full z-50 items-center justify-between px-6 py-4 lg:px-12 bg-transparent pointer-events-none">
-
-          {/* LOGO */}
-          <div className="pointer-events-auto">
-            <Link href="/" className="flex flex-col items-center cursor-pointer group">
-              <div className="text-2xl font-semibold text-gray-900 font-raleway group-hover:opacity-80 transition-opacity">
-                Certiflo
-              </div>
-              <div className="text-sm text-gray-600 font-medium font-pacifico group-hover:opacity-80 transition-opacity">
-                by SENEMENT
-              </div>
-            </Link>
-          </div>
-
-          {/* DESKTOP CENTER LINKS (Absolute Centered) */}
-          <div className="hidden md:flex absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 items-center space-x-1 bg-white p-1.5 rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.05)] border border-gray-100 pointer-events-auto">
-            <Link href="https://senement.com" target="_blank" className="text-gray-600 hover:text-black px-5 py-2 rounded-full hover:bg-gray-50 transition-all duration-200 text-sm font-medium">
-              Senement
-            </Link>
-            <Link href="/" className="text-gray-600 hover:text-black px-5 py-2 rounded-full hover:bg-gray-50 transition-all duration-200 text-sm font-medium">
-              Pricing
-            </Link>
-            <Link href="#" className="text-gray-600 hover:text-black px-5 py-2 rounded-full hover:bg-gray-50 transition-all duration-200 text-sm font-medium">
-              Verify
-            </Link>
-            <Link href="#" className="text-gray-600 hover:text-black px-5 py-2 rounded-full hover:bg-gray-50 transition-all duration-200 text-sm font-medium">
-              Contact
-            </Link>
-          </div>
-
-          {/* DESKTOP RIGHT ACTIONS */}
-          <div className="hidden md:flex items-center gap-3 pointer-events-auto">
-            <button className="px-5 py-2 text-sm font-semibold text-gray-700 hover:text-black transition-colors">
-              Login
-            </button>
-            <button className="px-5 py-2 text-sm font-semibold text-white bg-black rounded-full hover:bg-gray-800 transition-colors shadow-lg active:scale-95 transform duration-100">
-              Join Now
-            </button>
-          </div>
-
-
-
-        </nav>
+        {/* Navigation */}
+        <NewLandingDesktopNav />
 
         {/* MOBILE NAVIGATION */}
         <MobileNav />
