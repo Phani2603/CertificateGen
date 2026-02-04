@@ -56,20 +56,20 @@ export default function ProblemCardImage({
     }, [variant])
 
     return (
-        <div className={cn("group flex flex-col p-2 px-2 rounded-[40px] bg-white transition-all duration-500 hover:shadow-xl hover:-translate-y-1", className)}>
-            {/* High-quality Image Container with Different Effects */}
-            <div className="relative w-full aspect-[15/10] bg-[#F5F5F7] rounded-[32px] overflow-hidden flex items-center justify-center mb-4 transition-all duration-500 group-hover:shadow-inner group-hover:bg-[#f0f0f2]">
+        <div className={cn("group flex flex-col p-1.5 rounded-[32px] bg-white transition-all duration-300 hover:shadow-lg", className)}>
+            {/* Component Container with Different Effects */}
+            <div className="relative w-full aspect-[15/10] bg-[#F5F5F7] rounded-[28px] overflow-hidden flex items-center justify-center mb-3 transition-all duration-300">
 
                 {/* Variant: Glare - Cinematic Sheen/Glint Overlay */}
                 {variant === 'glare' && (
-                    <div className="absolute inset-0 w-full h-full pointer-events-none z-10 overflow-hidden rounded-[32px]">
+                    <div className="absolute inset-0 w-full h-full pointer-events-none z-10 overflow-hidden rounded-[28px]">
                         <div className="absolute top-0 h-full w-[150%] bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-[150%] skew-x-[-20deg] transition-transform duration-1000 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:translate-x-[150%]" />
                     </div>
                 )}
 
                 {/* Variant: Pixelated - Mosaic Grid Overlay */}
                 {variant === 'pixelated' && (
-                    <div className="absolute inset-0 w-full h-full pointer-events-none z-10 overflow-hidden rounded-[32px]">
+                    <div className="absolute inset-0 w-full h-full pointer-events-none z-10 overflow-hidden rounded-[28px]">
                         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                             <canvas
                                 ref={canvasRef}
@@ -91,7 +91,7 @@ export default function ProblemCardImage({
 
                 {/* Variant: Marquee - Scrolling Shine Bars */}
                 {variant === 'marquee' && (
-                    <div className="absolute inset-0 w-full h-full pointer-events-none z-10 overflow-hidden rounded-[32px]">
+                    <div className="absolute inset-0 w-full h-full pointer-events-none z-10 overflow-hidden rounded-[28px]">
                         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                             {/* Multiple animated bars */}
                             <div className="absolute top-0 left-0 w-full h-[20%] bg-gradient-to-b from-white/30 to-transparent animate-marquee-down"
@@ -104,32 +104,32 @@ export default function ProblemCardImage({
                     </div>
                 )}
 
-                {/* Image with Float & Tilt */}
-                <div className="relative w-[65%] h-auto z-20 transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:scale-110 group-hover:-rotate-3 group-hover:-translate-y-3">
+                {/* Image - Simple Hover Effect */}
+                <div className="relative w-full h-full z-20">
                     <Image
                         ref={imageRef}
                         src={imageSrc}
                         alt={imageAlt}
                         width={400}
                         height={300}
-                        className="object-contain w-full h-auto drop-shadow-xl transition-all duration-500 group-hover:drop-shadow-2xl"
+                        className="object-cover w-full h-full rounded-[28px]"
                     />
                 </div>
             </div>
 
-            <div className="flex flex-col items-start space-y-1 py-2 px-2">
+            <div className="flex flex-col items-start space-y-1 py-1.5 px-2">
                 {/* Tag Pill */}
-                <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-[#FFEFEF] text-[#FF4D4D] text-sm font-semibold tracking-wide">
+                <div className="inline-flex items-center px-3 py-1 rounded-full bg-[#FFEFEF] text-[#FF4D4D] text-xs font-semibold tracking-wide">
                     {tag}
                 </div>
 
                 {/* Title */}
-                <h3 className="text-2xl font-bold text-gray-900 tracking-tight leading-tight">
+                <h3 className="text-lg font-bold text-gray-900 tracking-tight leading-tight line-clamp-2">
                     {title}
                 </h3>
 
                 {/* Description */}
-                <p className="text-base text-gray-500 leading-relaxed font-medium">
+                <p className="text-sm text-gray-500 leading-relaxed font-medium line-clamp-2">
                     {description}
                 </p>
             </div>

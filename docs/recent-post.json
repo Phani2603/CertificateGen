@@ -1,0 +1,50 @@
+{
+    "section_recent_posts": {
+        "header_row": {
+            "title": "Recent",
+            "cta": {
+                "text": "See all posts",
+                "style": "minimal_link",
+                "alignment": "right"
+            }
+        },
+        "grid": {
+            "columns_desktop": 3,
+            "columns_tablet": 2,
+            "columns_mobile": 1,
+            "gap": "large",
+            "card_style": {
+                "border_radius": "20px",
+                "hover": {
+                    "lift": "subtle",
+                    "cursor": "pointer"
+                }
+            },
+            "card_components": [
+                {
+                    "image": {
+                        "aspect_ratio": "16:9",
+                        "border_radius": "16px",
+                        "fit": "cover"
+                    }
+                },
+                {
+                    "title": {
+                        "weight": "medium",
+                        "size": "h3"
+                    }
+                },
+                {
+                    "meta_row": {
+                        "items": [
+                            "date",
+                            "tag_chip_1",
+                            "tag_chip_2"
+                        ],
+                        "spacing": "small"
+                    }
+                }
+            ]
+        }
+    }
+}

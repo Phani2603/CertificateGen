@@ -6,7 +6,11 @@ import { Menu, X } from "lucide-react"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
 
-export default function MobileNav() {
+interface MobileNavProps {
+    hideAuth?: boolean
+}
+
+export default function MobileNav({ hideAuth = false }: MobileNavProps) {
     const [isOpen, setIsOpen] = useState(false)
     const contentRef = useRef<HTMLDivElement>(null)
 
@@ -56,19 +60,25 @@ export default function MobileNav() {
                         <div className="h-px w-full bg-gray-100" />
 
                         <nav className="flex flex-col space-y-4">
-                            <Link href="#" className="text-lg font-medium text-gray-600 hover:text-black transition-colors">Pricing</Link>
-                            <Link href="#" className="text-lg font-medium text-gray-600 hover:text-black transition-colors">Verify</Link>
-                            <Link href="#" className="text-lg font-medium text-gray-600 hover:text-black transition-colors">Contact</Link>
+                            <Link href="#" className="text-lg font-medium text-gray-600 hover:text-black transition-colors">Home</Link>
+                            <Link href="https://semenent.com" target="_blank" className="text-lg font-medium text-gray-600 hover:text-black transition-colors">Semenent</Link>
+                            <Link href="/newlanding/pricing" className="text-lg font-medium text-gray-600 hover:text-black transition-colors">Pricing</Link>
+                            <Link href="/verify" className="text-lg font-medium text-gray-600 hover:text-black transition-colors">Verify</Link>
+                            <Link href="/newlanding/contact" className="text-lg font-medium text-gray-600 hover:text-black transition-colors">Contact</Link>
+                            <Link href="/blog" className="text-lg font-medium text-gray-600 hover:text-black transition-colors">Blog</Link>
                         </nav>
 
-                        <div className="flex flex-col gap-3">
-                            <button className="w-full bg-black text-white rounded-xl py-3 text-base font-bold shadow-md active:scale-95 transition-transform">
-                                Join Now
-                            </button>
-                            <button className="w-full bg-gray-50 text-gray-900 rounded-xl py-3 text-base font-bold hover:bg-gray-100 active:scale-95 transition-transform">
-                                Login
-                            </button>
-                        </div>
+                        {/* Auth Buttons - Conditionally Hidden */}
+                        {!hideAuth && (
+                            <div className="flex flex-col gap-3">
+                                <button className="w-full bg-black text-white rounded-xl py-3 text-base font-bold shadow-md active:scale-95 transition-transform">
+                                    Join Now
+                                </button>
+                                <button className="w-full bg-gray-50 text-gray-900 rounded-xl py-3 text-base font-bold hover:bg-gray-100 active:scale-95 transition-transform">
+                                    Login
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
 

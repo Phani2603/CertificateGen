@@ -1,0 +1,28 @@
+{
+    "section_featured_visual": {
+        "container": {
+            "width": "full",
+            "max_width": "1100px",
+            "border_radius": "24px",
+            "aspect_ratio": "16:9",
+            "overflow": "hidden"
+        },
+        "content": {
+            "type": "composite_collage",
+            "placement": "center",
+            "layering": {
+                "depth_effect": true,
+                "overlap": true,
+                "floating_objects": true
+            },
+            "visual_elements": [
+                "portrait_cutouts",
+                "abstract_shapes",
+                "symbolic_objects",
+                "3d_objects",
+                "floating_clock",
+                "gradient_background"
+            ]
+        }
+    }
+}

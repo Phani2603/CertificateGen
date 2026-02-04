@@ -1,0 +1,62 @@
+{
+    "page_type": "blog_article",
+    "layout_system": {
+        "container": "centered",
+        "max_width": "1200px",
+        "responsive_behavior": "fluid_with_breakpoints",
+        "breakpoints": [
+            "mobile",
+            "tablet",
+            "desktop"
+        ]
+    },
+    "section_hero": {
+        "alignment": "center",
+        "vertical_spacing": "large",
+        "elements_in_order": [
+            {
+                "type": "title",
+                "text_style": {
+                    "weight": "medium",
+                    "tracking": "normal",
+                    "line_height": "1.2",
+                    "size_hierarchy": "primary"
+                },
+                "position": "top_center"
+            },
+            {
+                "type": "primary_cta",
+                "shape": "pill",
+                "border": "1px solid",
+                "padding": "medium_horizontal",
+                "hover": {
+                    "scale": "1.02",
+                    "cursor": "pointer"
+                },
+                "spacing_from_title": "medium"
+            },
+            {
+                "type": "meta_row",
+                "alignment": "center",
+                "items": [
+                    {
+                        "type": "tag",
+                        "style": "outlined_chip"
+                    },
+                    {
+                        "type": "tag",
+                        "style": "outlined_chip"
+                    },
+                    {
+                        "type": "date",
+                        "format": "DD Month YYYY"
+                    },
+                    {
+                        "type": "author_names"
+                    }
+                ],
+                "spacing_between_items": "small"
+            }
+        ]
+    }
+}

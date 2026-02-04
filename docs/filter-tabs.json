@@ -1,0 +1,23 @@
+{
+    "section_filters": {
+        "style": "pill_tabs",
+        "alignment": "left",
+        "tabs": [
+            "All",
+            "Insights",
+            "News",
+            "Best practices"
+        ],
+        "active_state": {
+            "filled_background": true,
+            "bold_text": true
+        },
+        "inactive_state": {
+            "outlined": true
+        },
+        "interaction": {
+            "smooth_transition": true,
+            "content_filtering": true
+        }
+    }
+}

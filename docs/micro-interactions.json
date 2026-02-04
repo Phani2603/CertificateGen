@@ -1,0 +1,17 @@
+{
+    "interactions": {
+        "hover_effects": {
+            "cards": "lift + slight scale",
+            "buttons": "subtle scale",
+            "links": "underline_on_hover"
+        },
+        "scroll_behavior": {
+            "fade_in_sections": true,
+            "staggered_animation": true
+        },
+        "responsive_behavior": {
+            "stack_on_mobile": true,
+            "center_align_hero": true
+        }
+    }
+}
