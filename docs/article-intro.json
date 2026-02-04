@@ -1,0 +1,23 @@
+{
+    "section_intro": {
+        "text_alignment": "left",
+        "max_width": "720px",
+        "centered_container": true,
+        "typography": {
+            "heading": {
+                "size": "h2",
+                "weight": "medium"
+            },
+            "body": {
+                "size": "medium",
+                "line_height": "1.6",
+                "paragraph_spacing": "large"
+            }
+        },
+        "structure": [
+            "short_intro_paragraph",
+            "long_explanatory_paragraph",
+            "methodology_overview"
+        ]
+    }
+}

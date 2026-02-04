@@ -1,8 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
-import Image from "next/image"
+
 import { Caveat, Poppins, Raleway, Pacifico } from "next/font/google"
 
 import { Mail, MapPin, Send } from "lucide-react"
