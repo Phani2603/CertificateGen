@@ -60,7 +60,7 @@ const OrganizationSchema = new Schema<IOrganization>(
 )
 
 // Indexes for better query performance
-OrganizationSchema.index({ name: 1 })
+// Note: name index is created by unique: true constraint
 OrganizationSchema.index({ type: 1 })
 OrganizationSchema.index({ members: 1 })
 

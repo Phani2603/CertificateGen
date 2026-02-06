@@ -83,10 +83,10 @@ const CertificateHistorySchema = new Schema<ICertificateHistory>(
 CertificateHistorySchema.index({ userId: 1, createdAt: -1 })
 CertificateHistorySchema.index({ organizationId: 1, createdAt: -1 })
 CertificateHistorySchema.index({ clubId: 1, createdAt: -1 })
-CertificateHistorySchema.index({ batchId: 1 })
+// Note: batchId index is created by unique: true constraint
 
 const CertificateHistory: Model<ICertificateHistory> =
-  mongoose.models.CertificateHistory || 
+  mongoose.models.CertificateHistory ||
   mongoose.model<ICertificateHistory>('CertificateHistory', CertificateHistorySchema)
 
 export default CertificateHistory

@@ -113,6 +113,19 @@ export async function POST(
         user.isSuspended = false
         user.suspendedUntil = undefined as any
         await user.save()
+
+        // Mark any pending appeals as resolved
+        const SuspensionAppeal = (await import('@/models/SuspensionAppeal')).default
+        await SuspensionAppeal.updateMany(
+          { userId: objectId, status: 'pending' },
+          {
+            status: 'resolved',
+            reviewedBy: adminEmail,
+            reviewedAt: new Date(),
+            adminResponse: 'Account unsuspended by admin'
+          }
+        )
+
         await logAdminAction({ adminEmail, action: 'USER_UNSUSPENDED', targetId: objectId })
         await logUserActivity({ userId: objectId, adminEmail, action: 'admin_unsuspend', description: 'User unsuspended by admin' })
         return NextResponse.json({ success: true, message: 'User unsuspended' })

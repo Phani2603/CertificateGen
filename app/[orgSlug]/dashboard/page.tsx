@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { CorporateProfileOverlay } from "@/components/dashboard/corporate/CorporateProfileOverlay"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { SuspensionChecker } from "@/components/SuspensionChecker"
 
 interface PageProps {
   params: Promise<{
@@ -32,7 +33,7 @@ export default function CorporateDashboard({ params }: PageProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [resolvedParams, setResolvedParams] = useState<{ orgSlug: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
-  
+
   // Sidebar state
   const [currentPage, setCurrentPage] = useState<CorporatePage>("overview")
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -111,16 +112,16 @@ export default function CorporateDashboard({ params }: PageProps) {
           const userId = userData.user.id || userData.user._id
           const ownerId = orgData.organization.ownerId
           const allowedUsers = orgData.organization.allowedUsers || []
-          
-          console.log('[Dashboard] Owner check:', { 
-            ownerId, 
-            userId, 
-            ownerIdType: typeof ownerId, 
+
+          console.log('[Dashboard] Owner check:', {
+            ownerId,
+            userId,
+            ownerIdType: typeof ownerId,
             userIdType: typeof userId,
             areEqual: ownerId === userId,
             areEqualAsString: String(ownerId) === String(userId)
           })
-          
+
           const hasAccess = ownerId === userId || allowedUsers.includes(userId)
 
           if (!hasAccess) {
@@ -188,7 +189,7 @@ export default function CorporateDashboard({ params }: PageProps) {
           </div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Unable to Load Dashboard</h2>
           <p className="text-gray-600 mb-6">
-            {error === "Organization not found" 
+            {error === "Organization not found"
               ? `We couldn't find an organization with the identifier "${resolvedParams.orgSlug}".`
               : error}
           </p>
@@ -221,14 +222,15 @@ export default function CorporateDashboard({ params }: PageProps) {
         }}
       />
 
-      <UserTypeSelectionModal 
-        isOpen={showTypeSelection} 
-        onClose={() => setShowTypeSelection(false)} 
+      <SuspensionChecker />
+      <UserTypeSelectionModal
+        isOpen={showTypeSelection}
+        onClose={() => setShowTypeSelection(false)}
       />
 
       {orgData && (
         <>
-          <CorporateSidebar 
+          <CorporateSidebar
             sidebarOpen={sidebarOpen}
             setSidebarOpen={setSidebarOpen}
             currentPage={currentPage}
@@ -246,13 +248,13 @@ export default function CorporateDashboard({ params }: PageProps) {
               {/* Mobile Menu Button + Org Name / Active Event Indicator */}
               <div className="flex items-center gap-2 md:gap-3">
                 {/* Mobile Menu Button - Always visible on mobile */}
-                <button 
+                <button
                   onClick={() => setSidebarOpen(true)}
                   className="md:hidden p-2 -ml-2 hover:bg-gray-100 rounded-lg text-gray-600"
                 >
                   <Menu className="h-6 w-6" />
                 </button>
-                
+
                 {/* Active Event or Org Name */}
                 {activeEvent ? (
                   <div className="flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-white rounded-lg md:rounded-xl shadow-sm border border-gray-200">
@@ -266,7 +268,7 @@ export default function CorporateDashboard({ params }: PageProps) {
                   <span className="font-semibold text-gray-900">{orgData.name}</span>
                 )}
               </div>
-              
+
               <CorporateProfileOverlay
                 trigger={
                   <Avatar className="w-10 h-10 md:w-12 md:h-12 cursor-pointer ring-2 ring-white shadow-lg" title="Open profile">
@@ -286,28 +288,28 @@ export default function CorporateDashboard({ params }: PageProps) {
               <div className="max-w-7xl mx-auto w-full">
                 {currentPage === "overview" && (
                   <div className="space-y-6 md:space-y-8">
-                    <CorporateOrgSection 
+                    <CorporateOrgSection
                       organization={orgData}
                       isOwner={String(orgData.ownerId) === String(userData?.id || userData?._id)}
                       onEditClick={() => setCurrentPage("settings")}
                     />
-                    
+
                     {/* Stats Overview */}
-                    <OrgOverviewStats 
+                    <OrgOverviewStats
                       organizationId={orgData._id}
                       memberCount={orgData.allowedUsers?.length || 0}
                     />
-                    
+
                     {/* Permission Requests (Owner Only) */}
-                    <PermissionRequestsSection 
+                    <PermissionRequestsSection
                       organizationId={orgData._id}
                       isOwner={String(orgData.ownerId) === String(userData?.id || userData?._id)}
                     />
                   </div>
                 )}
-                
+
                 {currentPage === "events" && (
-                  <CorporateEventsSection 
+                  <CorporateEventsSection
                     organizationId={orgData._id}
                     organizationSlug={orgData.slug}
                     organizationName={orgData.name}
@@ -316,14 +318,14 @@ export default function CorporateDashboard({ params }: PageProps) {
                 )}
 
                 {currentPage === "history" && (
-                  <CorporateHistorySection 
+                  <CorporateHistorySection
                     organizationId={orgData._id}
                     organizationName={orgData.name}
                   />
                 )}
-                
+
                 {currentPage === "members" && (
-                  <InvitationsSection 
+                  <InvitationsSection
                     organizationId={orgData._id}
                     organizationSlug={orgData.slug}
                     isOwner={String(orgData.ownerId) === String(userData?.id || userData?._id)}
@@ -331,7 +333,7 @@ export default function CorporateDashboard({ params }: PageProps) {
                 )}
 
                 {currentPage === "settings" && (
-                  <CorporateSettings 
+                  <CorporateSettings
                     organization={orgData}
                     onUpdate={handleUpdateSettings}
                   />
