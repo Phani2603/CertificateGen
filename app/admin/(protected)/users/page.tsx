@@ -1,22 +1,23 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import { useRouter } from "next/navigation"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -40,7 +41,6 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import { UserDetailsPanel } from "@/components/admin/UserDetailsPanel"
 
 interface User {
   _id: string
@@ -52,6 +52,7 @@ interface User {
 }
 
 export default function UsersPage() {
+  const router = useRouter()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
@@ -68,10 +69,6 @@ export default function UsersPage() {
     email: "",
     userType: ""
   })
-
-  // User Details Panel State
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
-  const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
 
   useEffect(() => {
     fetchUsers()
@@ -95,15 +92,15 @@ export default function UsersPage() {
         search,
         type: typeFilter
       })
-      
+
       const res = await fetch(`/api/admin/users?${params}`)
       const data = await res.json()
-      
+
       if (!res.ok && res.status === 401) {
         window.location.href = '/admin/login'
         return
       }
-      
+
       if (data.success) {
         setUsers(data.users)
         setTotalPages(data.pagination.pages)
@@ -132,8 +129,7 @@ export default function UsersPage() {
     setIsEditDialogOpen(true)
   }
   const handleViewDetails = (userId: string) => {
-    setSelectedUserId(userId)
-    setIsDetailsPanelOpen(true)
+    router.push(`/admin/users/${userId}/details`)
   }
   const handleUpdateUser = async () => {
     if (!editingUser) return
@@ -144,9 +140,9 @@ export default function UsersPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editForm)
       })
-      
+
       const data = await res.json()
-      
+
       if (data.success) {
         toast({
           title: "Success",
@@ -174,7 +170,7 @@ export default function UsersPage() {
         method: 'DELETE'
       })
       const data = await res.json()
-      
+
       if (data.success) {
         toast({
           title: "Success",
@@ -377,8 +373,8 @@ export default function UsersPage() {
               <Label htmlFor="type" className="text-right">
                 Type
               </Label>
-              <Select 
-                value={editForm.userType} 
+              <Select
+                value={editForm.userType}
                 onValueChange={(val) => setEditForm({ ...editForm, userType: val })}
               >
                 <SelectTrigger className="col-span-3">
@@ -400,18 +396,6 @@ export default function UsersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* User Details Panel */}
-      {selectedUserId && (
-        <UserDetailsPanel
-          userId={selectedUserId}
-          isOpen={isDetailsPanelOpen}
-          onClose={() => {
-            setIsDetailsPanelOpen(false)
-            setSelectedUserId(null)
-          }}
-        />
-      )}
     </div>
   )
 }

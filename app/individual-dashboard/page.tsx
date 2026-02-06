@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { useIslandAlerts } from "@/components/ui/island-alerts"
+import { SuspensionChecker } from "@/components/SuspensionChecker"
 
 export default function IndividualDashboard() {
   const { data: session, status } = useSession()
@@ -43,10 +44,10 @@ export default function IndividualDashboard() {
         try {
           const response = await fetch('/api/profile')
           const data = await response.json()
-          
+
           if (data.success) {
             setUserData(data.user)
-            
+
             // Check if user has no type selected (OAuth users)
             if (!data.user.userType) {
               setShowTypeSelection(true)
@@ -77,7 +78,7 @@ export default function IndividualDashboard() {
       try {
         const response = await fetch('/api/profile')
         const data = await response.json()
-        
+
         if (data.success && data.user) {
           // Check if user was promoted to corporate
           if (data.user.userType === 'corporate' && userData?.userType === 'individual') {
@@ -87,12 +88,12 @@ export default function IndividualDashboard() {
               type: 'success',
               duration: 10000,
             })
-            
+
             // Force hard refresh to update session and redirect
             setTimeout(() => {
               window.location.href = '/create-organization'
             }, 2000)
-            
+
             clearInterval(pollInterval)
           }
         }
@@ -100,7 +101,7 @@ export default function IndividualDashboard() {
         console.error('Error polling user status:', error)
       }
     }, 5000) // Poll every 5 seconds
-    
+
     return () => clearInterval(pollInterval)
   }, [userData, status, addAlert, router])
 
@@ -165,18 +166,19 @@ export default function IndividualDashboard() {
 
   return (
     <>
-      <UserTypeSelectionModal 
-        isOpen={showTypeSelection} 
-        onClose={() => setShowTypeSelection(false)} 
+      <SuspensionChecker />
+      <UserTypeSelectionModal
+        isOpen={showTypeSelection}
+        onClose={() => setShowTypeSelection(false)}
       />
-      
+
       <div className="min-h-screen bg-gradient-to-b from-[#f6f6f6] to-[#f0f0f0]">
-        <IndividualHeader 
+        <IndividualHeader
           userName={userData?.name || session?.user?.name || "User"}
           userEmail={userData?.email || session?.user?.email}
           userImage={userData?.image || session?.user?.image}
         />
-        
+
         <main className="w-full">
           {/* Main content with responsive padding and tighter max-width for larger side margins */}
           <div className="mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 py-6 sm:py-8 lg:py-10 w-full max-w-5xl">
@@ -236,7 +238,7 @@ export default function IndividualDashboard() {
               <section className="scroll-mt-20">
                 <MyCertificatesSection userId={userData?._id} />
               </section>
-              
+
               {/* Contact Information Card - Responsive */}
               <section className="scroll-mt-20">
                 <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100 shadow-sm">
