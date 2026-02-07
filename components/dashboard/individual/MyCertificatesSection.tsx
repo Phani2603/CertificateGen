@@ -1,8 +1,11 @@
 "use client"
 
 import { useEffect, useState, useRef } from "react"
-import { Card } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import {
   DropdownMenu,
@@ -10,7 +13,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Download, Search, Award, Filter, ChevronLeft, ChevronRight, X, Share2, Linkedin, Send, Mail, ExternalLink } from "lucide-react"
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer"
+import { Download, Search, Award, Filter, ChevronLeft, ChevronRight, X, Share2, ExternalLink, MoreHorizontal, CheckCircle2, Copy, Printer } from "lucide-react"
+import { FaLinkedin, FaWhatsapp, FaTwitter } from "react-icons/fa"
+import { HiMail } from "react-icons/hi"
+import { BsFiletypePng, BsFiletypePdf } from "react-icons/bs"
 import Image from "next/image"
 import { useSocket } from "@/components/socket-provider"
 import { toast } from "sonner"
@@ -45,6 +60,8 @@ export function MyCertificatesSection({ userId }: MyCertificatesSectionProps) {
   const [certificateImages, setCertificateImages] = useState<Record<string, string>>({}) // Store rendered certificate images
   const [loadingImages, setLoadingImages] = useState<Record<string, boolean>>({})
   const [downloadFormat, setDownloadFormat] = useState<"png" | "pdf">("png")
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [drawerCertificate, setDrawerCertificate] = useState<Certificate | null>(null)
   const itemsPerPage = 8
   const { socket } = useSocket()
   const componentRef = useRef<HTMLDivElement>(null)
@@ -73,7 +90,7 @@ export function MyCertificatesSection({ userId }: MyCertificatesSectionProps) {
 
   useEffect(() => {
     if (searchQuery) {
-      const filtered = certificates.filter(cert => 
+      const filtered = certificates.filter(cert =>
         cert.eventName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         cert.recipientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (cert.organizationName?.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -152,7 +169,7 @@ export function MyCertificatesSection({ userId }: MyCertificatesSectionProps) {
         console.log(`[MyCertificates] Fetching event data for ${cert.eventId}`)
         const eventResponse = await fetch(`/api/events/${cert.eventId}`)
         const eventData = await eventResponse.json()
-        
+
         if (eventData.success && eventData.event) {
           templateS3Key = templateS3Key || eventData.event.templateS3Key
           fieldConfig = fieldConfig || eventData.event.fieldConfiguration
@@ -197,21 +214,21 @@ export function MyCertificatesSection({ userId }: MyCertificatesSectionProps) {
       console.log(`[MyCertificates] Loading template via proxy`, { proxiedUrl })
       const img: HTMLImageElement = document.createElement('img')
       img.crossOrigin = 'anonymous'
-      
+
       return new Promise<string | null>((resolve) => {
         img.onload = () => {
           console.log(`[MyCertificates] Template image loaded, creating canvas`)
-          
+
           const canvas = document.createElement('canvas')
           const ctx = canvas.getContext('2d')
-          
+
           console.log(`[MyCertificates] Canvas context:`, {
             canvasExists: !!canvas,
             ctxExists: !!ctx,
             ctxType: ctx?.constructor.name,
             hasDrawImage: !!ctx?.drawImage,
           })
-          
+
           if (!ctx) {
             console.error('[MyCertificates] Failed to get canvas context')
             resolve(null)
@@ -220,9 +237,9 @@ export function MyCertificatesSection({ userId }: MyCertificatesSectionProps) {
 
           canvas.width = img.width
           canvas.height = img.height
-          
+
           console.log(`[MyCertificates] Canvas size: ${canvas.width}x${canvas.height}`)
-          
+
           try {
             ctx.drawImage(img, 0, 0)
             console.log(`[MyCertificates] Template drawn to canvas`)
@@ -263,7 +280,7 @@ export function MyCertificatesSection({ userId }: MyCertificatesSectionProps) {
           setCertificateImages(prev => ({ ...prev, [cert._id]: imageData }))
           resolve(imageData)
         }
-        
+
         img.onerror = () => {
           console.error('[MyCertificates] Failed to load template image from proxy:', proxiedUrl)
           resolve(null)
@@ -303,488 +320,718 @@ export function MyCertificatesSection({ userId }: MyCertificatesSectionProps) {
 
   return (
     <>
-      <div ref={componentRef} className="space-y-4 sm:space-y-6 lg:space-y-8 w-full">
-        {/* Header - Responsive */}
-        <div className="flex flex-col gap-4">
-          <div>
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold flex items-center gap-2 sm:gap-3">
-              <Award className="w-5 sm:w-6 h-5 sm:h-6 text-[#8FD6BD]" />
-              My Certificates
-            </h2>
-            <p className="text-gray-600 text-xs sm:text-sm mt-2">
-              {certificates.length} certificate{certificates.length !== 1 ? 's' : ''} earned
-            </p>
-          </div>
-
-          {/* Search - Responsive */}
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
-              placeholder="Search certificates..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 text-sm"
-            />
+      <Tabs defaultValue="all">
+        <div className="flex items-center">
+          <TabsList>
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="verified">Verified</TabsTrigger>
+            <TabsTrigger value="pending">Pending</TabsTrigger>
+          </TabsList>
+          <div className="ml-auto flex items-center gap-2">
+            <Button variant="outline" size="sm" className="h-7 gap-1 text-sm">
+              <Filter className="h-3.5 w-3.5" />
+              <span className="sr-only sm:not-sr-only">Filter</span>
+            </Button>
+            <Button size="sm" variant="outline" className="h-7 gap-1 text-sm">
+              <Download className="h-3.5 w-3.5" />
+              <span className="sr-only sm:not-sr-only">Export</span>
+            </Button>
           </div>
         </div>
-
-        {/* Certificates Grid */}
-        {filteredCertificates.length === 0 ? (
-          <Card className="p-6 sm:p-8 lg:p-12">
-            <div className="text-center">
-              <Award className="w-12 sm:w-16 h-12 sm:h-16 text-gray-300 mx-auto mb-3 sm:mb-4" />
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
-                {searchQuery ? "No certificates found" : "No certificates yet"}
-              </h3>
-              <p className="text-sm sm:text-base text-gray-600">
-                {searchQuery 
-                  ? "Try adjusting your search query" 
-                  : "Certificates you receive will appear here"
-                }
-              </p>
-            </div>
-          </Card>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" ref={gridRef}>
-              {currentCertificates.map((cert) => (
-                <div 
-                  key={cert._id} 
-                  onClick={() => {
-                    setSelectedCertificate(cert)
-                    setShowDetailModal(true)
-                  }}
-                  className="group relative bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-[#21808D] hover:shadow-lg transition-all duration-300 cursor-pointer flex flex-col h-full"
-                >
-                  {/* Certificate Image Preview - Compact */}
-                  <div className="relative h-32 bg-gradient-to-br from-[#21808D] to-[#8FD6BD] overflow-hidden flex items-center justify-center">
-                    {certificateImages[cert._id] ? (
-                      <>
-                        <img 
-                          src={certificateImages[cert._id]} 
-                          alt={cert.eventName}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                        />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                          <div className="bg-white/90 backdrop-blur-sm rounded-full p-2">
-                            <ExternalLink className="w-5 h-5 text-[#21808D]" />
-                          </div>
-                        </div>
-                      </>
-                    ) : loadingImages[cert._id] ? (
-                      <div className="flex flex-col items-center justify-center gap-1">
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span className="text-xs text-white">Loading...</span>
-                      </div>
-                    ) : (
-                      <Award className="w-10 h-10 text-white/60" />
-                    )}
-                  </div>
-
-                  {/* Certificate Details - Compact */}
-                  <div className="p-3 flex-1 flex flex-col justify-between">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-xs line-clamp-1 text-gray-900">{cert.eventName}</h3>
-                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
-                        {cert.organizationName || cert.privateOrgName || "Organization"}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1.5 font-medium">
-                        {new Date(cert.issuedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
-                      </p>
-                    </div>
-
-                    {/* Quick Action Button */}
-                    <Button
-                      size="sm"
-                      className="w-full mt-2 bg-[#21808D] hover:bg-[#1a6370] text-white h-7 text-xs"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setSelectedCertificate(cert)
-                        setShowDetailModal(true)
-                      }}
-                    >
-                      <ExternalLink className="w-2.5 h-2.5 mr-1" />
-                      View
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Enhanced Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-6 border-t border-gray-200">
-                <div className="text-xs sm:text-sm text-gray-500 font-medium">
-                  Showing <span className="font-semibold text-gray-900">{startIndex + 1}-{Math.min(endIndex, filteredCertificates.length)}</span> of <span className="font-semibold text-gray-900">{filteredCertificates.length}</span>
-                </div>
-                
-                <div className="flex items-center gap-1.5">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="h-9 w-9 p-0 rounded-lg border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  
-                  <div className="flex items-center gap-0.5 bg-gray-50 rounded-lg p-1">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
-                      if (
-                        page === 1 ||
-                        page === totalPages ||
-                        (page >= currentPage - 1 && page <= currentPage + 1)
-                      ) {
-                        return (
-                          <Button
-                            key={page}
-                            variant={currentPage === page ? "default" : "ghost"}
-                            size="sm"
-                            onClick={() => setCurrentPage(page)}
-                            className={`h-8 w-8 p-0 rounded-md transition-all ${
-                              currentPage === page 
-                                ? "bg-[#21808D] hover:bg-[#1a6370] text-white shadow-sm" 
-                                : "text-gray-600 hover:bg-white hover:text-[#21808D]"
-                            }`}
-                          >
-                            {page}
-                          </Button>
-                        )
-                      } else if (
-                        page === currentPage - 2 ||
-                        page === currentPage + 2
-                      ) {
-                        return (
-                          <span key={page} className="px-2 text-gray-300 text-sm">
-                            •••
-                          </span>
-                        )
-                      }
-                      return null
-                    })}
-                  </div>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                    className="h-9 w-9 p-0 rounded-lg border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
+        <TabsContent value="all">
+          <Card>
+            <CardHeader className="px-7">
+              <CardTitle>Certificates</CardTitle>
+              <CardDescription>
+                Recent certificates issued to you.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-4 mb-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-neutral-500" />
+                  <Input
+                    type="search"
+                    placeholder="Search certificates..."
+                    className="w-full pl-8 sm:w-[300px]"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
                 </div>
               </div>
-            )}
-          </>
-        )}
-      </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="hidden sm:table-cell">Preview</TableHead>
+                    <TableHead>Event</TableHead>
+                    <TableHead className="hidden sm:table-cell">Status</TableHead>
+                    <TableHead className="hidden md:table-cell">Date</TableHead>
+                    <TableHead className="hidden lg:table-cell">Verification Link</TableHead>
+                    <TableHead className="table-cell lg:hidden text-center">Link</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-10">Loading...</TableCell>
+                    </TableRow>
+                  ) : filteredCertificates.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-10">No certificates found.</TableCell>
+                    </TableRow>
+                  ) : (
+                    currentCertificates.map((cert) => (
+                      <TableRow key={cert._id} className="hover:bg-neutral-50/50">
+                        <TableCell className="hidden sm:table-cell cursor-pointer" onClick={() => { setSelectedCertificate(cert); setShowDetailModal(true); }}>
+                          <div className="h-10 w-16 bg-neutral-100 rounded border overflow-hidden">
+                            {certificateImages[cert._id] ? (
+                              <img src={certificateImages[cert._id]} className="w-full h-full object-cover" alt="" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center"><Award className="w-4 h-4 text-neutral-300" /></div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="cursor-pointer" onClick={() => { setSelectedCertificate(cert); setShowDetailModal(true); }}>
+                          <div className="font-medium text-neutral-900">{cert.eventName}</div>
+                          <div className="hidden text-xs text-neutral-500 md:inline">
+                            {cert.organizationName || cert.privateOrgName}
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell cursor-pointer" onClick={() => { setSelectedCertificate(cert); setShowDetailModal(true); }}>
+                          <Badge className="text-xs" variant="secondary">Verified</Badge>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell cursor-pointer" onClick={() => { setSelectedCertificate(cert); setShowDetailModal(true); }}>
+                          {new Date(cert.issuedDate).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          <div className="flex items-center gap-2">
+                            <code className="text-xs bg-neutral-100 px-2 py-1 rounded truncate max-w-[200px] block">
+                              {`${window.location.origin}/verify/${cert.verificationId}`}
+                            </code>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 shrink-0"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                navigator.clipboard.writeText(`${window.location.origin}/verify/${cert.verificationId}`)
+                                toast.success('Verification link copied!')
+                              }}
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                        {/* Mobile - Show copy button */}
+                        <TableCell className="table-cell lg:hidden text-center">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              navigator.clipboard.writeText(`${window.location.origin}/verify/${cert.verificationId}`)
+                              toast.success('Link copied!')
+                            }}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-neutral-100 rounded-full"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setDrawerCertificate(cert)
+                              setDrawerOpen(true)
+                            }}
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Certificate Detail Modal - Compact UI */}
-      {showDetailModal && selectedCertificate && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4 overflow-auto">
-          <Card className="bg-white rounded-xl max-w-4xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            {/* Close Button - Top Right */}
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => {
-                setShowDetailModal(false)
-                setSelectedCertificate(null)
-              }}
-              className="absolute top-2 right-2 z-20 h-8 w-8 rounded-full hover:bg-gray-100"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+      {
+        showDetailModal && selectedCertificate && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4 overflow-auto">
+            <Card className="bg-white rounded-xl max-w-xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+              {/* Close Button - Top Right */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setShowDetailModal(false)
+                  setSelectedCertificate(null)
+                }}
+                className="absolute top-2 right-2 z-20 h-8 w-8 rounded-full hover:bg-gray-100"
+              >
+                <X className="h-4 w-4" />
+              </Button>
 
-            {/* Modal Content */}
-            <div className="overflow-y-auto flex-1 p-4 sm:p-6">
-              {/* Certificate Preview */}
-              <div className="mb-4 sm:mb-6 rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-gray-50">
-                {certificateImages[selectedCertificate._id] ? (
-                  <div className="flex items-center justify-center bg-white p-3 sm:p-4 lg:p-6">
-                    <img 
-                      src={certificateImages[selectedCertificate._id]} 
-                      alt={selectedCertificate.eventName}
-                      className="w-full h-auto max-h-72 sm:max-h-96 object-contain"
-                    />
-                  </div>
-                ) : loadingImages[selectedCertificate._id] ? (
-                  <div className="h-48 sm:h-72 lg:h-96 bg-gray-100 flex items-center justify-center">
-                    <div className="flex flex-col items-center gap-2 sm:gap-3">
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 border-3 border-[#21808D] border-t-transparent rounded-full animate-spin"></div>
-                      <span className="text-xs sm:text-sm text-gray-600 font-medium">Rendering certificate...</span>
+              {/* Modal Content */}
+              <div className="overflow-y-auto flex-1 p-4 sm:p-6">
+                {/* Certificate Preview */}
+                <div className="mb-4 sm:mb-6 rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-gray-50">
+                  {certificateImages[selectedCertificate._id] ? (
+                    <div className="flex items-center justify-center bg-white p-3 sm:p-4 lg:p-6">
+                      <img
+                        src={certificateImages[selectedCertificate._id]}
+                        alt={selectedCertificate.eventName}
+                        className="w-full h-auto max-h-72 sm:max-h-96 object-contain"
+                      />
+                    </div>
+                  ) : loadingImages[selectedCertificate._id] ? (
+                    <div className="h-48 sm:h-72 lg:h-96 bg-gray-100 flex items-center justify-center">
+                      <div className="flex flex-col items-center gap-2 sm:gap-3">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 border-3 border-[#21808D] border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-xs sm:text-sm text-gray-600 font-medium">Rendering certificate...</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="h-48 sm:h-72 lg:h-96 bg-gradient-to-br from-[#21808D] to-[#8FD6BD] flex items-center justify-center">
+                      <Award className="w-16 sm:w-20 lg:w-24 h-16 sm:h-20 lg:h-24 text-white/60" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Certificate Information Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div className="space-y-3">
+                    <div className="pb-3 border-b border-gray-100">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Event Name</p>
+                      <p className="text-sm sm:text-base font-semibold text-gray-900 mt-1.5">{selectedCertificate.eventName}</p>
+                    </div>
+                    <div className="pb-3 sm:pb-4 border-b border-gray-100">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Organization</p>
+                      <p className="text-sm sm:text-base font-semibold text-gray-900 mt-1.5">
+                        {selectedCertificate.organizationName || selectedCertificate.privateOrgName || "N/A"}
+                      </p>
+                    </div>
+                    <div className="pb-3 sm:pb-4 border-b border-gray-100">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Recipient Name</p>
+                      <p className="text-sm sm:text-base font-semibold text-gray-900 mt-1.5">{selectedCertificate.recipientName}</p>
                     </div>
                   </div>
-                ) : (
-                  <div className="h-48 sm:h-72 lg:h-96 bg-gradient-to-br from-[#21808D] to-[#8FD6BD] flex items-center justify-center">
-                    <Award className="w-16 sm:w-20 lg:w-24 h-16 sm:h-20 lg:h-24 text-white/60" />
+
+                  <div className="space-y-3 sm:space-y-4">
+                    <div className="pb-3 sm:pb-4 border-b border-gray-100">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Email Address</p>
+                      <p className="text-sm sm:text-base font-semibold text-gray-900 mt-1.5 break-all">{selectedCertificate.recipientEmail}</p>
+                    </div>
+                    <div className="pb-3 sm:pb-4 border-b border-gray-100">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Date Issued</p>
+                      <p className="text-sm sm:text-base font-semibold text-gray-900 mt-1.5">
+                        {new Date(selectedCertificate.issuedDate).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                    <div className="pb-3 sm:pb-4">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Certificate ID</p>
+                      <p className="text-xs sm:text-sm font-mono text-gray-600 mt-1.5 truncate">{selectedCertificate.verificationId || selectedCertificate._id}</p>
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
 
-              {/* Certificate Information Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                <div className="space-y-3">
-                  <div className="pb-3 border-b border-gray-100">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Event Name</p>
-                    <p className="text-sm sm:text-base font-semibold text-gray-900 mt-1.5">{selectedCertificate.eventName}</p>
-                  </div>
-                  <div className="pb-3 sm:pb-4 border-b border-gray-100">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Organization</p>
-                    <p className="text-sm sm:text-base font-semibold text-gray-900 mt-1.5">
-                      {selectedCertificate.organizationName || selectedCertificate.privateOrgName || "N/A"}
-                    </p>
-                  </div>
-                  <div className="pb-3 sm:pb-4 border-b border-gray-100">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Recipient Name</p>
-                    <p className="text-sm sm:text-base font-semibold text-gray-900 mt-1.5">{selectedCertificate.recipientName}</p>
-                  </div>
+              {/* Modal Footer - Compact */}
+              <div className="p-4 border-t border-gray-100 bg-gray-50">
+                {/* Format Selector - Compact */}
+                <div className="flex gap-1.5 p-0.5 bg-slate-100 rounded-lg w-fit mb-3">
+                  <button
+                    onClick={() => setDownloadFormat('png')}
+                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${downloadFormat === 'png'
+                      ? 'bg-white text-slate-900 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                  >
+                    PNG
+                  </button>
+                  <button
+                    onClick={() => setDownloadFormat('pdf')}
+                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${downloadFormat === 'pdf'
+                      ? 'bg-white text-slate-900 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                  >
+                    PDF
+                  </button>
                 </div>
 
-                <div className="space-y-3 sm:space-y-4">
-                  <div className="pb-3 sm:pb-4 border-b border-gray-100">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Email Address</p>
-                    <p className="text-sm sm:text-base font-semibold text-gray-900 mt-1.5 break-all">{selectedCertificate.recipientEmail}</p>
-                  </div>
-                  <div className="pb-3 sm:pb-4 border-b border-gray-100">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Date Issued</p>
-                    <p className="text-sm sm:text-base font-semibold text-gray-900 mt-1.5">
-                      {new Date(selectedCertificate.issuedDate).toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })}
-                    </p>
-                  </div>
-                  <div className="pb-3 sm:pb-4">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Certificate ID</p>
-                    <p className="text-xs sm:text-sm font-mono text-gray-600 mt-1.5 truncate">{selectedCertificate.verificationId || selectedCertificate._id}</p>
-                  </div>
+                {/* Action Buttons - Compact */}
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    className="bg-[#21808D] hover:bg-[#1a6370] h-9 text-xs"
+                    onClick={async () => {
+                      if (!selectedCertificate) return
+
+                      const fileName = `certificate-${selectedCertificate.recipientName.replace(/\s+/g, '_')}`
+                      const imgData = certificateImages[selectedCertificate._id]
+
+                      if (!imgData) {
+                        toast.error('Certificate image not ready')
+                        return
+                      }
+
+                      if (downloadFormat === 'pdf') {
+                        try {
+                          const tempCanvas = document.createElement('canvas')
+                          const img = new window.Image()
+
+                          await new Promise((resolve, reject) => {
+                            img.onload = resolve
+                            img.onerror = reject
+                            img.src = imgData
+                          })
+
+                          tempCanvas.width = img.width
+                          tempCanvas.height = img.height
+                          const ctx = tempCanvas.getContext('2d')
+                          if (!ctx) throw new Error('Failed to get canvas context')
+                          ctx.drawImage(img, 0, 0)
+
+                          const canvasWidth = tempCanvas.width
+                          const canvasHeight = tempCanvas.height
+                          const aspectRatio = canvasWidth / canvasHeight
+                          const isLandscape = aspectRatio > 1
+                          const pdf = new jsPDF({
+                            orientation: isLandscape ? 'l' : 'p',
+                            unit: 'mm',
+                            format: 'a4'
+                          })
+
+                          const pageWidth = pdf.internal.pageSize.getWidth()
+                          const pageHeight = pdf.internal.pageSize.getHeight()
+                          const margin = 10
+                          const maxWidth = pageWidth - (2 * margin)
+                          const maxHeight = pageHeight - (2 * margin)
+
+                          let imgWidth = maxWidth
+                          let imgHeight = imgWidth / aspectRatio
+
+                          if (imgHeight > maxHeight) {
+                            imgHeight = maxHeight
+                            imgWidth = imgHeight * aspectRatio
+                          }
+
+                          const x = (pageWidth - imgWidth) / 2
+                          const y = (pageHeight - imgHeight) / 2
+
+                          pdf.addImage(imgData, 'JPEG', x, y, imgWidth, imgHeight)
+
+                          const verificationUrl = `${window.location.origin}/verify/${selectedCertificate.verificationId}`
+                          pdf.setFontSize(10)
+                          pdf.setTextColor(100, 100, 100)
+                          const bottomY = pageHeight - 5
+                          pdf.text('Verify this certificate:', margin, bottomY)
+                          pdf.setTextColor(33, 128, 141)
+                          pdf.textWithLink(verificationUrl, margin + 45, bottomY, { url: verificationUrl })
+
+                          const pdfArrayBuffer = pdf.output('arraybuffer')
+
+                          if (!pdfArrayBuffer || pdfArrayBuffer.byteLength < 1000) {
+                            throw new Error('Generated PDF is too small or invalid')
+                          }
+
+                          const pdfBlob = new Blob([pdfArrayBuffer], { type: 'application/pdf' })
+                          const url = URL.createObjectURL(pdfBlob)
+                          const link = document.createElement('a')
+                          link.href = url
+                          link.download = `${fileName}.pdf`
+                          document.body.appendChild(link)
+                          link.click()
+                          document.body.removeChild(link)
+                          setTimeout(() => URL.revokeObjectURL(url), 100)
+                          toast.success('Certificate downloaded as PDF')
+                        } catch (error) {
+                          console.error('PDF generation failed:', error)
+                          toast.error('Failed to generate PDF')
+                        }
+                      } else {
+                        const link = document.createElement('a')
+                        link.href = imgData
+                        link.download = `${fileName}.png`
+                        document.body.appendChild(link)
+                        link.click()
+                        document.body.removeChild(link)
+                        toast.success('Certificate downloaded as PNG')
+                      }
+                    }}
+                  >
+                    <Download className="w-3.5 h-3.5 mr-1.5" />
+                    Download {downloadFormat.toUpperCase()}
+                  </Button>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-9">
+                        <Share2 className="w-3.5 h-3.5 mr-1.5" />
+                        Share
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem
+                        onClick={() => {
+                          if (!selectedCertificate) return
+                          const verificationUrl = `${window.location.origin}/verify/${selectedCertificate.verificationId}`
+                          const issueDate = new Date(selectedCertificate.issuedDate)
+                          const addToProfileUrl = `https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${encodeURIComponent(selectedCertificate.eventName)}&organizationName=${encodeURIComponent(selectedCertificate.organizationName || selectedCertificate.privateOrgName || '')}&issueYear=${issueDate.getFullYear()}&issueMonth=${issueDate.getMonth() + 1}&certUrl=${encodeURIComponent(verificationUrl)}&certId=${selectedCertificate.verificationId}`
+                          window.open(addToProfileUrl, '_blank')
+                          toast.success('Opening LinkedIn')
+                        }}
+                      >
+                        <FaLinkedin className="w-4 h-4 mr-2 text-[#0077b5]" />
+                        Add to LinkedIn
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          if (!selectedCertificate) return
+                          const verificationUrl = `${window.location.origin}/verify/${selectedCertificate.verificationId}`
+                          const text = `I've earned a certificate for ${selectedCertificate.eventName}! Check it out:`
+                          const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(verificationUrl)}`
+                          window.open(twitterUrl, '_blank', 'width=600,height=600')
+                          toast.success('Opening Twitter/X')
+                        }}
+                      >
+                        <FaTwitter className="w-4 h-4 mr-2 text-[#1DA1F2]" />
+                        Share on Twitter
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          if (!selectedCertificate) return
+                          const verificationUrl = `${window.location.origin}/verify/${selectedCertificate.verificationId}`
+                          const text = `I've earned a certificate for ${selectedCertificate.eventName}! ${verificationUrl}`
+                          const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`
+                          window.open(whatsappUrl, '_blank')
+                          toast.success('Opening WhatsApp')
+                        }}
+                      >
+                        <FaWhatsapp className="w-4 h-4 mr-2 text-[#25D366]" />
+                        Share on WhatsApp
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          if (!selectedCertificate) return
+                          const verificationUrl = `${window.location.origin}/verify/${selectedCertificate.verificationId}`
+                          const subject = `Certificate: ${selectedCertificate.eventName}`
+                          const body = `I'm excited to share that I've earned a certificate for ${selectedCertificate.eventName}!\n\nYou can verify it here: ${verificationUrl}`
+                          const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+                          window.location.href = mailtoUrl
+                          toast.success('Opening email client')
+                        }}
+                      >
+                        <HiMail className="w-4 h-4 mr-2 text-red-500" />
+                        Share via Email
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
+              </div>
+            </Card>
+          </div>
+        )
+      }
+
+      {/* Actions Drawer */}
+      <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <DrawerContent className="md:max-w-[95%] lg:max-w-[45%] mx-auto rounded-t-2xl">
+          <DrawerHeader className="pb-3 relative">
+            <DrawerTitle className="text-base">Certificate Actions</DrawerTitle>
+            <DrawerDescription className="text-xs">
+              {drawerCertificate?.eventName}
+            </DrawerDescription>
+            {/* Close Button */}
+            <button
+              onClick={() => setDrawerOpen(false)}
+              className="absolute top-4 right-4 flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+            >
+              <X className="w-4 h-4 text-gray-600" />
+            </button>
+          </DrawerHeader>
+          <div className="px-6 pb-6 space-y-4">
+            {/* Share Options */}
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-2.5 uppercase tracking-wide">Share Certificate</p>
+              <div className="flex items-center gap-3 justify-center">
+                {/* WhatsApp */}
+                <button
+                  className="flex items-center justify-center w-14 h-14 rounded-full bg-[#25D366] hover:bg-[#1faa52] transition-colors duration-200 shadow-md"
+                  onClick={() => {
+                    if (!drawerCertificate) return
+                    const verificationUrl = `${window.location.origin}/verify/${drawerCertificate.verificationId}`
+                    const text = `I've earned a certificate for ${drawerCertificate.eventName}! ${verificationUrl}`
+                    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`
+                    window.open(whatsappUrl, '_blank')
+                    toast.success('Opening WhatsApp')
+                    setDrawerOpen(false)
+                  }}
+                >
+                  <FaWhatsapp className="w-6 h-6 text-white" />
+                </button>
+
+                {/* LinkedIn */}
+                <button
+                  className="flex items-center justify-center w-14 h-14 rounded-full bg-[#0077b5] hover:bg-[#005885] transition-colors duration-200 shadow-md"
+                  onClick={() => {
+                    if (!drawerCertificate) return
+                    const verificationUrl = `${window.location.origin}/verify/${drawerCertificate.verificationId}`
+                    const issueDate = new Date(drawerCertificate.issuedDate)
+                    const addToProfileUrl = `https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${encodeURIComponent(drawerCertificate.eventName)}&organizationName=${encodeURIComponent(drawerCertificate.organizationName || drawerCertificate.privateOrgName || '')}&issueYear=${issueDate.getFullYear()}&issueMonth=${issueDate.getMonth() + 1}&certUrl=${encodeURIComponent(verificationUrl)}&certId=${drawerCertificate.verificationId}`
+                    window.open(addToProfileUrl, '_blank')
+                    toast.success('Opening LinkedIn')
+                    setDrawerOpen(false)
+                  }}
+                >
+                  <FaLinkedin className="w-6 h-6 text-white" />
+                </button>
+
+                {/* Instagram - Share via DM or copy link */}
+                <button
+                  className="flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-[#833AB4] via-[#E1306C] to-[#F77737] hover:opacity-80 transition-opacity duration-200 shadow-md"
+                  onClick={() => {
+                    if (!drawerCertificate) return
+                    const verificationUrl = `${window.location.origin}/verify/${drawerCertificate.verificationId}`
+                    navigator.clipboard.writeText(verificationUrl)
+                    toast.success('Link copied! Share on Instagram')
+                    setDrawerOpen(false)
+                  }}
+                >
+                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                  </svg>
+                </button>
+
+                {/* Email */}
+                <button
+                  className="flex items-center justify-center w-14 h-14 rounded-full bg-[#EA4335] hover:bg-[#c5372f] transition-colors duration-200 shadow-md"
+                  onClick={() => {
+                    if (!drawerCertificate) return
+                    const verificationUrl = `${window.location.origin}/verify/${drawerCertificate.verificationId}`
+                    const subject = `Certificate: ${drawerCertificate.eventName}`
+                    const body = `I'm excited to share that I've earned a certificate for ${drawerCertificate.eventName}!\n\nYou can verify it here: ${verificationUrl}`
+                    const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+                    window.location.href = mailtoUrl
+                    toast.success('Opening email client')
+                    setDrawerOpen(false)
+                  }}
+                >
+                  <HiMail className="w-6 h-6 text-white" />
+                </button>
+
+                {/* Twitter */}
+                <button
+                  className="flex items-center justify-center w-14 h-14 rounded-full bg-[#1DA1F2] hover:bg-[#1a8cd8] transition-colors duration-200 shadow-md"
+                  onClick={() => {
+                    if (!drawerCertificate) return
+                    const verificationUrl = `${window.location.origin}/verify/${drawerCertificate.verificationId}`
+                    const text = `I've earned a certificate for ${drawerCertificate.eventName}! Check it out:`
+                    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(verificationUrl)}`
+                    window.open(twitterUrl, '_blank', 'width=600,height=600')
+                    toast.success('Opening Twitter/X')
+                    setDrawerOpen(false)
+                  }}
+                >
+                  <FaTwitter className="w-6 h-6 text-white" />
+                </button>
               </div>
             </div>
 
-            {/* Modal Footer - Compact */}
-            <div className="p-4 border-t border-gray-100 bg-gray-50">
-              {/* Format Selector - Compact */}
-              <div className="flex gap-1.5 p-0.5 bg-slate-100 rounded-lg w-fit mb-3">
+            {/* Share Verification Link */}
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-2.5 uppercase tracking-wide">Share Verification Link</p>
+              <button
+                className="flex items-center justify-center gap-2 w-full h-10 rounded-lg bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-colors duration-200 shadow-sm text-white font-medium text-sm"
+                onClick={() => {
+                  if (!drawerCertificate) return
+                  const verificationUrl = `${window.location.origin}/verify/${drawerCertificate.verificationId}`
+                  navigator.clipboard.writeText(verificationUrl)
+                  toast.success('Verification link copied to clipboard!')
+                }}
+              >
+                <Copy className="w-3.5 h-3.5" />
+                Copy Verification Link
+              </button>
+            </div>
+
+            {/* Download Options */}
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-2.5 uppercase tracking-wide">Download & Print</p>
+              <div className="flex items-center gap-3 justify-center">
+                {/* Download PNG */}
                 <button
-                  onClick={() => setDownloadFormat('png')}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                    downloadFormat === 'png'
-                      ? 'bg-white text-slate-900 shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  PNG
-                </button>
-                <button
-                  onClick={() => setDownloadFormat('pdf')}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                    downloadFormat === 'pdf'
-                      ? 'bg-white text-slate-900 shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  PDF
-                </button>
-              </div>
-              
-              {/* Action Buttons - Compact */}
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  className="bg-[#21808D] hover:bg-[#1a6370] h-9 text-xs"
+                  className="flex items-center justify-center w-12 h-12 rounded-lg border-2 border-border bg-background hover:bg-accent hover:border-accent-foreground/20 transition-colors duration-200"
                   onClick={async () => {
-                    if (!selectedCertificate) return
-                    
-                    const fileName = `certificate-${selectedCertificate.recipientName.replace(/\s+/g, '_')}`
-                    const imgData = certificateImages[selectedCertificate._id]
-                    
+                    if (!drawerCertificate) return
+
+                    const fileName = `certificate-${drawerCertificate.recipientName.replace(/\s+/g, '_')}`
+                    const imgData = certificateImages[drawerCertificate._id]
+
                     if (!imgData) {
                       toast.error('Certificate image not ready')
                       return
                     }
-                    
-                    if (downloadFormat === 'pdf') {
-                      try {
-                        // Create a temporary canvas to get the image
-                        const tempCanvas = document.createElement('canvas')
-                        const img = new window.Image()
-                        
-                        await new Promise((resolve, reject) => {
-                          img.onload = resolve
-                          img.onerror = reject
-                          img.src = imgData
-                        })
-                        
-                        tempCanvas.width = img.width
-                        tempCanvas.height = img.height
-                        const ctx = tempCanvas.getContext('2d')
-                        if (!ctx) throw new Error('Failed to get canvas context')
-                        ctx.drawImage(img, 0, 0)
-                        
-                        // Get canvas dimensions
-                        const canvasWidth = tempCanvas.width
-                        const canvasHeight = tempCanvas.height
-                        const aspectRatio = canvasWidth / canvasHeight
-                        
-                        // Determine orientation
-                        const isLandscape = aspectRatio > 1
-                        
-                        // Create PDF
-                        const pdf = new jsPDF({
-                          orientation: isLandscape ? 'l' : 'p',
-                          unit: 'mm',
-                          format: 'a4'
-                        })
-                        
-                        const pageWidth = pdf.internal.pageSize.getWidth()
-                        const pageHeight = pdf.internal.pageSize.getHeight()
-                        
-                        // Calculate dimensions with margins
-                        const margin = 10
-                        const maxWidth = pageWidth - (2 * margin)
-                        const maxHeight = pageHeight - (2 * margin)
-                        
-                        let imgWidth = maxWidth
-                        let imgHeight = imgWidth / aspectRatio
-                        
-                        // If height exceeds, scale by height instead
-                        if (imgHeight > maxHeight) {
-                          imgHeight = maxHeight
-                          imgWidth = imgHeight * aspectRatio
-                        }
-                        
-                        // Center the image
-                        const x = (pageWidth - imgWidth) / 2
-                        const y = (pageHeight - imgHeight) / 2
-                        
-                        // Add image to PDF
-                        pdf.addImage(imgData, 'JPEG', x, y, imgWidth, imgHeight)
-                        
-                        // Add verification link at bottom - using verificationId
-                        const verificationUrl = `${window.location.origin}/verify/${selectedCertificate.verificationId}`
-                        pdf.setFontSize(10)
-                        pdf.setTextColor(100, 100, 100)
-                        const bottomY = pageHeight - 5
-                        pdf.text('Verify this certificate:', margin, bottomY)
-                        pdf.setTextColor(33, 128, 141)
-                        pdf.textWithLink(verificationUrl, margin + 45, bottomY, { url: verificationUrl })
-                        
-                        // Use arraybuffer (most reliable method)
-                        const pdfArrayBuffer = pdf.output('arraybuffer')
-                        
-                        // Validate PDF was generated
-                        if (!pdfArrayBuffer || pdfArrayBuffer.byteLength < 1000) {
-                          throw new Error('Generated PDF is too small or invalid')
-                        }
-                        
-                        // Convert to Blob and download
-                        const pdfBlob = new Blob([pdfArrayBuffer], { type: 'application/pdf' })
-                        const url = URL.createObjectURL(pdfBlob)
-                        const link = document.createElement('a')
-                        link.href = url
-                        link.download = `${fileName}.pdf`
-                        document.body.appendChild(link)
-                        link.click()
-                        document.body.removeChild(link)
-                        
-                        // Clean up
-                        setTimeout(() => URL.revokeObjectURL(url), 100)
-                        
-                        toast.success('Certificate downloaded as PDF')
-                      } catch (error) {
-                        console.error('PDF generation failed:', error)
-                        toast.error('Failed to generate PDF')
+
+                    const link = document.createElement('a')
+                    link.href = imgData
+                    link.download = `${fileName}.png`
+                    document.body.appendChild(link)
+                    link.click()
+                    document.body.removeChild(link)
+                    toast.success('Downloaded as PNG!')
+                    setDrawerOpen(false)
+                  }}
+                >
+                  <BsFiletypePng className="w-5 h-5 text-foreground" />
+                </button>
+
+                {/* Download PDF */}
+                <button
+                  className="flex items-center justify-center w-12 h-12 rounded-lg border-2 border-border bg-background hover:bg-accent hover:border-accent-foreground/20 transition-colors duration-200"
+                  onClick={async () => {
+                    if (!drawerCertificate) return
+
+                    const fileName = `certificate-${drawerCertificate.recipientName.replace(/\s+/g, '_')}`
+                    const imgData = certificateImages[drawerCertificate._id]
+
+                    if (!imgData) {
+                      toast.error('Certificate image not ready')
+                      return
+                    }
+
+                    try {
+                      const tempCanvas = document.createElement('canvas')
+                      const img = new window.Image()
+
+                      await new Promise((resolve, reject) => {
+                        img.onload = resolve
+                        img.onerror = reject
+                        img.src = imgData
+                      })
+
+                      tempCanvas.width = img.width
+                      tempCanvas.height = img.height
+                      const ctx = tempCanvas.getContext('2d')
+                      if (!ctx) throw new Error('Failed to get canvas context')
+                      ctx.drawImage(img, 0, 0)
+
+                      const canvasWidth = tempCanvas.width
+                      const canvasHeight = tempCanvas.height
+                      const aspectRatio = canvasWidth / canvasHeight
+                      const isLandscape = aspectRatio > 1
+                      const pdf = new jsPDF({
+                        orientation: isLandscape ? 'l' : 'p',
+                        unit: 'mm',
+                        format: 'a4'
+                      })
+
+                      const pageWidth = pdf.internal.pageSize.getWidth()
+                      const pageHeight = pdf.internal.pageSize.getHeight()
+                      const margin = 10
+                      const maxWidth = pageWidth - (2 * margin)
+                      const maxHeight = pageHeight - (2 * margin)
+
+                      let imgWidth = maxWidth
+                      let imgHeight = imgWidth / aspectRatio
+
+                      if (imgHeight > maxHeight) {
+                        imgHeight = maxHeight
+                        imgWidth = imgHeight * aspectRatio
                       }
-                    } else {
-                      // PNG download
+
+                      const x = (pageWidth - imgWidth) / 2
+                      const y = (pageHeight - imgHeight) / 2
+
+                      pdf.addImage(imgData, 'JPEG', x, y, imgWidth, imgHeight)
+
+                      const verificationUrl = `${window.location.origin}/verify/${drawerCertificate.verificationId}`
+                      pdf.setFontSize(10)
+                      pdf.setTextColor(100, 100, 100)
+                      const bottomY = pageHeight - 5
+                      pdf.text('Verify this certificate:', margin, bottomY)
+                      pdf.setTextColor(33, 128, 141)
+                      pdf.textWithLink(verificationUrl, margin + 45, bottomY, { url: verificationUrl })
+
+                      const pdfArrayBuffer = pdf.output('arraybuffer')
+
+                      if (!pdfArrayBuffer || pdfArrayBuffer.byteLength < 1000) {
+                        throw new Error('Generated PDF is too small or invalid')
+                      }
+
+                      const pdfBlob = new Blob([pdfArrayBuffer], { type: 'application/pdf' })
+                      const url = URL.createObjectURL(pdfBlob)
                       const link = document.createElement('a')
-                      link.href = imgData
-                      link.download = `${fileName}.png`
+                      link.href = url
+                      link.download = `${fileName}.pdf`
                       document.body.appendChild(link)
                       link.click()
                       document.body.removeChild(link)
-                      toast.success('Certificate downloaded as PNG')
+                      setTimeout(() => URL.revokeObjectURL(url), 100)
+                      toast.success('Downloaded as PDF!')
+                      setDrawerOpen(false)
+                    } catch (error) {
+                      console.error('PDF generation failed:', error)
+                      toast.error('Failed to generate PDF')
                     }
                   }}
                 >
-                  <Download className="w-3.5 h-3.5 mr-1.5" />
-                  Download {downloadFormat.toUpperCase()}
-                </Button>
-                
-                {/* Share Dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-9">
-                      <Share2 className="w-3.5 h-3.5 mr-1.5" />
-                      Share
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem
-                      onClick={() => {
-                        if (!selectedCertificate) return
-                        const verificationUrl = `${window.location.origin}/verify/${selectedCertificate.verificationId}`
-                        const issueDate = new Date(selectedCertificate.issuedDate)
-                        const addToProfileUrl = `https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${encodeURIComponent(selectedCertificate.eventName)}&organizationName=${encodeURIComponent(selectedCertificate.organizationName || selectedCertificate.privateOrgName || '')}&issueYear=${issueDate.getFullYear()}&issueMonth=${issueDate.getMonth() + 1}&certUrl=${encodeURIComponent(verificationUrl)}&certId=${selectedCertificate.verificationId}`
-                        window.open(addToProfileUrl, '_blank')
-                        toast.success('Opening LinkedIn')
-                      }}
-                    >
-                      <Linkedin className="w-4 h-4 mr-2" />
-                      Add to LinkedIn
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        if (!selectedCertificate) return
-                        const verificationUrl = `${window.location.origin}/verify/${selectedCertificate.verificationId}`
-                        const text = `I've earned a certificate for ${selectedCertificate.eventName}! Check it out:`
-                        const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(verificationUrl)}`
-                        window.open(twitterUrl, '_blank', 'width=600,height=600')
-                        toast.success('Opening Twitter/X')
-                      }}
-                    >
-                      <Share2 className="w-4 h-4 mr-2" />
-                      Share on Twitter
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        if (!selectedCertificate) return
-                        const verificationUrl = `${window.location.origin}/verify/${selectedCertificate.verificationId}`
-                        const text = `I've earned a certificate for ${selectedCertificate.eventName}! ${verificationUrl}`
-                        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`
-                        window.open(whatsappUrl, '_blank')
-                        toast.success('Opening WhatsApp')
-                      }}
-                    >
-                      <Send className="w-4 h-4 mr-2" />
-                      Share on WhatsApp
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        if (!selectedCertificate) return
-                        const verificationUrl = `${window.location.origin}/verify/${selectedCertificate.verificationId}`
-                        const subject = `Certificate: ${selectedCertificate.eventName}`
-                        const body = `I'm excited to share that I've earned a certificate for ${selectedCertificate.eventName}!\n\nYou can verify it here: ${verificationUrl}`
-                        const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-                        window.location.href = mailtoUrl
-                        toast.success('Opening email client')
-                      }}
-                    >
-                      <Mail className="w-4 h-4 mr-2" />
-                      Share via Email
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                  <BsFiletypePdf className="w-5 h-5 text-foreground" />
+                </button>
+
+                {/* Print */}
+                <button
+                  className="flex items-center justify-center w-12 h-12 rounded-lg border-2 border-border bg-background hover:bg-accent hover:border-accent-foreground/20 transition-colors duration-200"
+                onClick={() => {
+                if (!drawerCertificate) return
+                const imgData = certificateImages[drawerCertificate._id]
+
+                if (!imgData) {
+                  toast.error('Certificate image not ready')
+                  return
+                }
+
+                const printWindow = window.open('', '_blank')
+                if (printWindow) {
+                  printWindow.document.write(`
+                    <html>
+                      <head>
+                        <title>Print Certificate</title>
+                        <style>
+                          body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+                          img { max-width: 100%; height: auto; }
+                        </style>
+                      </head>
+                      <body>
+                        <img src="${imgData}" onload="window.print(); window.close();" />
+                      </body>
+                    </html>
+                  `)
+                  printWindow.document.close()
+                }
+                setDrawerOpen(false)
+              }}
+            >
+              <Printer className="w-5 h-5 text-foreground" />
+            </button>
               </div>
             </div>
-          </Card>
-        </div>
-      )}
+          </div>
+        </DrawerContent>
+      </Drawer>
     </>
   )
 }

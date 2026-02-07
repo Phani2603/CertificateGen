@@ -70,11 +70,24 @@ export function ExpandableScreen({
   }
 
   useEffect(() => {
-    if (lockScroll) {
-      if (isExpanded) {
-        document.body.style.overflow = "hidden"
-      } else {
-        document.body.style.overflow = "unset"
+    if (lockScroll && isExpanded) {
+      // Save current scroll position and lock body
+      const scrollY = window.scrollY
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
+      
+      document.body.style.position = "fixed"
+      document.body.style.top = `-${scrollY}px`
+      document.body.style.width = "100%"
+      document.body.style.paddingRight = `${scrollbarWidth}px`
+      
+      return () => {
+        // Restore body scroll
+        const scrollY = document.body.style.top
+        document.body.style.position = ""
+        document.body.style.top = ""
+        document.body.style.width = ""
+        document.body.style.paddingRight = ""
+        window.scrollTo(0, parseInt(scrollY || "0") * -1)
       }
     }
   }, [isExpanded, lockScroll])
@@ -174,12 +187,18 @@ export function ExpandableScreenContent({
               "fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-2",
               overlayClassName
             )}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) collapse()
+            }}
+            onWheel={(e) => e.currentTarget === e.target && e.preventDefault()}
+            onTouchMove={(e) => e.currentTarget === e.target && e.preventDefault()}
           >
             <div
-              className={`relative flex h-full w-full overflow-y-auto ${className}`}
+              className={`relative flex h-full w-full max-h-[90vh] overflow-hidden ${className}`}
               style={{ borderRadius: contentRadius }}
+              onClick={(e) => e.stopPropagation()}
             >
-              <div className="relative z-20 w-full">{children}</div>
+              <div className="relative z-20 w-full h-full overflow-y-auto overscroll-contain">{children}</div>
               {showCloseButton && (
                 <button
                   onClick={collapse}
@@ -203,6 +222,11 @@ export function ExpandableScreenContent({
             "fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-2",
             overlayClassName
           )}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) collapse()
+          }}
+          onWheel={(e) => e.currentTarget === e.target && e.preventDefault()}
+          onTouchMove={(e) => e.currentTarget === e.target && e.preventDefault()}
         >
           {/* Morphing background with shared layoutId */}
           <motion.div
@@ -218,14 +242,15 @@ export function ExpandableScreenContent({
               borderRadius: contentRadius,
             }}
             layout
-            className={`relative flex h-full w-full overflow-y-auto transform-gpu will-change-transform ${className}`}
+            className={`relative flex h-full w-full max-h-[90vh] overflow-hidden transform-gpu will-change-transform ${className}`}
+            onClick={(e) => e.stopPropagation()}
           >
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
               transition={{ ...panelTransition, duration: 0.24 }}
-              className="relative z-20 w-full"
+              className="relative z-20 w-full h-full overflow-y-auto overscroll-contain"
             >
               {children}
             </motion.div>

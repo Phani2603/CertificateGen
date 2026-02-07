@@ -1,30 +1,32 @@
 "use client"
 
-import { useSession } from "next-auth/react"
+import { useSession, signOut } from "next-auth/react"
 import { redirect, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { IndividualHeader } from "@/components/dashboard/individual/IndividualHeader"
-import { MyCertificatesSection } from "@/components/dashboard/individual/MyCertificatesSection"
-import { AchievementsSection } from "@/components/dashboard/individual/AchievementsSection"
-import { ActiveEventsSection } from "@/components/dashboard/individual/ActiveEventsSection"
+import Link from "next/link"
+import DashboardToggle from '@/components/DashboardToggle'
 import { UserTypeSelectionModal } from "@/components/UserTypeSelectionModal"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Building2, Mail, Phone } from "lucide-react"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { useToast } from "@/hooks/use-toast"
-import { useIslandAlerts } from "@/components/ui/island-alerts"
 import { SuspensionChecker } from "@/components/SuspensionChecker"
+import { useIslandAlerts } from "@/components/ui/island-alerts"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { UpgradeCard } from "@/components/dashboard/individual/upgrade-card"
+import { CertificateInsights } from "@/components/dashboard/individual/certificate-insights"
+import { UserProfileCard } from "@/components/dashboard/individual/user-profile-card"
+import { MyCertificatesSection } from "@/components/dashboard/individual/MyCertificatesSection"
+import Calendar from "@/components/calendar-01"
+import { FiUser, FiSettings, FiCreditCard, FiUsers, FiHome, FiChevronRight, FiLogOut } from "react-icons/fi"
+import { MdPalette, MdPersonAdd } from "react-icons/md"
+import { BsCalendar2Event, BsStars, BsTrophy, BsLightning, BsBell, BsShield } from "react-icons/bs"
+import { HiOutlineUserCircle, HiOutlineMail } from "react-icons/hi"
+import "@/styles/nature.css"
 
 export default function IndividualDashboard() {
   const { data: session, status } = useSession()
@@ -32,31 +34,41 @@ export default function IndividualDashboard() {
   const { addAlert } = useIslandAlerts()
   const [showTypeSelection, setShowTypeSelection] = useState(false)
   const [userData, setUserData] = useState<any>(null)
+  const [dashboardStats, setDashboardStats] = useState<any>(null)
+  const [privateOrg, setPrivateOrg] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [isUpgradeDialogOpen, setIsUpgradeDialogOpen] = useState(false)
-  const [upgradeReason, setUpgradeReason] = useState("")
-  const [isSubmittingUpgrade, setIsSubmittingUpgrade] = useState(false)
-  const { toast } = useToast()
 
   useEffect(() => {
     async function fetchUserData() {
       if (status === "authenticated") {
         try {
-          const response = await fetch('/api/profile')
-          const data = await response.json()
+          const [profileResponse, statsResponse] = await Promise.all([
+            fetch('/api/profile'),
+            fetch('/api/dashboard/stats')
+          ])
+          
+          const profileData = await profileResponse.json()
+          const statsData = await statsResponse.json()
 
-          if (data.success) {
-            setUserData(data.user)
+          if (profileData.success) {
+            setUserData(profileData.user)
 
-            // Check if user has no type selected (OAuth users)
-            if (!data.user.userType) {
-              setShowTypeSelection(true)
-            } else if (data.user.userType !== 'individual') {
-              // Redirect to appropriate dashboard if not individual
-              if (data.user.userType === 'corporate') {
-                redirect('/create-organization')
-              }
+            // Set privateOrg from profile data if available
+            if (profileData.user.privateOrg) {
+              console.log('[Dashboard] Private org data:', profileData.user.privateOrg)
+              setPrivateOrg(profileData.user.privateOrg)
             }
+
+            // Show user type selection if not set
+            if (!profileData.user.userType) {
+              setShowTypeSelection(true)
+            }
+            // Note: Removed redirect logic - corporate users can access individual dashboard
+            // and toggle to their corporate dashboard using the toggle switch
+          }
+          
+          if (statsData.success) {
+            setDashboardStats(statsData)
           }
         } catch (error) {
           console.error('Error fetching user data:', error)
@@ -69,18 +81,15 @@ export default function IndividualDashboard() {
     fetchUserData()
   }, [status])
 
-  // Poll for promotion approval (WebSocket disabled for now)
   useEffect(() => {
     if (!userData || status !== 'authenticated') return
 
-    // Poll for user type changes to detect promotion approval
     const pollInterval = setInterval(async () => {
       try {
         const response = await fetch('/api/profile')
         const data = await response.json()
 
         if (data.success && data.user) {
-          // Check if user was promoted to corporate
           if (data.user.userType === 'corporate' && userData?.userType === 'individual') {
             addAlert({
               title: 'Promotion Approved!',
@@ -89,7 +98,6 @@ export default function IndividualDashboard() {
               duration: 10000,
             })
 
-            // Force hard refresh to update session and redirect
             setTimeout(() => {
               window.location.href = '/create-organization'
             }, 2000)
@@ -100,60 +108,16 @@ export default function IndividualDashboard() {
       } catch (error) {
         console.error('Error polling user status:', error)
       }
-    }, 5000) // Poll every 5 seconds
+    }, 5000)
 
     return () => clearInterval(pollInterval)
   }, [userData, status, addAlert, router])
-
-  const handleUpgradeRequest = async () => {
-    if (!upgradeReason.trim()) {
-      toast({
-        title: "Error",
-        description: "Please provide a reason for the upgrade",
-        variant: "destructive"
-      })
-      return
-    }
-
-    try {
-      setIsSubmittingUpgrade(true)
-      const res = await fetch('/api/access-requests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          requestedType: 'corporate',
-          reason: upgradeReason
-        })
-      })
-
-      const data = await res.json()
-
-      if (data.success) {
-        toast({
-          title: "Request Submitted",
-          description: "Your request to upgrade to Corporate account has been submitted for approval."
-        })
-        setIsUpgradeDialogOpen(false)
-        setUpgradeReason("")
-      } else {
-        throw new Error(data.error)
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to submit request",
-        variant: "destructive"
-      })
-    } finally {
-      setIsSubmittingUpgrade(false)
-    }
-  }
 
   if (status === "loading" || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f6f6f6]">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-[#21808D] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Loading your dashboard...</p>
         </div>
       </div>
@@ -165,114 +129,292 @@ export default function IndividualDashboard() {
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-background font-montserrat">
       <SuspensionChecker />
       <UserTypeSelectionModal
         isOpen={showTypeSelection}
         onClose={() => setShowTypeSelection(false)}
       />
 
-      <div className="min-h-screen bg-gradient-to-b from-[#f6f6f6] to-[#f0f0f0]">
-        <IndividualHeader
-          userName={userData?.name || session?.user?.name || "User"}
-          userEmail={userData?.email || session?.user?.email}
-          userImage={userData?.image || session?.user?.image}
-        />
+      {/* Header */}
+      <header className="bg-primary border-b border-primary min-h-[301px] md:min-h-[351px] lg:min-h-[401px] flex flex-col relative">
+        {/* Top Pill Navigation Bar */}
+        <div className="w-full  bg-primary/95 backdrop-blur-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-2 sm:gap-4">
+            {/* Logo - Left Side */}
+            <Link href="/newlanding/hero-section" className="flex flex-col cursor-pointer group shrink-0">
+              <div className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 font-raleway group-hover:opacity-80 transition-opacity leading-tight">
+                Certiflo
+              </div>
+              <div className="text-[9px] sm:text-[10px] text-white/70 font-medium font-pacifico group-hover:opacity-80 transition-opacity leading-tight">
+                by SENEMENT
+              </div>
+            </Link>
 
-        <main className="w-full">
-          {/* Main content with responsive padding and tighter max-width for larger side margins */}
-          <div className="mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 py-6 sm:py-8 lg:py-10 w-full max-w-5xl">
-            {/* Action Button Section - Responsive */}
-            <div className="flex justify-end mb-6 sm:mb-8 lg:mb-10">
-              <Dialog open={isUpgradeDialogOpen} onOpenChange={setIsUpgradeDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="gap-2 text-sm sm:text-base">
-                    <Building2 className="h-4 w-4" />
-                    Upgrade to Corporate
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="w-[95vw] sm:w-full max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Upgrade to Corporate Account</DialogTitle>
-                    <DialogDescription className="text-xs sm:text-sm">
-                      Request to upgrade your account to Corporate status. This will allow you to create organizations and issue certificates.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="reason" className="text-sm">Reason for Upgrade</Label>
-                      <Textarea
-                        id="reason"
-                        placeholder="Please tell us why you want to upgrade (e.g., Company Name, Use Case)"
-                        value={upgradeReason}
-                        onChange={(e) => setUpgradeReason(e.target.value)}
-                        className="text-sm"
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter className="flex gap-2 flex-col-reverse sm:flex-row">
-                    <Button variant="outline" onClick={() => setIsUpgradeDialogOpen(false)} className="w-full sm:w-auto">
-                      Cancel
-                    </Button>
-                    <Button onClick={handleUpgradeRequest} disabled={isSubmittingUpgrade} className="w-full sm:w-auto">
-                      {isSubmittingUpgrade ? "Submitting..." : "Submit Request"}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+            {/* Center - Navigation & Toggle */
+            <div className="flex items-center gap-2 sm:gap-3">
+              {/* Blog Button - Light bg, no icon, fixed width */}
+              <Link 
+                href="/blog" 
+                className="px-4 sm:px-6 py-1.5 sm:py-2 bg-primary-foreground/90 hover:bg-primary-foreground text-primary rounded-full text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap w-16 sm:w-20 text-center"
+              >
+                Blog
+              </Link>
+
+              {/* Dashboard Toggle Switch - Only show if user is corporate */}
+              {userData?.userType === 'corporate' && (
+                <div>
+                  {/* Use shared DashboardToggle component for persistent state and animation */}
+                  <DashboardToggle userData={userData} privateOrgSlug={userData?.privateOrg?.slug || null} />
+                </div>
+              )}
             </div>
+}
+            {/* Avatar Dropdown - Right */}
 
-            {/* Content Sections with consistent spacing */}
-            <div className="space-y-6 sm:space-y-8 lg:space-y-10">
-              {/* Achievements Section */}
-              <section className="scroll-mt-20">
-                <AchievementsSection userId={userData?._id} />
-              </section>
 
-              {/* Active Events Section */}
-              <section className="scroll-mt-20">
-                <ActiveEventsSection userId={userData?._id} />
-              </section>
-
-              {/* My Certificates Section */}
-              <section className="scroll-mt-20">
-                <MyCertificatesSection userId={userData?._id} />
-              </section>
-
-              {/* Contact Information Card - Responsive */}
-              <section className="scroll-mt-20">
-                <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100 shadow-sm">
-                  <div className="p-4 sm:p-6 lg:p-8">
-                    <h3 className="text-sm sm:text-base font-semibold text-blue-900 mb-4 sm:mb-5">Need Help?</h3>
-                    <div className="flex flex-col gap-4 sm:gap-6 text-sm text-blue-800">
-                      <div className="flex items-center gap-3">
-                        <Mail className="h-5 w-5 shrink-0 text-blue-700" />
-                        <a href="mailto:forge@senement.com" className="hover:underline hover:text-blue-900 transition-colors break-all">
-                          forge@senement.com
-                        </a>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Phone className="h-5 w-5 shrink-0 text-blue-700" />
-                        <a
-                          href="https://wa.me/9492478546"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:underline hover:text-blue-900 transition-colors"
-                        >
-                          Chat on WhatsApp
-                        </a>
-                      </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="rounded-full focus:outline-none focus:ring-2 focus:ring-primary-foreground/50 focus:ring-offset-2 focus:ring-offset-primary shrink-0">
+                  <Avatar className="h-7 w-7 sm:h-8 sm:w-8 lg:h-9 lg:w-9 border-2 border-primary-foreground/20 cursor-pointer hover:border-primary-foreground/40 transition-colors">
+                    <AvatarImage src={userData?.image || session?.user?.image} alt={userData?.name || session?.user?.name} />
+                    <AvatarFallback className="bg-primary-foreground text-primary text-xs sm:text-sm font-montserrat">
+                      {(userData?.name || session?.user?.name || "U").charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 font-montserrat">
+                <DropdownMenuLabel className="font-montserrat">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10 border border-border shrink-0">
+                      <AvatarImage src={userData?.image || session?.user?.image} alt={userData?.name || session?.user?.name} />
+                      <AvatarFallback className="bg-muted text-foreground text-sm font-montserrat">
+                        {(userData?.name || session?.user?.name || "U").charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm font-semibold text-foreground truncate">{userData?.name || session?.user?.name || "User"}</span>
+                      <span className="text-xs text-muted-foreground truncate">{userData?.email || session?.user?.email}</span>
                     </div>
                   </div>
-                </Card>
-              </section>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => router.push("/profile")} className="cursor-pointer font-montserrat">
+                  <FiUser className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push("/profile#settings")} className="cursor-pointer font-montserrat">
+                  <FiSettings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={() => signOut({ callbackUrl: "/login" })} 
+                  className="cursor-pointer font-montserrat text-destructive focus:text-destructive"
+                >
+                  <FiLogOut className="mr-2 h-4 w-4" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
 
-              {/* Bottom Spacing */}
-              <div className="h-6 sm:h-8 lg:h-10"></div>
+        <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+          {/* Breadcrumb - Outside Nav */}
+          <nav className="flex items-center text-[10px] sm:text-xs text-primary-foreground/60 font-montserrat gap-1 mb-4">
+            <FiHome className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+            <span className="hover:text-primary-foreground/80 cursor-pointer transition-colors">Home</span>
+            <FiChevronRight className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+            <span className="text-primary-foreground/80 font-medium">Dashboard</span>
+          </nav>
+
+          {/* Main Header Content */}
+          <div className="flex-1 flex flex-row items-center justify-between">
+            <div className="space-y-2 mb-2 max-w-full lg:max-w-[60%]">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground font-montserrat">
+                Dashboard
+              </h1>
+              <p className="text-base sm:text-lg md:text-xl text-primary-foreground/80 font-montserrat">
+                Welcome back, {userData?.name || session?.user?.name || "User"}
+              </p>
+            </div>
+            
+            {/* Calendar - Only visible on laptop and above */}
+            <div className="hidden lg:block">
+              <Calendar />
             </div>
           </div>
-        </main>
+        </div>
+      </header>
+
+      {/* Main Content Section */}
+      <div className="px-4 sm:px-6 lg:px-8 -mt-20 sm:-mt-24 lg:-mt-28 relative z-10">
+        <div className="max-w-7xl mx-auto lg:max-w-[90%]">
+          <div className="bg-card rounded-lg shadow-lg border border-border p-4 sm:p-6 w-full">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
+              {/* Left Side - 4 Stats Cards */}
+              <div className="lg:col-span-4 w-full">
+                <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 sm:gap-2.5">
+                    {/* Card 1 - Total Events */}
+                    <div className="bg-background rounded-lg border border-border p-2 sm:p-2.5 hover:shadow-md transition-shadow">
+                      <div className="flex flex-col gap-1.5 sm:gap-2">
+                        <div className="h-6 w-6 sm:h-7 sm:w-7 rounded-lg bg-accent/20 flex items-center justify-center shrink-0">
+                          <BsCalendar2Event className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-accent-foreground" />
+                        </div>
+                        <div>
+                          <div className="text-[10px] sm:text-xs font-semibold text-foreground font-montserrat mb-0.5">Total Events</div>
+                          <div className="text-lg sm:text-xl font-medium text-foreground font-montserrat">{dashboardStats?.stats?.events?.count || 0}</div>
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-accent/10 text-accent-foreground mt-1">
+                            Last 6 months
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Card 2 - Certificates */}
+                    <div className="bg-background rounded-lg border border-border p-2 sm:p-2.5 hover:shadow-md transition-shadow">
+                      <div className="flex flex-col gap-1.5 sm:gap-2">
+                        <div className="h-6 w-6 sm:h-7 sm:w-7 rounded-lg bg-accent/20 flex items-center justify-center shrink-0">
+                          <BsStars className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-accent-foreground" />
+                        </div>
+                        <div>
+                          <div className="text-[10px] sm:text-xs font-semibold text-foreground font-montserrat mb-0.5">Certificates</div>
+                          <div className="text-lg sm:text-xl font-medium text-foreground font-montserrat">{dashboardStats?.stats?.certificates?.count || 0}</div>
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-accent/10 text-accent-foreground mt-1">
+                            Last 4 months
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Card 3 - Organizations (Corporate Organizations user is part of) */}
+                    <div className="bg-background rounded-lg border border-border p-2 sm:p-2.5 hover:shadow-md transition-shadow">
+                      <div className="flex flex-col gap-1.5 sm:gap-2">
+                        <div className="h-6 w-6 sm:h-7 sm:w-7 rounded-lg bg-accent/20 flex items-center justify-center shrink-0">
+                          <BsTrophy className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-accent-foreground" />
+                        </div>
+                        <div>
+                          <div className="text-[10px] sm:text-xs font-semibold text-foreground font-montserrat mb-0.5">Organizations</div>
+                          <div className="text-lg sm:text-xl font-medium text-foreground font-montserrat">{dashboardStats?.stats?.organizations?.count || 0}</div>
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-accent/10 text-accent-foreground mt-1">
+                            Last year
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Card 4 - Achievements */}
+                    <div className="bg-background rounded-lg border border-border p-2 sm:p-2.5 hover:shadow-md transition-shadow">
+                      <div className="flex flex-col gap-1.5 sm:gap-2">
+                        <div className="h-6 w-6 sm:h-7 sm:w-7 rounded-lg bg-accent/20 flex items-center justify-center shrink-0">
+                          <BsLightning className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-accent-foreground" />
+                        </div>
+                        <div>
+                          <div className="text-[10px] sm:text-xs font-semibold text-foreground font-montserrat mb-0.5">Achievements</div>
+                          <div className="text-lg sm:text-xl font-medium text-foreground font-montserrat">{dashboardStats?.stats?.achievements?.count || 0}</div>
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-accent/10 text-accent-foreground mt-1">
+                            Last 6 months
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* User Profile Card - Below Stats */}
+                  <div className="mt-3 sm:mt-4">
+                    <UserProfileCard 
+                      name={dashboardStats?.userProfile?.name || userData?.name || session?.user?.name || 'User'}
+                      email={dashboardStats?.userProfile?.email || userData?.email || session?.user?.email || ''}
+                      image={dashboardStats?.userProfile?.image || userData?.image || session?.user?.image}
+                      accountType={dashboardStats?.userProfile?.accountType || 'individual'}
+                      joinedDate={dashboardStats?.userProfile?.joinedDate || userData?.createdAt || new Date().toISOString()}
+                      profileCompletion={dashboardStats?.userProfile?.profileCompletion || 0}
+                      trustScore={dashboardStats?.userProfile?.trustScore || 'Low'}
+                      lastActive={dashboardStats?.userProfile?.lastActive || 'Never'}
+                      userId={dashboardStats?.userProfile?.userId || userData?._id || ''}
+                      isOnline={status === 'authenticated'}
+                    />
+                  </div>
+                </div>
+
+                {/* Right Side - Recent Activity & Upgrade */}
+                <div className="lg:col-span-8 w-full">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+                    {/* Recent Activity */}
+                    <div className="lg:col-span-2 bg-background rounded-lg border border-border p-3 sm:p-4 w-full">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 sm:mb-3 gap-1">
+                        <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-foreground font-montserrat">Recent Activity</h3>
+                        <span className="text-[10px] sm:text-xs text-muted-foreground font-montserrat">Latest user actions</span>
+                      </div>
+                      <div className="space-y-2 sm:space-y-2.5 max-h-[180px] sm:max-h-[220px] overflow-y-auto pr-1 sm:pr-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+                        {dashboardStats?.recentActivity && dashboardStats.recentActivity.length > 0 ? (
+                          dashboardStats.recentActivity.slice(0, 5).map((activity: any) => {
+                            let IconComponent = BsBell
+                            let iconBg = "bg-muted"
+                            
+                            if (activity.category === 'profile' || activity.action.toLowerCase().includes('profile')) {
+                              IconComponent = HiOutlineUserCircle
+                            } else if (activity.category === 'security' || activity.action.toLowerCase().includes('security')) {
+                              IconComponent = BsShield
+                            } else if (activity.category === 'auth' || activity.action.toLowerCase().includes('login') || activity.action.toLowerCase().includes('logout')) {
+                              IconComponent = HiOutlineMail
+                            } else if (activity.action.toLowerCase().includes('certificate')) {
+                              IconComponent = BsStars
+                            } else if (activity.action.toLowerCase().includes('event')) {
+                              IconComponent = BsCalendar2Event
+                            }
+                            
+                            const formattedDate = new Date(activity.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                            
+                            return (
+                              <div key={activity._id} className="flex items-start gap-2 sm:gap-2.5 pb-2 sm:pb-2.5 border-b border-border last:border-0 last:pb-0">
+                                <div className={`h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 rounded-full ${iconBg} flex items-center justify-center shrink-0`}>
+                                  <IconComponent className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4 text-muted-foreground" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-[11px] sm:text-xs lg:text-sm font-medium text-foreground font-montserrat">{activity.action}</p>
+                                  <p className="text-[10px] sm:text-xs text-muted-foreground font-montserrat truncate">{activity.description || 'Activity recorded'}</p>
+                                </div>
+                                <span className="text-[10px] sm:text-xs text-muted-foreground font-montserrat shrink-0 hidden sm:inline">{formattedDate}</span>
+                              </div>
+                            )
+                          })
+                        ) : (
+                          <div className="text-center py-8 text-muted-foreground text-sm font-montserrat">
+                            No recent activity to display
+                          </div>
+                        )}  
+                      </div>
+                    </div>
+
+                    {/* Upgrade Card */}
+                    <div className="lg:col-span-1 w-full">
+                      <UpgradeCard userData={userData} dashboardStats={dashboardStats} />
+                    </div>
+                  </div>
+
+                  {/* Certificate Insights - Full Width */}
+                  <div className="mt-3 sm:mt-4">
+                    <CertificateInsights 
+                      totalIssued={dashboardStats?.stats?.certificates?.count || 0}
+                      eventsCovered={dashboardStats?.stats?.events?.count || 0}
+                      activeOrgs={dashboardStats?.stats?.organizations?.count || 0}
+                      suspensions={dashboardStats?.stats?.suspensions?.count || 0}
+                      trend={dashboardStats?.stats?.certificates?.trend || 0}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* My Certificates Section - Full Width Below */}
+              <div className="mt-3 sm:mt-4 w-full col-span-1 lg:col-span-12">
+                <MyCertificatesSection userId={userData?._id} />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </>
   )
 }

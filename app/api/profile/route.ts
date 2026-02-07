@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
     if (user.userType === 'individual' || user.userType === 'corporate') {
       // For individual/corporate users, populate privateOrgId if exists
       if (user.privateOrgId) {
-        await user.populate('privateOrgId', 'name logoUrl slug')
+        await user.populate('privateOrgId', 'name logoUrl slug allowedUsers')
       }
       
       // Clear old academic references for migrated users (cleanup)
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
       return org && typeof org === 'object' && 'name' in org
     }
 
-    const isPopulatedPrivateOrg = (org: any): org is { _id: any; name: string; logoUrl?: string; slug: string } => {
+    const isPopulatedPrivateOrg = (org: any): org is { _id: any; name: string; logoUrl?: string; slug: string; allowedUsers?: any[] } => {
       return org && typeof org === 'object' && 'name' in org && 'slug' in org
     }
 
@@ -93,6 +93,7 @@ export async function GET(request: NextRequest) {
           name: user.privateOrgId.name,
           logoUrl: user.privateOrgId.logoUrl,
           slug: user.privateOrgId.slug,
+          allowedUsers: user.privateOrgId.allowedUsers || [],
         }
       : null
 

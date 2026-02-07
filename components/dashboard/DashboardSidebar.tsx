@@ -61,8 +61,8 @@ export function DashboardSidebar({
               <Image
                 src="/cflo1.svg"
                 alt="CertificateHash Logo"
-                width={46}
-                height={46}
+                width={24}
+                height={24}
                 className="w-full h-full object-contain"
               />
             </div>
