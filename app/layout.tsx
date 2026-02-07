@@ -20,6 +20,7 @@ import {
   Tangerine,
   Coda,
   Iceland,
+  Source_Code_Pro,
 } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { getGoogleFontsUrl } from "@/lib/fonts"
@@ -149,6 +150,12 @@ const tangerine = Tangerine({
   variable: "--font-tangerine"
 })
 
+const sourceCodePro = Source_Code_Pro({
+  subsets: ["latin"],
+  weight: ["200", "300", "400", "500", "600", "700", "800", "900"],
+  variable: "--font-source-code-pro"
+})
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://gocertiflo.com"),
   title: "Certiflo - Certificate Generation Made Simple | by Senement",
@@ -181,12 +188,12 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/cflo1.svg", sizes: "32x32", type: "image/png" },
-      { url: "/cflo1.svg", sizes: "16x16", type: "image/png" },
-      { url: "/cflo1.svg" }
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
     ],
     apple: [
-      { url: "/cflo1.svg", sizes: "180x180", type: "image/png" }
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }
     ],
     other: [
       {
@@ -204,7 +211,7 @@ export const metadata: Metadata = {
     description: "Create, send, and verify digital certificates at scale. Trusted by 100+ organizations.",
     images: [
       {
-        url: "/cflo1.svg",
+        url: "/cflo1.png",
         width: 1200,
         height: 630,
         alt: "Certiflo - Certificate Generation Platform",
@@ -216,7 +223,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Certiflo - Certificate Generation & Verification",
     description: "Create, send, and verify digital certificates at scale. Trusted by 100+ organizations.",
-    images: ["/cflo1.svg"],
+    images: ["/cflo1.png"],
     creator: "@senement",
   },
   robots: {
@@ -252,6 +259,17 @@ export default function RootLayout({
         <link href={getGoogleFontsUrl()} rel="stylesheet" />
         {/* Explicit Caveat font load as backup */}
         <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&display=swap" rel="stylesheet" />
+        
+        {/* Web App Manifest */}
+        <link rel="manifest" href="/site.webmanifest" />
+        <meta name="theme-color" content="#21808D" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        
+        {/* Microsoft Tile */}
+        <meta name="msapplication-TileColor" content="#21808D" />
+        <meta name="msapplication-config" content="/browserconfig.xml" />
 
         {/* JSON-LD Structured Data */}
         <Script
@@ -263,7 +281,7 @@ export default function RootLayout({
               "@type": "Organization",
               "name": "Certiflo",
               "url": "https://gocertiflo.com",
-              "logo": "https://gocertiflo.com/cflo1.svg",
+              "logo": "https://gocertiflo.com/cflo1.png",
               "description": "Certificate generation and verification platform",
               "sameAs": [
                 "https://twitter.com/senement",
@@ -343,7 +361,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`font-sans ${roboto.variable} ${playfairDisplay.variable} ${cormorantGaramond.variable} ${lora.variable} ${coda.variable} ${crimsonText.variable} ${merriweather.variable} ${montserrat.variable} ${openSans.variable} ${poppins.variable} ${inter.variable} ${raleway.variable} ${caveat.variable}${iceland.variable} ${marckScript.variable} ${greatVibes.variable} ${pacifico.variable} ${dancingScript.variable} ${tangerine.variable} antialiased`}>
+      <body className={`font-sans ${roboto.variable} ${playfairDisplay.variable} ${cormorantGaramond.variable} ${lora.variable} ${coda.variable} ${crimsonText.variable} ${merriweather.variable} ${montserrat.variable} ${openSans.variable} ${poppins.variable} ${inter.variable} ${raleway.variable} ${caveat.variable}${iceland.variable} ${marckScript.variable} ${greatVibes.variable} ${pacifico.variable} ${dancingScript.variable} ${tangerine.variable} ${sourceCodePro.variable} antialiased`}>
         <SmoothScroll>
           {/* Google Analytics */}
           <Script

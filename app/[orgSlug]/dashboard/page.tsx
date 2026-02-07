@@ -10,14 +10,15 @@ import { OrgOverviewStats } from "@/components/dashboard/corporate/OrgOverviewSt
 import { PermissionRequestsSection } from "@/components/dashboard/corporate/PermissionRequestsSection"
 import { InvitationsSection } from "@/components/dashboard/corporate/InvitationsSection"
 import { CorporateSettings } from "@/components/dashboard/corporate/CorporateSettings"
+import { CorporateProfileContent } from "@/components/dashboard/corporate/CorporateProfileContent"
 import { UserTypeSelectionModal } from "@/components/UserTypeSelectionModal"
 import { CorporateSidebar, CorporatePage } from "@/components/dashboard/corporate/CorporateSidebar"
 import { Menu, AlertCircle, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { CorporateProfileOverlay } from "@/components/dashboard/corporate/CorporateProfileOverlay"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { SuspensionChecker } from "@/components/SuspensionChecker"
+import DashboardToggle from '@/components/DashboardToggle'
 
 interface PageProps {
   params: Promise<{
@@ -245,7 +246,7 @@ export default function CorporateDashboard({ params }: PageProps) {
           <main className="flex-1 flex flex-col min-h-screen p-3 sm:p-4 md:p-6 w-full relative z-10">
             {/* Top Header */}
             <header className="flex items-center justify-between gap-3 md:gap-4 mb-4 md:mb-6 px-2 md:px-4 py-2 mt-14 md:mt-2">
-              {/* Mobile Menu Button + Org Name / Active Event Indicator */}
+              {/* Left side: Mobile Menu Button + Org Name / Active Event Indicator */}
               <div className="flex items-center gap-2 md:gap-3">
                 {/* Mobile Menu Button - Always visible on mobile */}
                 <button
@@ -269,18 +270,25 @@ export default function CorporateDashboard({ params }: PageProps) {
                 )}
               </div>
 
-              <CorporateProfileOverlay
-                trigger={
-                  <Avatar className="w-10 h-10 md:w-12 md:h-12 cursor-pointer ring-2 ring-white shadow-lg" title="Open profile">
-                    {session?.user?.image && (
-                      <AvatarImage src={session.user.image} alt={session?.user?.name || "User"} />
-                    )}
-                    <AvatarFallback className="bg-[#21808D] text-white text-sm md:text-base">
-                      {session?.user?.name ? session.user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                }
-              />
+              {/* Center: Dashboard toggle */}
+              {userData?.userType === 'corporate' && (
+                <DashboardToggle userData={userData} privateOrgSlug={resolvedParams?.orgSlug || orgData?.slug || null} />
+              )}
+
+              {/* Right side: Profile */}
+              <button 
+                onClick={() => setCurrentPage("profile")}
+                className="focus:outline-none focus:ring-2 focus:ring-[#21808D] rounded-full"
+              >
+                <Avatar className="w-10 h-10 md:w-12 md:h-12 cursor-pointer ring-2 ring-white shadow-lg" title="Open profile">
+                  {session?.user?.image && (
+                    <AvatarImage src={session.user.image} alt={session?.user?.name || "User"} />
+                  )}
+                  <AvatarFallback className="bg-[#21808D] text-white text-sm md:text-base">
+                    {session?.user?.name ? session.user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
+                  </AvatarFallback>
+                </Avatar>
+              </button>
             </header>
 
             {/* Page Content */}
@@ -337,6 +345,10 @@ export default function CorporateDashboard({ params }: PageProps) {
                     organization={orgData}
                     onUpdate={handleUpdateSettings}
                   />
+                )}
+
+                {currentPage === "profile" && (
+                  <CorporateProfileContent />
                 )}
               </div>
             </div>

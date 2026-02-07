@@ -1,12 +1,11 @@
-# Certifio Robots.txt
+# Certiflo Robots.txt
 User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /api
-Disallow: /private
 
 # Sitemap
-Sitemap: https://certifio.com/sitemap.xml
+Sitemap: https://gocertiflo.com/sitemap.xml
 
 # Crawl delay
 Crawl-delay: 1

@@ -198,7 +198,7 @@ export function CorporateProfileOverlay({ trigger }: CorporateProfileOverlayProp
       layoutId="corporate-profile"
       contentRadius="28px"
       triggerRadius="9999px"
-      lockScroll={false}
+      lockScroll={true}
       animationDuration={0}
     >
       <ExpandableScreenTrigger className="align-middle">
@@ -206,11 +206,11 @@ export function CorporateProfileOverlay({ trigger }: CorporateProfileOverlayProp
       </ExpandableScreenTrigger>
 
       <ExpandableScreenContent
-        className="bg-white text-gray-900 dark:bg-neutral-950 dark:text-gray-100 shadow-2xl border border-black/5 dark:border-white/10 max-w-5xl mx-auto max-h-[90vh] overflow-y-auto no-scrollbar"
+        className="bg-white text-gray-900 dark:bg-neutral-950 dark:text-gray-100 shadow-2xl border border-black/5 dark:border-white/10 max-w-5xl mx-auto no-scrollbar"
         overlayClassName="backdrop-blur-md bg-black/30"
       >
         <style>{`.no-scrollbar{scrollbar-width:none;-ms-overflow-style:none;}.no-scrollbar::-webkit-scrollbar{display:none;}`}</style>
-        <div className="grid md:grid-cols-[320px,1fr] h-full w-full">
+        <div className="grid md:grid-cols-[320px,1fr] min-h-full w-full">
           <aside
             className="text-white p-6 md:p-8 flex flex-col gap-6"
             style={{

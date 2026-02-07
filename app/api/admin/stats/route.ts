@@ -142,7 +142,7 @@ export async function GET(request: NextRequest) {
 
     // Check System Status
     const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
-    const s3Status = process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && process.env.AWS_REGION && process.env.AWS_BUCKET_NAME ? 'configured' : 'missing_config'
+    const s3Status = process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && process.env.AWS_REGION && process.env.AWS_S3_BUCKET_NAME ? 'configured' : 'missing_config'
 
     return NextResponse.json({
       success: true,

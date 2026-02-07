@@ -5,7 +5,7 @@ import Image from "next/image"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { LogOut, Menu, X } from "lucide-react"
 
-export type CorporatePage = "overview" | "events" | "history" | "members" | "settings"
+export type CorporatePage = "overview" | "events" | "history" | "members" | "settings" | "profile"
 
 interface CorporateSidebarProps {
   sidebarOpen: boolean
@@ -35,6 +35,7 @@ export function CorporateSidebar({
     { id: "events" as CorporatePage, label: "Events", imageSrc: "/13.svg" },
     { id: "history" as CorporatePage, label: "History", imageSrc: "/history.svg" },
     { id: "members" as CorporatePage, label: "Members", imageSrc: "/members.svg" },
+    { id: "profile" as CorporatePage, label: "Profile", imageSrc: "/overview.svg" },
     { id: "settings" as CorporatePage, label: "Settings", imageSrc: "/setting.svg" },
   ]
 
@@ -50,19 +51,19 @@ export function CorporateSidebar({
 
       {/* Sidebar */}
       <aside
-        className={`${sidebarOpen ? "w-64" : "w-20"
+        className={`${sidebarOpen ? "w-46" : "w-20"
           } bg-green-300/60 backdrop-blur-2xl rounded-r-2xl sm:rounded-r-3xl border-r border-gray-200 transition-all duration-300 flex flex-col shadow-sm fixed md:sticky md:top-0 min-h-screen md:h-screen z-40 ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
           } overflow-y-auto pb-24 md:overflow-visible md:pb-0`}
       >
         {/* Logo */}
         <div className="p-2 sm:p-3 flex items-center">
-          <div className="flex flex-col items-center w-full">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden flex items-center justify-center">
+          <div className="flex flex-col items-center justify-center w-full">
+            <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-lg overflow-hidden flex items-center justify-center">
               <Image
                 src="/cflo1.svg"
                 alt="CertificateHash Logo"
-                width={42}
-                height={42}
+                width={20}
+                height={20}
                 className="w-full h-full object-contain"
               />
             </div>
@@ -90,7 +91,7 @@ export function CorporateSidebar({
         )}
 
         {/* Navigation */}
-        <nav className="flex-1 p-3 pb-6">
+        <nav className="flex-1 p-4 pb-6">
           <ul className="space-y-1.5">
             {navItems.map((item) => {
               return (
@@ -122,7 +123,13 @@ export function CorporateSidebar({
 
         {/* User Profile */}
         <div className="p-2">
-          <button className="w-full flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors">
+          <button 
+            onClick={() => {
+              setCurrentPage("profile")
+              if (window.innerWidth < 768) setSidebarOpen(false)
+            }}
+            className="w-full flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors"
+          >
             <Avatar className="w-9 h-9 sm:w-10 sm:h-10">
               {userImage && (
                 <AvatarImage src={userImage} alt={userName || "User"} />
