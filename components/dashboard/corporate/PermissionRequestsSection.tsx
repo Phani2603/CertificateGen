@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import { usePermissionRequests } from "@/hooks/useDashboardCache"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { CheckCircle, XCircle, Clock, User, Calendar, Trash2, Plus } from "lucide-react"
@@ -27,32 +28,8 @@ interface PermissionRequestsSectionProps {
 }
 
 export function PermissionRequestsSection({ organizationId, isOwner }: PermissionRequestsSectionProps) {
-  const [requests, setRequests] = useState<PermissionRequest[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const { requests, isLoading, mutate: mutateRequests } = usePermissionRequests(isOwner ? organizationId : null)
   const [processingId, setProcessingId] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (isOwner) {
-      fetchRequests()
-    } else {
-      setIsLoading(false)
-    }
-  }, [organizationId, isOwner])
-
-  const fetchRequests = async () => {
-    try {
-      const response = await fetch(`/api/permission-requests?privateOrgId=${organizationId}&status=pending`)
-      const data = await response.json()
-
-      if (data.requests) {
-        setRequests(data.requests)
-      }
-    } catch (error) {
-      console.error('Error fetching permission requests:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   const handleApprove = async (requestId: string, request: PermissionRequest) => {
     setProcessingId(requestId)
@@ -103,7 +80,7 @@ export function PermissionRequestsSection({ organizationId, isOwner }: Permissio
           }
         }
 
-        fetchRequests()
+        mutateRequests()
       } else {
         toast.error('Failed to approve request')
       }
@@ -132,7 +109,7 @@ export function PermissionRequestsSection({ organizationId, isOwner }: Permissio
 
       if (data.success) {
         toast.success('Request denied')
-        fetchRequests()
+        mutateRequests()
       } else {
         toast.error('Failed to deny request')
       }
@@ -193,7 +170,7 @@ export function PermissionRequestsSection({ organizationId, isOwner }: Permissio
       </div>
 
       <div className="space-y-3">
-        {requests.map((request) => (
+        {requests.map((request: PermissionRequest) => (
           <Card key={request._id} className="p-4 sm:p-5 border-2 border-orange-100 bg-orange-50/30">
             <div className="flex flex-col sm:flex-row items-start gap-4">
               <div className="flex items-start gap-3 sm:gap-4 flex-1 w-full">

@@ -3,6 +3,7 @@
 import { notFound, redirect } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { useEffect, useState } from "react"
+import { useProfile, usePrivateOrg, useActiveEvent } from "@/hooks/useDashboardCache"
 import { CorporateOrgSection } from "@/components/dashboard/corporate/CorporateOrgSection"
 import { CorporateEventsSection } from "@/components/dashboard/corporate/CorporateEventsSection"
 import { CorporateHistorySection } from "@/components/dashboard/corporate/CorporateHistorySection"
@@ -29,16 +30,19 @@ interface PageProps {
 export default function CorporateDashboard({ params }: PageProps) {
   const { data: session, status } = useSession()
   const [showTypeSelection, setShowTypeSelection] = useState(false)
-  const [orgData, setOrgData] = useState<any>(null)
-  const [userData, setUserData] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
   const [resolvedParams, setResolvedParams] = useState<{ orgSlug: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  // Use SWR hooks for cached data fetching
+  const { userData, isLoading: profileLoading, mutate: mutateProfile } = useProfile()
+  const { orgData, isLoading: orgLoading, mutate: mutateOrg } = usePrivateOrg(resolvedParams?.orgSlug || null)
+  const { activeEvent } = useActiveEvent(orgData?._id || null)
+  
+  const isLoading = profileLoading || orgLoading
 
   // Sidebar state
   const [currentPage, setCurrentPage] = useState<CorporatePage>("overview")
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [activeEvent, setActiveEvent] = useState<{ eventName: string } | null>(null)
   const pageStorageKey = resolvedParams ? `corp-page-${resolvedParams.orgSlug}` : null
 
   const handleUpdateSettings = async (data: any) => {
@@ -58,7 +62,8 @@ export default function CorporateDashboard({ params }: PageProps) {
       throw new Error(result.error)
     }
 
-    setOrgData(result.organization)
+    // Revalidate org data in cache
+    mutateOrg()
   }
 
   useEffect(() => {
@@ -74,97 +79,53 @@ export default function CorporateDashboard({ params }: PageProps) {
     }
   }, [resolvedParams])
 
+  // Validate user access when data is loaded
   useEffect(() => {
-    async function fetchData() {
-      if (status === "authenticated" && resolvedParams) {
-        try {
-          // Fetch user data
-          const userResponse = await fetch('/api/profile')
-          const userData = await userResponse.json()
+    if (status === "authenticated" && userData && orgData && resolvedParams) {
+      // Check if user has no type selected (OAuth users)
+      if (!userData.userType) {
+        setShowTypeSelection(true)
+        return
+      }
 
-          if (userData.success) {
-            setUserData(userData.user)
-            console.log('[Dashboard] User data:', userData.user)
+      // Check if user is corporate type
+      if (userData.userType !== 'corporate') {
+        redirect('/individual-dashboard')
+        return
+      }
 
-            // Check if user has no type selected (OAuth users)
-            if (!userData.user.userType) {
-              setShowTypeSelection(true)
-              setIsLoading(false)
-              return
-            }
+      // Check if user has access to this organization
+      const userId = userData.id || userData._id
+      const ownerId = orgData.ownerId
+      const allowedUsers = orgData.allowedUsers || []
 
-            // Check if user is corporate type
-            if (userData.user.userType !== 'corporate') {
-              redirect('/individual-dashboard')
-            }
-          }
+      console.log('[Dashboard] Owner check:', {
+        ownerId,
+        userId,
+        ownerIdType: typeof ownerId,
+        userIdType: typeof userId,
+        areEqual: ownerId === userId,
+        areEqualAsString: String(ownerId) === String(userId)
+      })
 
-          // Fetch organization data
-          const orgResponse = await fetch(`/api/private-orgs/${resolvedParams.orgSlug}`)
-          const orgData = await orgResponse.json()
+      const hasAccess = ownerId === userId || allowedUsers.includes(userId)
 
-          if (!orgData.success) {
-            setError(orgData.error || "Organization not found")
-            setIsLoading(false)
-            return
-          }
-
-          // Check if user has access to this organization
-          const userId = userData.user.id || userData.user._id
-          const ownerId = orgData.organization.ownerId
-          const allowedUsers = orgData.organization.allowedUsers || []
-
-          console.log('[Dashboard] Owner check:', {
-            ownerId,
-            userId,
-            ownerIdType: typeof ownerId,
-            userIdType: typeof userId,
-            areEqual: ownerId === userId,
-            areEqualAsString: String(ownerId) === String(userId)
-          })
-
-          const hasAccess = ownerId === userId || allowedUsers.includes(userId)
-
-          if (!hasAccess) {
-            redirect('/create-organization')
-          }
-
-          setOrgData(orgData.organization)
-        } catch (error) {
-          console.error('Error fetching data:', error)
-          setError("Failed to load organization data")
-        } finally {
-          setIsLoading(false)
-        }
+      if (!hasAccess) {
+        redirect('/create-organization')
       }
     }
 
-    fetchData()
-  }, [status, resolvedParams])
+    // Handle org data errors
+    if (!orgLoading && !orgData && resolvedParams) {
+      setError("Organization not found")
+    }
+  }, [status, userData, orgData, resolvedParams, orgLoading])
 
   // Persist current page per org
   useEffect(() => {
     if (!resolvedParams) return
     localStorage.setItem(`corp-page-${resolvedParams.orgSlug}`, currentPage)
   }, [currentPage, resolvedParams])
-
-  // Fetch active event (most recent event)
-  useEffect(() => {
-    async function fetchActiveEvent() {
-      if (orgData?._id) {
-        try {
-          const response = await fetch(`/api/history?privateOrgId=${orgData._id}&limit=1`)
-          const data = await response.json()
-          if (data.success && data.history && data.history.length > 0) {
-            setActiveEvent({ eventName: data.history[0].eventName })
-          }
-        } catch (error) {
-          console.error('Error fetching active event:', error)
-        }
-      }
-    }
-    fetchActiveEvent()
-  }, [orgData])
 
   if (status === "loading" || isLoading || !resolvedParams) {
     return (
@@ -238,9 +199,9 @@ export default function CorporateDashboard({ params }: PageProps) {
             setCurrentPage={setCurrentPage}
             orgName={orgData.name}
             orgWebsite={orgData.website}
-            userImage={session?.user?.image}
-            userName={session?.user?.name}
-            userEmail={session?.user?.email}
+            userImage={userData?.image || session?.user?.image}
+            userName={userData?.name || session?.user?.name}
+            userEmail={userData?.email || session?.user?.email}
           />
 
           <main className="flex-1 flex flex-col min-h-screen p-3 sm:p-4 md:p-6 w-full relative z-10">
@@ -281,11 +242,11 @@ export default function CorporateDashboard({ params }: PageProps) {
                 className="focus:outline-none focus:ring-2 focus:ring-[#21808D] rounded-full"
               >
                 <Avatar className="w-10 h-10 md:w-12 md:h-12 cursor-pointer ring-2 ring-white shadow-lg" title="Open profile">
-                  {session?.user?.image && (
-                    <AvatarImage src={session.user.image} alt={session?.user?.name || "User"} />
+                  {(userData?.image || session?.user?.image) && (
+                    <AvatarImage src={userData?.image || session?.user?.image} alt={userData?.name || session?.user?.name || "User"} />
                   )}
                   <AvatarFallback className="bg-[#21808D] text-white text-sm md:text-base">
-                    {session?.user?.name ? session.user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
+                    {(userData?.name || session?.user?.name) ? (userData?.name || session?.user?.name || '').split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
                   </AvatarFallback>
                 </Avatar>
               </button>

@@ -27,6 +27,7 @@ import { getGoogleFontsUrl } from "@/lib/fonts"
 import { AuthProvider } from "@/components/auth-provider"
 import { IslandAlertsProvider } from "@/components/ui/island-alerts"
 import { Toaster } from "@/components/ui/sonner"
+import { SWRProvider } from "@/components/swr-provider"
 import Script from "next/script"
 import SmoothScroll from "@/components/smooth-scroll"
 import "./globals.css"
@@ -378,9 +379,11 @@ export default function RootLayout({
           </Script>
 
           <AuthProvider>
-            <IslandAlertsProvider>
-              {children}
-            </IslandAlertsProvider>
+            <SWRProvider>
+              <IslandAlertsProvider>
+                {children}
+              </IslandAlertsProvider>
+            </SWRProvider>
           </AuthProvider>
           <Toaster position="top-right" richColors />
           <Analytics mode="production" />

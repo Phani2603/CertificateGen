@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useAdminStats } from "@/hooks/useDashboardCache"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -57,33 +58,29 @@ const CHART_COLORS = ['#3b82f6', '#f97316', '#a855f7', '#ef4444', '#10b981', '#1
 export default function AdminDashboard() {
   const router = useRouter()
   const { addAlert } = useIslandAlerts()
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    individualUsers: 0,
-    corporateUsers: 0,
-    academicUsers: 0,
-    pendingRequests: 0,
-    totalOrganizations: 0,
-    totalPrivateOrgs: 0,
-    totalEvents: 0,
-    totalCertificates: 0,
-    recentActivity: [],
-    monthlyUserGrowth: [],
-    userTypeDistribution: [],
-    providerStats: [],
-    systemStatus: { database: 'checking', s3: 'checking' }
-  })
-  const [isLoading, setIsLoading] = useState(true)
+  
+  // Use SWR hook for cached data fetching
+  const { stats, isLoading, mutate: mutateStats } = useAdminStats()
+  const [previousPendingRequests, setPreviousPendingRequests] = useState(0)
 
+  // Handle 401 redirects
   useEffect(() => {
-    fetchStats()
-  }, [])
+    if (!isLoading && !stats) {
+      router.push('/admin/login')
+    }
+  }, [stats, isLoading, router])
 
   // Poll for new access requests
   useEffect(() => {
+    if (stats?.pendingRequests !== undefined) {
+      setPreviousPendingRequests(stats.pendingRequests)
+    }
+  }, [stats?.pendingRequests])
+
+  useEffect(() => {
     const pollInterval = setInterval(async () => {
-      const currentStats = await fetchStats()
-      if (currentStats && currentStats.pendingRequests > stats.pendingRequests) {
+      const updatedData = await mutateStats()
+      if (updatedData?.stats?.pendingRequests > previousPendingRequests) {
         addAlert({
           title: 'New Access Request',
           message: 'A new account upgrade request has been submitted',
@@ -94,36 +91,10 @@ export default function AdminDashboard() {
     }, 15000) // Poll every 15s to reduce load
 
     return () => clearInterval(pollInterval)
-  }, [stats.pendingRequests, addAlert])
-
-  const fetchStats = async () => {
-    try {
-      const response = await fetch('/api/admin/stats')
-      const data = await response.json()
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          router.push('/admin/login')
-          return null
-        }
-      }
-
-      if (data.success) {
-        setStats(data.stats)
-        return data.stats
-      } else {
-        return null
-      }
-    } catch (error) {
-      console.error('Error fetching stats:', error)
-      return null
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  }, [previousPendingRequests, addAlert, mutateStats])
 
   // Calculate some derived stats for the UI
-  const totalOrgs = stats.totalOrganizations + stats.totalPrivateOrgs
+  const totalOrgs = (stats?.totalOrganizations || 0) + (stats?.totalPrivateOrgs || 0)
 
   return (
     <div className="space-y-6 pb-8">
@@ -181,7 +152,7 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard
           title="Total Users"
-          value={stats.totalUsers.toLocaleString()}
+          value={(stats?.totalUsers || 0).toLocaleString()}
           subtext="Active accounts"
           trend="+12.5%"
           trendUp={true}
@@ -201,7 +172,7 @@ export default function AdminDashboard() {
         />
         <StatsCard
           title="Certificates"
-          value={stats.totalCertificates.toLocaleString()}
+          value={(stats?.totalCertificates || 0).toLocaleString()}
           subtext="Generated to date"
           trend="+8.2%"
           trendUp={true}
@@ -211,10 +182,10 @@ export default function AdminDashboard() {
         />
         <StatsCard
           title="Pending Requests"
-          value={stats.pendingRequests.toLocaleString()}
+          value={(stats?.pendingRequests || 0).toLocaleString()}
           subtext="Requires attention"
-          trend={stats.pendingRequests > 0 ? "Action Needed" : "All Clear"}
-          trendUp={stats.pendingRequests === 0}
+          trend={(stats?.pendingRequests || 0) > 0 ? "Action Needed" : "All Clear"}
+          trendUp={(stats?.pendingRequests || 0) === 0}
           icon={AlertCircle}
           color="orange"
           loading={isLoading}
@@ -232,7 +203,7 @@ export default function AdminDashboard() {
         <CardContent>
           <div className="h-[300px] w-full mt-4">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={stats.monthlyUserGrowth} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+              <AreaChart data={stats?.monthlyUserGrowth || []} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor={PRIMARY_COLOR} stopOpacity={0.2} />
@@ -283,7 +254,7 @@ export default function AdminDashboard() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={stats.userTypeDistribution}
+                    data={stats?.userTypeDistribution || []}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
@@ -291,7 +262,7 @@ export default function AdminDashboard() {
                     paddingAngle={5}
                     dataKey="value"
                   >
-                    {stats.userTypeDistribution.map((entry, index) => (
+                    {(stats?.userTypeDistribution || []).map((entry: any, index: number) => (
                       <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                     ))}
                   </Pie>
@@ -314,7 +285,7 @@ export default function AdminDashboard() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   layout="vertical"
-                  data={stats.providerStats}
+                  data={stats?.providerStats || []}
                   margin={{ top: 0, right: 30, left: 20, bottom: 0 }}
                 >
                   <XAxis type="number" hide />
@@ -328,7 +299,7 @@ export default function AdminDashboard() {
                   />
                   <Tooltip cursor={{ fill: '#f9fafb' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
                   <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={20}>
-                    {stats.providerStats.map((entry, index) => (
+                    {(stats?.providerStats || []).map((entry: any, index: number) => (
                       <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                     ))}
                   </Bar>
@@ -359,8 +330,8 @@ export default function AdminDashboard() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {stats.recentActivity.length > 0 ? (
-                stats.recentActivity.map((log: any) => (
+              {(stats?.recentActivity || []).length > 0 ? (
+                (stats?.recentActivity || []).map((log: any) => (
                   <TableRow key={log._id} className="border-b-gray-50">
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-3">

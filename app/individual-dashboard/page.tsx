@@ -8,6 +8,7 @@ import DashboardToggle from '@/components/DashboardToggle'
 import { UserTypeSelectionModal } from "@/components/UserTypeSelectionModal"
 import { SuspensionChecker } from "@/components/SuspensionChecker"
 import { useIslandAlerts } from "@/components/ui/island-alerts"
+import { useProfile, useDashboardStats } from "@/hooks/useDashboardCache"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -33,64 +34,37 @@ export default function IndividualDashboard() {
   const router = useRouter()
   const { addAlert } = useIslandAlerts()
   const [showTypeSelection, setShowTypeSelection] = useState(false)
-  const [userData, setUserData] = useState<any>(null)
-  const [dashboardStats, setDashboardStats] = useState<any>(null)
   const [privateOrg, setPrivateOrg] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  
+  // Use SWR hooks for data fetching with caching
+  const { userData, isLoading: profileLoading, mutate: mutateProfile } = useProfile()
+  const { stats: dashboardStats, isLoading: statsLoading } = useDashboardStats()
+  
+  const isLoading = profileLoading || statsLoading
 
+  // Set privateOrg when userData changes
   useEffect(() => {
-    async function fetchUserData() {
-      if (status === "authenticated") {
-        try {
-          const [profileResponse, statsResponse] = await Promise.all([
-            fetch('/api/profile'),
-            fetch('/api/dashboard/stats')
-          ])
-          
-          const profileData = await profileResponse.json()
-          const statsData = await statsResponse.json()
-
-          if (profileData.success) {
-            setUserData(profileData.user)
-
-            // Set privateOrg from profile data if available
-            if (profileData.user.privateOrg) {
-              console.log('[Dashboard] Private org data:', profileData.user.privateOrg)
-              setPrivateOrg(profileData.user.privateOrg)
-            }
-
-            // Show user type selection if not set
-            if (!profileData.user.userType) {
-              setShowTypeSelection(true)
-            }
-            // Note: Removed redirect logic - corporate users can access individual dashboard
-            // and toggle to their corporate dashboard using the toggle switch
-          }
-          
-          if (statsData.success) {
-            setDashboardStats(statsData)
-          }
-        } catch (error) {
-          console.error('Error fetching user data:', error)
-        } finally {
-          setIsLoading(false)
-        }
-      }
+    if (userData?.privateOrg) {
+      console.log('[Dashboard] Private org data:', userData.privateOrg)
+      setPrivateOrg(userData.privateOrg)
     }
 
-    fetchUserData()
-  }, [status])
+    // Show user type selection if not set
+    if (userData && !userData.userType) {
+      setShowTypeSelection(true)
+    }
+  }, [userData])
 
   useEffect(() => {
     if (!userData || status !== 'authenticated') return
 
     const pollInterval = setInterval(async () => {
       try {
-        const response = await fetch('/api/profile')
-        const data = await response.json()
+        // Revalidate profile data from cache
+        const freshData = await mutateProfile()
 
-        if (data.success && data.user) {
-          if (data.user.userType === 'corporate' && userData?.userType === 'individual') {
+        if (freshData?.success && freshData.user) {
+          if (freshData.user.userType === 'corporate' && userData?.userType === 'individual') {
             addAlert({
               title: 'Promotion Approved!',
               message: 'Your account has been upgraded to corporate!',
@@ -111,7 +85,7 @@ export default function IndividualDashboard() {
     }, 5000)
 
     return () => clearInterval(pollInterval)
-  }, [userData, status, addAlert, router])
+  }, [userData, status, addAlert, mutateProfile])
 
   if (status === "loading" || isLoading) {
     return (
