@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect } from "react"
+import { useAdminAccessRequests } from "@/hooks/useDashboardCache"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -25,42 +26,16 @@ interface AccessRequest {
 }
 
 export default function RequestsPage() {
-  const [requests, setRequests] = useState<AccessRequest[]>([])
-  const [loading, setLoading] = useState(true)
+  const { requests, isLoading: loading, mutate: mutateRequests } = useAdminAccessRequests()
   const { toast } = useToast()
   const { show } = useIslandAlerts()
 
+  // Handle 401 redirects
   useEffect(() => {
-    fetchRequests()
-  }, [])
-
-  const fetchRequests = async () => {
-    try {
-      setLoading(true)
-      const res = await fetch('/api/admin/access-requests')
-      const data = await res.json()
-      
-      if (!res.ok && res.status === 401) {
-        window.location.href = '/admin/login'
-        return
-      }
-      
-      if (data.success) {
-        setRequests(data.requests)
-      } else {
-        console.error('Failed to fetch requests:', data.error)
-      }
-    } catch (error) {
-      console.error("Failed to fetch requests", error)
-      toast({
-        title: "Error",
-        description: "Failed to load access requests",
-        variant: "destructive"
-      })
-    } finally {
-      setLoading(false)
+    if (!loading && !requests) {
+      window.location.href = '/admin/login'
     }
-  }
+  }, [requests, loading])
 
   const handleAction = async (requestId: string, status: 'approved' | 'denied') => {
     try {
@@ -82,7 +57,7 @@ export default function RequestsPage() {
           title: "Success",
           description: `Request ${status} successfully`,
         })
-        fetchRequests() // Refresh list
+        mutateRequests() // Refresh list from cache
         return
       }
 
@@ -118,7 +93,7 @@ export default function RequestsPage() {
             <Card key={i} className="animate-pulse bg-gray-100 h-48" />
           ))}
         </div>
-      ) : requests.length === 0 ? (
+      ) : (requests || []).length === 0 ? (
         <Card className="p-12 text-center">
           <div className="flex flex-col items-center justify-center space-y-3">
             <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
@@ -130,7 +105,7 @@ export default function RequestsPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {requests.map((req) => (
+          {(requests || []).map((req: AccessRequest) => (
             <Card key={req._id} className="overflow-hidden">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">

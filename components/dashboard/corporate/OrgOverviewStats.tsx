@@ -1,15 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useOrgStats } from "@/hooks/useDashboardCache"
 import { Card } from "@/components/ui/card"
 import { Users, Award, Calendar, TrendingUp } from "lucide-react"
-
-interface OrgStats {
-  totalMembers: number
-  totalEvents: number
-  totalCertificates: number
-  thisMonthCertificates: number
-}
 
 interface OrgOverviewStatsProps {
   organizationId: string
@@ -17,53 +10,25 @@ interface OrgOverviewStatsProps {
 }
 
 export function OrgOverviewStats({ organizationId, memberCount }: OrgOverviewStatsProps) {
-  const [stats, setStats] = useState<OrgStats>({
+  const { events, history, isLoading } = useOrgStats(organizationId)
+
+  // Calculate stats from SWR data
+  const totalCertificates = history.reduce((sum: number, item: any) => 
+    sum + (item.certificateCount || 0), 0
+  )
+
+  // This month certificates
+  const now = new Date()
+  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  const thisMonthCertificates = history
+    .filter((item: any) => new Date(item.date) >= firstDayOfMonth)
+    .reduce((sum: number, item: any) => sum + (item.certificateCount || 0), 0)
+
+  const stats = {
     totalMembers: memberCount,
-    totalEvents: 0,
-    totalCertificates: 0,
-    thisMonthCertificates: 0
-  })
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    fetchStats()
-  }, [organizationId, memberCount])
-
-  const fetchStats = async () => {
-    try {
-      // Fetch events
-      const eventsRes = await fetch(`/api/events?privateOrgId=${organizationId}`)
-      const eventsData = await eventsRes.json()
-      const events = eventsData.events || []
-
-      // Fetch history
-      const historyRes = await fetch(`/api/history?privateOrgId=${organizationId}&limit=1000`)
-      const historyData = await historyRes.json()
-      const history = historyData.history || []
-
-      // Calculate stats
-      const totalCertificates = history.reduce((sum: number, item: any) => 
-        sum + (item.certificateCount || 0), 0
-      )
-
-      // This month certificates
-      const now = new Date()
-      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-      const thisMonthCertificates = history
-        .filter((item: any) => new Date(item.date) >= firstDayOfMonth)
-        .reduce((sum: number, item: any) => sum + (item.certificateCount || 0), 0)
-
-      setStats({
-        totalMembers: memberCount,
-        totalEvents: events.length,
-        totalCertificates,
-        thisMonthCertificates
-      })
-    } catch (error) {
-      console.error('Error fetching stats:', error)
-    } finally {
-      setIsLoading(false)
-    }
+    totalEvents: events.length,
+    totalCertificates,
+    thisMonthCertificates
   }
 
   const statCards = [
