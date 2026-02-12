@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
 
     console.log('[Profile API] Organization data:', { organizationData, privateOrgData })
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       user: {
         id: user._id.toString(),
@@ -117,6 +117,8 @@ export async function GET(request: NextRequest) {
         createdAt: user.createdAt,
       },
     })
+    response.headers.set('Cache-Control', 'private, max-age=30, stale-while-revalidate=60')
+    return response
   } catch (error) {
     console.error('[Profile GET] Error:', error)
     return NextResponse.json(

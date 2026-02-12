@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { MyCertificatesSection } from "@/components/dashboard/individual/MyCertificatesSection"
 import { Badge } from "@/components/ui/badge"
 import { Mail, Phone, Shield, Sparkles, Loader2, Palette } from "lucide-react"
+import { useProfile, useMyCertificates } from "@/hooks/useDashboardCache"
 import {
   FloatingPanelRoot,
   FloatingPanelTrigger,
@@ -29,6 +30,12 @@ interface ProfileForm {
 
 export function CorporateProfileContent() {
   const { data: session, status, update } = useSession()
+  
+  // Use SWR hooks for caching
+  const { userData, isLoading: profileLoading, mutate: mutateProfile } = useProfile()
+  const { certificates, isLoading: certsLoading } = useMyCertificates()
+  const isLoading = profileLoading || certsLoading
+  
   const [formData, setFormData] = useState<ProfileForm>({
     name: "",
     email: "",
@@ -37,9 +44,7 @@ export function CorporateProfileContent() {
     organization: "",
     image: "",
   })
-  const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
-  const [certCount, setCertCount] = useState<number | null>(null)
   const [viewMode, setViewMode] = useState<"profile" | "certs">("profile")
   const [bannerKey, setBannerKey] = useState<string>("corp-banner-default")
   const [banner, setBanner] = useState<{ from: string; to: string }>(() => {
@@ -56,11 +61,19 @@ export function CorporateProfileContent() {
     return { from: "#21808D", to: "#1a6370" }
   })
 
+  // Sync form data with SWR userData
   useEffect(() => {
-    if (session?.user?.email) {
-      setBannerKey(`corp-banner-${session.user.email}`)
+    if (userData) {
+      setFormData({
+        name: userData.name || "",
+        email: userData.email || "",
+        phone: userData.phone || "",
+        bio: userData.bio || "",
+        organization: userData.organization || "",
+        image: userData.image || "",
+      })
     }
-  }, [session?.user?.email])
+  }, [userData])
 
   const bannerOptions = [
     { from: "#FF6B3D", to: "#FF6B3D" },
@@ -82,45 +95,10 @@ export function CorporateProfileContent() {
   }, [formData.name])
 
   useEffect(() => {
-    if (status !== "authenticated") return
-
-    const loadProfile = async () => {
-      try {
-        const response = await fetch("/api/profile")
-        const data = await response.json()
-
-        if (data.success) {
-          setFormData({
-            name: data.user.name || "",
-            email: data.user.email || "",
-            phone: data.user.phone || "",
-            bio: data.user.bio || "",
-            organization: data.user.organization || "",
-            image: data.user.image || "",
-          })
-        }
-      } catch (error) {
-        console.error("Failed to load profile:", error)
-      } finally {
-        setIsLoading(false)
-      }
+    if (session?.user?.email) {
+      setBannerKey(`corp-banner-${session.user.email}`)
     }
-
-    const loadCertificates = async () => {
-      try {
-        const res = await fetch("/api/my-certificates")
-        const data = await res.json()
-        if (data.success) {
-          setCertCount((data.certificates || []).length)
-        }
-      } catch (error) {
-        console.error("Failed to load certificates:", error)
-      }
-    }
-
-    loadProfile()
-    loadCertificates()
-  }, [status])
+  }, [session?.user?.email])
 
   useEffect(() => {
     if (!bannerKey || typeof window === "undefined") return
@@ -176,6 +154,7 @@ export function CorporateProfileContent() {
       const data = await response.json()
       if (data.success) {
         await update({ name: data.user.name, image: data.user.image })
+        mutateProfile() // Revalidate cache
       }
     } catch (error) {
       console.error("Failed to update profile:", error)
@@ -222,9 +201,9 @@ export function CorporateProfileContent() {
                 <Badge variant="outline" className="border-white/40 text-white bg-white/10 text-xs">
                   <Shield className="h-3 w-3 mr-1.5" /> Corporate member
                 </Badge>
-                {certCount !== null && (
+                {certificates.length > 0 && (
                   <Badge variant="outline" className="border-white/40 text-white bg-white/10 text-xs px-3 py-1.5">
-                    <span className="font-semibold text-lg mr-1.5">{certCount}</span>
+                    <span className="font-semibold text-lg mr-1.5">{certificates.length}</span>
                     <span className="text-white/70">certificates</span>
                   </Badge>
                 )}

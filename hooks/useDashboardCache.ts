@@ -11,6 +11,17 @@ export function useProfile() {
   }
 }
 
+export function useMyCertificates() {
+  const { data, error, isLoading, mutate } = useSWR('/api/my-certificates')
+  
+  return {
+    certificates: data?.success ? data.certificates : [],
+    isLoading,
+    isError: error,
+    mutate,
+  }
+}
+
 export function useDashboardStats() {
   const { data, error, isLoading, mutate } = useSWR('/api/dashboard/stats')
   
@@ -43,6 +54,19 @@ export function useOrgMembers(orgSlug: string | null) {
   return {
     members: data?.success ? data.members : [],
     owner: data?.success ? data.owner : null,
+    isLoading,
+    isError: error,
+    mutate,
+  }
+}
+
+export function useOrgInvitations(orgSlug: string | null) {
+  const { data, error, isLoading, mutate } = useSWR(
+    orgSlug ? `/api/private-orgs/${orgSlug}/invite` : null
+  )
+  
+  return {
+    invitations: data?.success ? data.invitations : [],
     isLoading,
     isError: error,
     mutate,
@@ -166,12 +190,25 @@ export function useAdminSuspensionAppeals(status?: string) {
 }
 
 // Corporate dashboard specific hooks
-export function useOrgStats(organizationId: string | null) {
-  const { data: eventsData, error: eventsError, isLoading: eventsLoading } = useSWR(
+export function useOrgEventsByOrgId(organizationId: string | null) {
+  const { data, error, isLoading, mutate } = useSWR(
     organizationId ? `/api/events?privateOrgId=${organizationId}` : null
   )
   
-  const { data: historyData, error: historyError, isLoading: historyLoading } = useSWR(
+  return {
+    events: data?.success ? data.events : [],
+    isLoading,
+    isError: error,
+    mutate,
+  }
+}
+
+export function useOrgStats(organizationId: string | null) {
+  const { data: eventsData, error: eventsError, isLoading: eventsLoading, mutate: mutateEvents } = useSWR(
+    organizationId ? `/api/events?privateOrgId=${organizationId}` : null
+  )
+  
+  const { data: historyData, error: historyError, isLoading: historyLoading, mutate: mutateHistory } = useSWR(
     organizationId ? `/api/history?privateOrgId=${organizationId}&limit=1000` : null
   )
   
@@ -180,6 +217,8 @@ export function useOrgStats(organizationId: string | null) {
     history: historyData?.success ? historyData.history : [],
     isLoading: eventsLoading || historyLoading,
     isError: eventsError || historyError,
+    mutateEvents,
+    mutateHistory,
   }
 }
 

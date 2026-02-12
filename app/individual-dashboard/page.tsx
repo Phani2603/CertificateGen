@@ -23,6 +23,7 @@ import { CertificateInsights } from "@/components/dashboard/individual/certifica
 import { UserProfileCard } from "@/components/dashboard/individual/user-profile-card"
 import { MyCertificatesSection } from "@/components/dashboard/individual/MyCertificatesSection"
 import Calendar from "@/components/calendar-01"
+import { MinimalFooter } from "@/components/minimal-footer"
 import { FiUser, FiSettings, FiCreditCard, FiUsers, FiHome, FiChevronRight, FiLogOut } from "react-icons/fi"
 import { MdPalette, MdPersonAdd } from "react-icons/md"
 import { BsCalendar2Event, BsStars, BsTrophy, BsLightning, BsBell, BsShield } from "react-icons/bs"
@@ -383,10 +384,13 @@ export default function IndividualDashboard() {
               </div>
 
               {/* My Certificates Section - Full Width Below */}
-              <div className="mt-3 sm:mt-4 w-full col-span-1 lg:col-span-12">
+              <div className="mt-3 sm:mt-4 w-full col-span-1 lg:col-span-12 mb-8">
                 <MyCertificatesSection userId={userData?._id} />
               </div>
             </div>
+
+            {/* Footer */}
+            <MinimalFooter />
           </div>
         </div>
       </div>

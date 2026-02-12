@@ -58,10 +58,10 @@ export function CertificateInsights({
           </div>
         </div>
 
-        {/* Right Side - 2x2 Grid of Stats */}
-        <div className="grid grid-cols-2 gap-2">
+        {/* Right Side - 2 Stats Side by Side (No Cards) */}
+        <div className="grid grid-cols-2 gap-4">
           {/* Issued */}
-          <div className="space-y-1 p-2 rounded-lg bg-background border border-border">
+          <div className="space-y-1.5 p-2">
             <div className="flex items-center gap-1">
               <div className="h-4 w-4 rounded bg-primary/20 flex items-center justify-center">
                 <BsFileEarmarkText className="h-2.5 w-2.5 text-primary" />
@@ -75,38 +75,8 @@ export function CertificateInsights({
             </div>
           </div>
 
-          {/* Events */}
-          <div className="space-y-1 p-2 rounded-lg bg-background border border-border">
-            <div className="flex items-center gap-1">
-              <div className="h-4 w-4 rounded bg-primary/20 flex items-center justify-center">
-                <BsCash className="h-2.5 w-2.5 text-primary" />
-              </div>
-              <span className="text-[10px] font-medium text-muted-foreground">Events</span>
-            </div>
-            <div className="text-lg font-bold text-foreground">{eventsCovered}</div>
-            {/* Progress bar */}
-            <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
-              <div className="h-full bg-primary rounded-full" style={{ width: '48%' }} />
-            </div>
-          </div>
-
-          {/* Suspensions */}
-          <div className="space-y-1 p-2 rounded-lg bg-background border border-border">
-            <div className="flex items-center gap-1">
-              <div className="h-4 w-4 rounded bg-destructive/20 flex items-center justify-center">
-                <BsShieldX className="h-2.5 w-2.5 text-destructive" />
-              </div>
-              <span className="text-[10px] font-medium text-muted-foreground">Suspensions</span>
-            </div>
-            <div className="text-lg font-bold text-foreground">{suspensions}</div>
-            {/* Progress bar */}
-            <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
-              <div className="h-full bg-destructive rounded-full" style={{ width: suspensions > 0 ? '100%' : '0%' }} />
-            </div>
-          </div>
-
           {/* Organizations */}
-          <div className="space-y-1 p-2 rounded-lg bg-background border border-border">
+          <div className="space-y-1.5 p-2">
             <div className="flex items-center gap-1">
               <div className="h-4 w-4 rounded bg-primary/20 flex items-center justify-center">
                 <BsGraphUp className="h-2.5 w-2.5 text-primary" />

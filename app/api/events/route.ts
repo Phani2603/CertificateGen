@@ -90,7 +90,9 @@ export async function GET(request: NextRequest) {
       })
       
       console.log('[Events API] Returning', enrichedEvents.length, 'enriched events for privateOrgId:', privateOrgId)
-      return NextResponse.json({ success: true, events: enrichedEvents })
+      const response = NextResponse.json({ success: true, events: enrichedEvents })
+      response.headers.set('Cache-Control', 'private, max-age=30, stale-while-revalidate=60')
+      return response
     }
 
     // Group by club
@@ -114,7 +116,9 @@ export async function GET(request: NextRequest) {
       })
     })
 
-    return NextResponse.json({ success: true, events: eventsByClub })
+    const response = NextResponse.json({ success: true, events: eventsByClub })
+    response.headers.set('Cache-Control', 'private, max-age=30, stale-while-revalidate=60')
+    return response
   } catch (error) {
     console.error('[Events API] GET error:', error)
     return NextResponse.json(

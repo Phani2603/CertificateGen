@@ -32,10 +32,12 @@ export async function GET(
       )
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       organization,
     })
+    response.headers.set('Cache-Control', 'private, max-age=30, stale-while-revalidate=60')
+    return response
   } catch (error) {
     console.error('[Private Org] Error:', error)
     return NextResponse.json(

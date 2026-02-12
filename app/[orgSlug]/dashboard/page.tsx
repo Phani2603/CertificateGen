@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { SuspensionChecker } from "@/components/SuspensionChecker"
+import { MinimalFooter } from "@/components/minimal-footer"
 import DashboardToggle from '@/components/DashboardToggle'
 
 interface PageProps {
@@ -311,6 +312,11 @@ export default function CorporateDashboard({ params }: PageProps) {
                 {currentPage === "profile" && (
                   <CorporateProfileContent />
                 )}
+              </div>
+
+              {/* Footer */}
+              <div className="mt-8">
+                <MinimalFooter />
               </div>
             </div>
           </main>

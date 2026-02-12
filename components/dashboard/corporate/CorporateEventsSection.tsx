@@ -10,6 +10,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
 import { toast } from "sonner"
+import { useOrgEventsByOrgId } from "@/hooks/useDashboardCache"
 import TemplateUpload from "@/components/steps/template-upload"
 import FieldConfiguration from "@/components/steps/field-configuration"
 import CertificateGeneration from "@/components/steps/certificate-generation"
@@ -59,8 +60,8 @@ export function CorporateEventsSection({
 }: CorporateEventsSectionProps) {
   console.log('[CorporateEventsSection] Props:', { organizationId, organizationSlug, organizationName, isOwner })
   
-  const [events, setEvents] = useState<Event[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  // Use SWR for caching
+  const { events, isLoading, isError, mutate: mutateEvents } = useOrgEventsByOrgId(organizationId)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [eventDate, setEventDate] = useState<Date | undefined>(undefined)
   const [isCreating, setIsCreating] = useState(false)
@@ -97,40 +98,6 @@ export function CorporateEventsSection({
     "from-purple-500 to-purple-600",
     "from-pink-500 to-pink-600"
   ]
-
-  const fetchEvents = async () => {
-    console.log('[CorporateEventsSection] Fetching events for organizationId:', organizationId)
-    setIsLoading(true)
-    try {
-      const url = `/api/events?privateOrgId=${organizationId}`
-      console.log('[CorporateEventsSection] Fetching from URL:', url)
-      
-      const response = await fetch(url)
-      const data = await response.json()
-      
-      console.log('[CorporateEventsSection] Fetch response:', { status: response.status, data })
-
-      if (data.success) {
-        console.log('[CorporateEventsSection] Setting events:', data.events?.length || 0, 'items')
-        setEvents(data.events || [])
-      } else {
-        console.error('[CorporateEventsSection] Fetch failed:', data.error)
-        toast.error(data.error || 'Failed to fetch events')
-      }
-    } catch (error) {
-      console.error('[CorporateEventsSection] Error fetching events:', error)
-      toast.error('Failed to fetch events')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    console.log('[CorporateEventsSection] useEffect triggered with organizationId:', organizationId)
-    if (organizationId) {
-      fetchEvents()
-    }
-  }, [organizationId])
 
   const handleCreateEvent = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -196,7 +163,7 @@ export function CorporateEventsSection({
           toast.success('Event created successfully!')
           setShowCreateModal(false)
           setEventDate(undefined)
-          fetchEvents()
+          mutateEvents() // Revalidate cache
           e.currentTarget.reset()
         } else {
           toast.error(data.error || 'Failed to create event')
@@ -247,7 +214,7 @@ export function CorporateEventsSection({
 
         if (data.success) {
           toast.success('Event deleted successfully')
-          fetchEvents()
+          mutateEvents() // Revalidate cache
         } else {
           toast.error(data.error || 'Failed to delete event')
         }
@@ -309,7 +276,7 @@ export function CorporateEventsSection({
 
       toast.success(`Generated ${count} certificates for ${eventName}`)
       // Don't automatically navigate away - let users see results and download
-      fetchEvents()
+      mutateEvents() // Revalidate cache
     } catch (error) {
       console.error('Error adding to history:', error)
       toast.error('Failed to save history')
@@ -370,7 +337,7 @@ export function CorporateEventsSection({
             ) : (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {currentEvents.map((event, index) => (
+                  {currentEvents.map((event: Event, index: number) => (
                     <Card key={event._id} className="p-3 hover:shadow-md transition-all bg-white border-2 border-gray-100">
                       <div className="space-y-2">
                         {/* Event Icon */}

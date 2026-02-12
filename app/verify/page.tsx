@@ -136,10 +136,10 @@ export default function VerifyLandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#ACC8A2]/20 relative overflow-hidden">
+    <div className="min-h-screen bg[#F9FAFB]/20 relative overflow-hidden">
       {/* Dot Background Section */}
       <div
-        className="relative bg-[#ACC8A2] overflow-hidden pb-32"
+        className="relative bg-[#F9FAFB] overflow-hidden pb-32"
         style={{
           borderBottomLeftRadius: '30% 100px',
           borderBottomRightRadius: '30% 100px'
@@ -150,7 +150,7 @@ export default function VerifyLandingPage() {
           className={cn(
             "absolute inset-x-0 top-0 h-full z-0",
             "[background-size:20px_20px]",
-            "[background-image:radial-gradient(#1A2517_1.2px,transparent_1px)]",
+            "[background-image:radial-gradient(#C5C8C9_1.2px,transparent_1px)]",
             "[mask-image:radial-gradient(ellipse_60%_80%_at_50%_0%,black_15%,transparent_100%)]"
           )}
         />
