@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
       batchId: item.batchId,
     }))
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       history: formattedHistory,
       pagination: {
@@ -80,6 +80,8 @@ export async function GET(request: NextRequest) {
         hasPrevPage: page > 1,
       }
     })
+    response.headers.set('Cache-Control', 'private, max-age=30, stale-while-revalidate=60')
+    return response
   } catch (error) {
     console.error('[History API] GET error:', error)
     return NextResponse.json(

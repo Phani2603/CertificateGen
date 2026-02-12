@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Calendar, Award, Building2 } from "lucide-react"
 import Image from "next/image"
+import { useOrgStats } from "@/hooks/useDashboardCache"
 
 interface EventSummary {
   eventName: string
@@ -18,55 +19,45 @@ interface CorporateActiveEventsSectionProps {
 }
 
 export function CorporateActiveEventsSection({ organizationId, organizationName }: CorporateActiveEventsSectionProps) {
+  // Use SWR for caching history data
+  const { history, isLoading } = useOrgStats(organizationId)
   const [activeEvents, setActiveEvents] = useState<EventSummary[]>([])
-  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    fetchActiveEvents()
-  }, [organizationId])
-
-  const fetchActiveEvents = async () => {
-    try {
-      const response = await fetch(`/api/history?privateOrgId=${organizationId}&limit=100`)
-      const data = await response.json()
-
-      if (data.success && data.history) {
-        // Group by event
-        const eventMap = new Map<string, EventSummary>()
+    if (history && history.length > 0) {
+      // Group by event
+      const eventMap = new Map<string, EventSummary>()
+      
+      history.forEach((item: any) => {
+        const key = item.eventName
         
-        data.history.forEach((item: any) => {
-          const key = item.eventName
-          
-          if (!eventMap.has(key)) {
-            eventMap.set(key, {
-              eventName: item.eventName,
-              eventId: item.id,
-              certificateCount: item.certificateCount || 0,
-              latestDate: item.date
-            })
-          } else {
-            const existing = eventMap.get(key)!
-            existing.certificateCount += item.certificateCount || 0
-            // Keep the latest date
-            if (new Date(item.date) > new Date(existing.latestDate)) {
-              existing.latestDate = item.date
-            }
+        if (!eventMap.has(key)) {
+          eventMap.set(key, {
+            eventName: item.eventName,
+            eventId: item.id,
+            certificateCount: item.certificateCount || 0,
+            latestDate: item.date
+          })
+        } else {
+          const existing = eventMap.get(key)!
+          existing.certificateCount += item.certificateCount || 0
+          // Keep the latest date
+          if (new Date(item.date) > new Date(existing.latestDate)) {
+            existing.latestDate = item.date
           }
-        })
+        }
+      })
 
-        // Convert to array and sort by latest date
-        const events = Array.from(eventMap.values()).sort((a, b) => 
-          new Date(b.latestDate).getTime() - new Date(a.latestDate).getTime()
-        )
+      // Convert to array and sort by latest date
+      const events = Array.from(eventMap.values()).sort((a, b) => 
+        new Date(b.latestDate).getTime() - new Date(a.latestDate).getTime()
+      )
 
-        setActiveEvents(events.slice(0, 6)) // Show top 6 events
-      }
-    } catch (error) {
-      console.error('Error fetching active events:', error)
-    } finally {
-      setIsLoading(false)
+      setActiveEvents(events.slice(0, 6)) // Show top 6 events
+    } else {
+      setActiveEvents([])
     }
-  }
+  }, [history])
 
   const colors = [
     "from-[#FF5733] to-[#ff7a59]",

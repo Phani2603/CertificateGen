@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Mail, Plus, UserPlus, Clock, CheckCircle, XCircle, Users, Shield } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useIslandAlerts } from "@/components/ui/island-alerts"
+import { useOrgMembers, useOrgInvitations } from "@/hooks/useDashboardCache"
 
 interface Invitation {
   _id: string
@@ -31,58 +32,19 @@ interface InvitationsSectionProps {
 }
 
 export function InvitationsSection({ organizationId, organizationSlug, isOwner }: InvitationsSectionProps) {
-  const [invitations, setInvitations] = useState<Invitation[]>([])
-  const [members, setMembers] = useState<Member[]>([])
-  const [owner, setOwner] = useState<Member | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  // Use SWR hooks for caching
+  const { invitations, isLoading: invitationsLoading, mutate: mutateInvitations } = useOrgInvitations(organizationSlug)
+  const { members, owner, isLoading: membersLoading, mutate: mutateMembers } = useOrgMembers(organizationSlug)
+  const isLoading = invitationsLoading || membersLoading
+  const typedMembers: Member[] = members || []
+  const typedInvitations: Invitation[] = invitations || []
+  
   const [showInviteForm, setShowInviteForm] = useState(false)
   const [inviteEmail, setInviteEmail] = useState("")
   const [isSending, setIsSending] = useState(false)
   const { show } = useIslandAlerts()
 
   console.log('[InvitationsSection] Props:', { organizationId, organizationSlug, isOwner })
-
-  useEffect(() => {
-    if (organizationSlug) {
-      fetchData()
-    }
-  }, [organizationSlug])
-
-  const fetchData = async () => {
-    setIsLoading(true)
-    try {
-      await Promise.all([fetchInvitations(), fetchMembers()])
-    } catch (error) {
-      console.error('Error fetching data:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const fetchInvitations = async () => {
-    try {
-      const response = await fetch(`/api/private-orgs/${organizationSlug}/invite`)
-      const data = await response.json()
-      if (data.success) {
-        setInvitations(data.invitations || [])
-      }
-    } catch (error) {
-      console.error('Error fetching invitations:', error)
-    }
-  }
-
-  const fetchMembers = async () => {
-    try {
-      const response = await fetch(`/api/private-orgs/${organizationSlug}/members`)
-      const data = await response.json()
-      if (data.success) {
-        setMembers(data.members || [])
-        setOwner(data.owner)
-      }
-    } catch (error) {
-      console.error('Error fetching members:', error)
-    }
-  }
 
   const handleSendInvitation = async () => {
     if (!inviteEmail) return
@@ -105,7 +67,7 @@ export function InvitationsSection({ organizationId, organizationSlug, isOwner }
       if (data.success) {
         setInviteEmail("")
         setShowInviteForm(false)
-        fetchInvitations()
+        mutateInvitations() // Revalidate cache
         show({
           title: 'Invite email sent',
           description: `Delivered to ${inviteEmail}`,
@@ -148,7 +110,7 @@ export function InvitationsSection({ organizationId, organizationSlug, isOwner }
           description: 'We re-delivered the invitation email.',
           tone: 'success'
         })
-        fetchInvitations()
+        mutateInvitations() // Revalidate cache
       } else {
         show({
           title: 'Resend failed',
@@ -186,7 +148,7 @@ export function InvitationsSection({ organizationId, organizationSlug, isOwner }
           description: 'The user no longer has access.',
           tone: 'info'
         })
-        fetchMembers()
+        mutateMembers() // Revalidate cache
       } else {
         show({
           title: 'Remove failed',
@@ -295,7 +257,7 @@ export function InvitationsSection({ organizationId, organizationSlug, isOwner }
           )}
 
           {/* Other Members */}
-          {members.map((member) => (
+          {typedMembers.map((member) => (
             <div key={member._id} className="p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Avatar>
@@ -411,7 +373,7 @@ export function InvitationsSection({ organizationId, organizationSlug, isOwner }
           ) : (
             <Card>
               <div className="divide-y">
-                {invitations.map((invitation) => (
+                {typedInvitations.map((invitation) => (
                   <div key={invitation._id} className="p-4 hover:bg-gray-50 transition-colors">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">

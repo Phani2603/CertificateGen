@@ -43,11 +43,13 @@ export async function GET(
       _id: { $in: organization.allowedUsers }
     }).select('name email image')
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       owner,
       members
     })
+    response.headers.set('Cache-Control', 'private, max-age=30, stale-while-revalidate=60')
+    return response
 
   } catch (error) {
     console.error('[Members API] Error:', error)

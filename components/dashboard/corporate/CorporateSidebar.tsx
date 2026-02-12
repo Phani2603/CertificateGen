@@ -52,7 +52,7 @@ export function CorporateSidebar({
       {/* Sidebar */}
       <aside
         className={`${sidebarOpen ? "w-46" : "w-20"
-          } bg-green-300/60 backdrop-blur-2xl rounded-r-2xl sm:rounded-r-3xl border-r border-gray-200 transition-all duration-300 flex flex-col shadow-sm fixed md:sticky md:top-0 min-h-screen md:h-screen z-40 ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+          } bg-[#177f60] backdrop-blur-2xl rounded-r-2xl sm:rounded-r-3xl border-r border-gray-200 transition-all duration-300 flex flex-col shadow-sm fixed md:sticky md:top-0 min-h-screen md:h-screen z-40 ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
           } overflow-y-auto pb-24 md:overflow-visible md:pb-0`}
       >
         {/* Logo */}
@@ -70,25 +70,7 @@ export function CorporateSidebar({
           </div>
         </div>
 
-        {/* Organization Info - Only show when open */}
-        {sidebarOpen && (
-          <div className="px-3 sm:px-4 py-2">
-            <div className="bg-white/50 rounded-xl p-2.5 sm:p-3 border border-white/20 text-center">
-              <p className="text-[9px] sm:text-[10px] font-semibold text-[#21808D] uppercase tracking-wider mb-1">Organization</p>
-              <p className="font-bold text-gray-900 truncate text-xs sm:text-sm" title={orgName}>{orgName}</p>
-              {orgWebsite && (
-                <a
-                  href={orgWebsite}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-gray-500 hover:text-[#21808D] truncate block mt-1 hover:underline"
-                >
-                  {orgWebsite.replace(/^https?:\/\//, '')}
-                </a>
-              )}
-            </div>
-          </div>
-        )}
+        
 
         {/* Navigation */}
         <nav className="flex-1 p-4 pb-6">
@@ -102,8 +84,8 @@ export function CorporateSidebar({
                       if (window.innerWidth < 768) setSidebarOpen(false)
                     }}
                     className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${currentPage === item.id
-                      ? "bg-[#21808D] text-white"
-                      : "text-gray-700 hover:bg-gray-100"
+                      ? "bg-[#428a72] text-white"
+                      : "text-white hover:bg-green-800/50"
                       }`}
                   >
                     <Image
@@ -128,7 +110,7 @@ export function CorporateSidebar({
               setCurrentPage("profile")
               if (window.innerWidth < 768) setSidebarOpen(false)
             }}
-            className="w-full flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors"
+            className="w-full flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-green-600 transition-colors"
           >
             <Avatar className="w-9 h-9 sm:w-10 sm:h-10">
               {userImage && (

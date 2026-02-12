@@ -222,7 +222,9 @@ export async function GET(
       privateOrgId: organization._id,
     }).sort({ createdAt: -1 })
 
-    return NextResponse.json({ success: true, invitations })
+    const response = NextResponse.json({ success: true, invitations })
+    response.headers.set('Cache-Control', 'private, max-age=30, stale-while-revalidate=60')
+    return response
 
   } catch (error) {
     console.error('[Invite API] Error:', error)

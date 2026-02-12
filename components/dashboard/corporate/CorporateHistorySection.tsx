@@ -35,6 +35,20 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
     fetchHistory()
   }, [organizationId])
 
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (showDetailModal) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [showDetailModal])
+
   const fetchHistory = async () => {
     setIsLoading(true)
     try {
@@ -241,66 +255,86 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
 
       {/* History Detail Modal */}
       {showDetailModal && selectedHistoryItem && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 md:p-4">
-          <Card className="bg-white p-4 md:p-8 rounded-2xl max-w-4xl w-full max-h-[85vh] md:max-h-[80vh] overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between mb-4 md:mb-6">
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 md:p-4 overflow-y-auto"
+          onClick={(e) => {
+            // Close modal when clicking on backdrop
+            if (e.target === e.currentTarget) {
+              setShowDetailModal(false)
+              setSelectedHistoryItem(null)
+            }
+          }}
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+        >
+          <Card 
+            className="bg-white p-3 md:p-6 lg:p-8 rounded-xl md:rounded-2xl max-w-[95vw] md:max-w-2xl lg:max-w-3xl w-full max-h-[90vh] md:max-h-[85vh] overflow-hidden flex flex-col my-auto"
+            onClick={(e) => e.stopPropagation()}
+            onWheel={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-3 md:mb-4 lg:mb-6">
               <div className="flex-1 min-w-0 pr-2">
-                <h2 className="text-2xl md:text-3xl font-bold truncate">{selectedHistoryItem.eventName}</h2>
-                <p className="text-xs md:text-sm text-gray-500 mt-1">Generated on {selectedHistoryItem.date}</p>
+                <h2 className="text-lg md:text-2xl lg:text-3xl font-bold truncate">{selectedHistoryItem.eventName}</h2>
+                <p className="text-[10px] md:text-xs lg:text-sm text-gray-500 mt-0.5 md:mt-1">Generated on {selectedHistoryItem.date}</p>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => {
+              <Button variant="ghost" size="sm" className="shrink-0" onClick={() => {
                 setShowDetailModal(false)
                 setSelectedHistoryItem(null)
               }}>
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4 md:h-5 md:w-5" />
               </Button>
             </div>
 
-            <div className="flex-1 overflow-y-auto pr-1 space-y-6 no-scrollbar">
-              <div className="grid grid-cols-3 gap-2 md:gap-4">
-                <Card className="p-3 md:p-4 bg-gradient-to-br from-[#FF5733] to-[#ff7a59] text-white">
-                  <div className="text-2xl md:text-3xl font-bold">{selectedHistoryItem.certificateCount}</div>
-                  <div className="text-[10px] md:text-sm opacity-90">Generated</div>
+            <div 
+              className="flex-1 overflow-y-auto pr-0.5 md:pr-1 space-y-4 md:space-y-6 no-scrollbar"
+              onWheel={(e) => e.stopPropagation()}
+              onTouchMove={(e) => e.stopPropagation()}
+            >
+              <div className="grid grid-cols-3 gap-1.5 md:gap-3 lg:gap-4">
+                <Card className="p-2 md:p-3 lg:p-4 bg-gradient-to-br from-[#FF5733] to-[#ff7a59] text-white">
+                  <div className="text-lg md:text-2xl lg:text-3xl font-bold">{selectedHistoryItem.certificateCount}</div>
+                  <div className="text-[9px] md:text-[10px] lg:text-sm opacity-90">Generated</div>
                 </Card>
-                <Card className="p-3 md:p-4 bg-gradient-to-br from-[#8FD6BD] to-[#a8e0cd] text-gray-900">
-                  <div className="text-2xl md:text-3xl font-bold">{selectedHistoryItem.successRate}%</div>
-                  <div className="text-[10px] md:text-sm opacity-80">Success Rate</div>
+                <Card className="p-2 md:p-3 lg:p-4 bg-gradient-to-br from-[#8FD6BD] to-[#a8e0cd] text-gray-900">
+                  <div className="text-lg md:text-2xl lg:text-3xl font-bold">{selectedHistoryItem.successRate}%</div>
+                  <div className="text-[9px] md:text-[10px] lg:text-sm opacity-80">Success Rate</div>
                 </Card>
-                <Card className="p-3 md:p-4 bg-gradient-to-br from-[#F4E04D] to-[#f7e878] text-gray-900">
-                  <div className="text-2xl md:text-3xl font-bold">{selectedHistoryItem.totalSize}</div>
-                  <div className="text-[10px] md:text-sm opacity-80">Total Size</div>
+                <Card className="p-2 md:p-3 lg:p-4 bg-gradient-to-br from-[#F4E04D] to-[#f7e878] text-gray-900">
+                  <div className="text-lg md:text-2xl lg:text-3xl font-bold">{selectedHistoryItem.totalSize}</div>
+                  <div className="text-[9px] md:text-[10px] lg:text-sm opacity-80">Total Size</div>
                 </Card>
               </div>
 
-              <div className="p-6 bg-gray-50 rounded-lg">
-                <h3 className="text-lg font-bold mb-4 text-gray-900">Generation Summary</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center pb-2 border-b border-gray-200">
-                    <span className="text-gray-600">Event Name</span>
-                    <span className="font-semibold text-gray-900">{selectedHistoryItem.eventName}</span>
+              <div className="p-3 md:p-4 lg:p-6 bg-gray-50 rounded-lg">
+                <h3 className="text-base md:text-lg font-bold mb-3 md:mb-4 text-gray-900">Generation Summary</h3>
+                <div className="space-y-2 md:space-y-3">
+                  <div className="flex justify-between items-center pb-2 border-b border-gray-200 gap-2">
+                    <span className="text-xs md:text-sm text-gray-600">Event Name</span>
+                    <span className="font-semibold text-xs md:text-sm text-gray-900 text-right truncate max-w-[60%]">{selectedHistoryItem.eventName}</span>
                   </div>
-                  <div className="flex justify-between items-center pb-2 border-b border-gray-200">
-                    <span className="text-gray-600">Organization</span>
-                    <span className="font-semibold text-gray-900">{selectedHistoryItem.clubName}</span>
+                  <div className="flex justify-between items-center pb-2 border-b border-gray-200 gap-2">
+                    <span className="text-xs md:text-sm text-gray-600">Organization</span>
+                    <span className="font-semibold text-xs md:text-sm text-gray-900 text-right truncate max-w-[60%]">{selectedHistoryItem.clubName}</span>
                   </div>
-                  <div className="flex justify-between items-center pb-2 border-b border-gray-200">
-                    <span className="text-gray-600">Date Generated</span>
-                    <span className="font-semibold text-gray-900">{selectedHistoryItem.date}</span>
+                  <div className="flex justify-between items-center pb-2 border-b border-gray-200 gap-2">
+                    <span className="text-xs md:text-sm text-gray-600">Date Generated</span>
+                    <span className="font-semibold text-xs md:text-sm text-gray-900 text-right">{selectedHistoryItem.date}</span>
                   </div>
-                  <div className="flex justify-between items-center pb-2 border-b border-gray-200">
-                    <span className="text-gray-600">Total Certificates</span>
-                    <span className="font-semibold text-gray-900">{selectedHistoryItem.certificateCount}</span>
+                  <div className="flex justify-between items-center pb-2 border-b border-gray-200 gap-2">
+                    <span className="text-xs md:text-sm text-gray-600">Total Certificates</span>
+                    <span className="font-semibold text-xs md:text-sm text-gray-900">{selectedHistoryItem.certificateCount}</span>
                   </div>
-                  <div className="flex justify-between items-center pb-2 border-b border-gray-200">
-                    <span className="text-gray-600">Success Rate</span>
-                    <span className="font-semibold text-green-600">{selectedHistoryItem.successRate}%</span>
+                  <div className="flex justify-between items-center pb-2 border-b border-gray-200 gap-2">
+                    <span className="text-xs md:text-sm text-gray-600">Success Rate</span>
+                    <span className="font-semibold text-xs md:text-sm text-green-600">{selectedHistoryItem.successRate}%</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Total Size</span>
-                    <span className="font-semibold text-gray-900">{selectedHistoryItem.totalSize}</span>
+                  <div className="flex justify-between items-center gap-2">
+                    <span className="text-xs md:text-sm text-gray-600">Total Size</span>
+                    <span className="font-semibold text-xs md:text-sm text-gray-900">{selectedHistoryItem.totalSize}</span>
                   </div>
                 </div>
-                <p className="mt-4 text-xs text-gray-500 italic">
+                <p className="mt-3 md:mt-4 text-[10px] md:text-xs text-gray-500 italic">
                   Note: Certificate files are downloaded as ZIP and not stored on server.
                 </p>
               </div>

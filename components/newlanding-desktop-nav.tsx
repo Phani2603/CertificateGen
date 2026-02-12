@@ -33,11 +33,10 @@ export default function NewLandingDesktopNav({ hideAuth = false }: NewLandingDes
             {/* DESKTOP CENTER LINKS */}
             <div className="hidden md:flex absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 items-center space-x-1 bg-white p-1.5 rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.05)] border border-gray-100 pointer-events-auto">
                 <Link
-                    href="https://senement.com"
-                    target="_blank"
+                    href="https://gocertiflo.com/newlanding/hero-section"
                     className="text-gray-600 hover:text-black px-5 py-2 rounded-full hover:bg-gray-50 transition-all duration-200 text-sm font-medium"
                 >
-                    Senement
+                    Home
                 </Link>
                 <Link
                     href="/"
