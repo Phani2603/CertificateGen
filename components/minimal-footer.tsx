@@ -10,11 +10,11 @@ export function MinimalFooter() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-4 text-[10px] sm:text-xs text-gray-600">
           {/* Email */}
           <a 
-            href="mailto:support@certificategen.com" 
+            href="mailto:support@gocertiflo.com" 
             className="flex items-center gap-1 hover:text-[#21808D] transition-colors"
           >
             <Mail className="w-3 h-3" />
-            <span>support@certificategen.com</span>
+            <span>support@gocertiflo.com</span>
           </a>
 
           {/* Divider */}

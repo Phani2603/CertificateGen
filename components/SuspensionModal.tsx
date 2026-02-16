@@ -237,8 +237,8 @@ export function SuspensionModal({ isOpen, reason, suspendedUntil, onClose }: Sus
                 <div className="border-t pt-3">
                     <p className="text-xs text-slate-500 text-center">
                         Need help? Contact{' '}
-                        <a href="mailto:support@example.com" className="text-blue-600 hover:underline">
-                            support@example.com
+                        <a href="mailto:support@gocertilo.com" className="text-blue-600 hover:underline">
+                            support@gocertilo.com
                         </a>
                     </p>
                 </div>

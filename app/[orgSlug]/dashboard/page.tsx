@@ -264,16 +264,16 @@ export default function CorporateDashboard({ params }: PageProps) {
                       onEditClick={() => setCurrentPage("settings")}
                     />
 
+                    {/* Permission Requests - Show First for Visibility (Owner Only) */}
+                    <PermissionRequestsSection
+                      organizationId={orgData._id}
+                      isOwner={String(orgData.ownerId) === String(userData?.id || userData?._id)}
+                    />
+
                     {/* Stats Overview */}
                     <OrgOverviewStats
                       organizationId={orgData._id}
                       memberCount={orgData.allowedUsers?.length || 0}
-                    />
-
-                    {/* Permission Requests (Owner Only) */}
-                    <PermissionRequestsSection
-                      organizationId={orgData._id}
-                      isOwner={String(orgData.ownerId) === String(userData?.id || userData?._id)}
                     />
                   </div>
                 )}

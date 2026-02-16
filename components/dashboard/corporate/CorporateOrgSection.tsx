@@ -3,6 +3,7 @@
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Building2, Users, Globe, Edit, ExternalLink } from "lucide-react"
+import { TbBuildingBank } from "react-icons/tb"
 import { useState } from "react"
 
 interface CorporateOrgSectionProps {
@@ -26,7 +27,7 @@ export function CorporateOrgSection({ organization, isOwner, onEditClick }: Corp
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold flex items-center gap-2">
-          <Building2 className="w-6 h-6 text-[#FF5733]" />
+          <TbBuildingBank className="w-6 h-6 text-[#FF5733]" />
           Organization Overview
         </h2>
         {isOwner && onEditClick && (
@@ -53,7 +54,7 @@ export function CorporateOrgSection({ organization, isOwner, onEditClick }: Corp
               />
             ) : (
               <div className="w-24 h-24 bg-gradient-to-br from-[#FF5733] to-[#21808D] rounded-lg flex items-center justify-center">
-                <Building2 className="w-12 h-12 text-white" />
+                <TbBuildingBank className="w-12 h-12 text-white" />
               </div>
             )}
             <p className="text-sm text-gray-600 mt-3 text-center">

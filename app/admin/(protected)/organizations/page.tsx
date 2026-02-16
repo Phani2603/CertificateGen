@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow
 } from "@/components/ui/table"
+import{TbBuildingBank} from "react-icons/tb"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -187,7 +188,7 @@ export default function OrganizationsPage() {
                             <Avatar className="h-9 w-9 rounded-lg">
                               <AvatarImage src={org.logoUrl} alt={org.name} />
                               <AvatarFallback className="rounded-lg">
-                                <Building2 className="h-4 w-4" />
+                                <TbBuildingBank className="h-4 w-4" />
                               </AvatarFallback>
                             </Avatar>
                             <div>

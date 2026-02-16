@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Calendar as CalendarIcon, Plus, Award, Trash2, X, ChevronRight, ChevronLeft, Info } from "lucide-react"
+import { Calendar as CalendarIcon, Plus, Award, Trash2, X, ChevronRight, ChevronLeft, Info, AlertCircle } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
@@ -106,6 +106,9 @@ export function CorporateEventsSection({
     const formData = new FormData(e.currentTarget)
     const name = formData.get('name') as string
     const description = formData.get('description') as string
+    
+    // Store form reference before async operations
+    const form = e.currentTarget
 
     console.log('[Events] Creating event:', { name, description, eventDate, organizationId })
 
@@ -139,7 +142,7 @@ export function CorporateEventsSection({
           toast.success(data.message || 'Permission request submitted! Waiting for owner approval.')
           setShowCreateModal(false)
           setEventDate(undefined)
-          e.currentTarget.reset()
+          form?.reset()
         } else {
           toast.error(data.error || 'Failed to request permission')
         }
@@ -164,7 +167,7 @@ export function CorporateEventsSection({
           setShowCreateModal(false)
           setEventDate(undefined)
           mutateEvents() // Revalidate cache
-          e.currentTarget.reset()
+          form?.reset()
         } else {
           toast.error(data.error || 'Failed to create event')
         }
@@ -308,7 +311,23 @@ export function CorporateEventsSection({
               </Button>
             </div>
 
-            {isLoading ? (
+            {isError ? (
+              <Card className="p-8 border-2 border-red-200 bg-red-50">
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <AlertCircle className="w-6 h-6 text-red-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-red-900 mb-2">Failed to load events</h3>
+                  <p className="text-red-600 mb-4">There was an error fetching your events. Please try again.</p>
+                  <Button 
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                    onClick={() => mutateEvents()}
+                  >
+                    Retry
+                  </Button>
+                </div>
+              </Card>
+            ) : isLoading ? (
               <Card className="p-8">
                 <div className="flex items-center justify-center">
                   <div className="text-center">

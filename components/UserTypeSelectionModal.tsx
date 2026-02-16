@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Building2, User, X } from "lucide-react"
+import { TbBuildingBank } from "react-icons/tb"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -84,7 +85,7 @@ export function UserTypeSelectionModal({ isOpen, onClose }: UserTypeSelectionMod
               "w-16 h-16 rounded-xl flex items-center justify-center transition-colors",
               selectedType === "corporate" ? "bg-[#FF5733]" : "bg-gray-100"
             )}>
-              <Building2 className={cn(
+              <TbBuildingBank className={cn(
                 "w-8 h-8",
                 selectedType === "corporate" ? "text-white" : "text-gray-600"
               )} />

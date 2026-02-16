@@ -40,14 +40,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Only owner can view requests' }, { status: 403 });
     }
 
+    console.log('[PermissionRequests API] Fetching requests:', { 
+      privateOrgId, 
+      status, 
+      ownerId: org.ownerId, 
+      userId: currentUser._id,
+      isOwner: String(org.ownerId) === String(currentUser._id)
+    });
+
     const requests = await PermissionRequest.find({
       privateOrgId,
       status,
     })
       .sort({ createdAt: -1 })
       .lean();
+      
+    console.log('[PermissionRequests API] Found requests:', requests.length);
 
-    return NextResponse.json({ requests });
+    return NextResponse.json({ success: true, requests });
   } catch (error) {
     console.error('Error fetching permission requests:', error);
     return NextResponse.json({ error: 'Failed to fetch requests' }, { status: 500 });

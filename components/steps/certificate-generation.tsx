@@ -72,7 +72,7 @@ export default function CertificateGeneration({
   const [emailsSent, setEmailsSent] = useState(0)
   const [emailErrors, setEmailErrors] = useState<Array<{ email: string; error: string }>>([])
   const [isSendingMail, setIsSendingMail] = useState(false)
-  const [emailProvider, setEmailProvider] = useState<"resend" | "gmail" | "senement">("resend")
+  const [emailProvider, setEmailProvider] = useState<"resend" | "gmail" | "senement">("senement")
   const [sendingMode, setSendingMode] = useState<"auto" | "sequential" | "pooled">("auto")
   const [showDevNav, setShowDevNav] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -346,36 +346,86 @@ export default function CertificateGeneration({
         }))
       )
       
-      const response = await fetch("/api/send-certificates", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          recipients: recipientsWithBase64, 
-          provider: emailProvider,
-          sendingMode: sendingMode === "auto" ? undefined : sendingMode,
-          // Pass credentials to server for Gmail
-          credentials: credentials ? {
-            email: credentials.email,
-            appPassword: credentials.appPassword
-          } : null
-        }),
-      })
+      // Send in batches to avoid 413 Payload Too Large errors
+      const BATCH_SIZE = 10 // Adjust based on certificate size
+      const batches = []
+      for (let i = 0; i < recipientsWithBase64.length; i += BATCH_SIZE) {
+        batches.push(recipientsWithBase64.slice(i, i + BATCH_SIZE))
+      }
+      
+      console.log(`[sendEmailsOnly] Sending ${recipientsWithBase64.length} emails in ${batches.length} batches`)
+      
+      let totalSent = 0
+      const allErrors: Array<{ email: string; error: string }> = []
+      
+      for (let i = 0; i < batches.length; i++) {
+        const batch = batches[i]
+        console.log(`[sendEmailsOnly] Processing batch ${i + 1}/${batches.length} (${batch.length} recipients)`)
+        
+        try {
+          const response = await fetch("/api/send-certificates", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+              recipients: batch, 
+              provider: emailProvider,
+              sendingMode: sendingMode === "auto" ? undefined : sendingMode,
+              // Pass credentials to server for Gmail
+              credentials: credentials ? {
+                email: credentials.email,
+                appPassword: credentials.appPassword
+              } : null
+            }),
+          })
 
-      const result = await response.json()
+          // Handle non-JSON responses (like 413 errors)
+          if (!response.ok) {
+            let errorMessage = `Server error: ${response.status} ${response.statusText}`
+            try {
+              const errorData = await response.json()
+              errorMessage = errorData.error || errorMessage
+            } catch {
+              // Response is not JSON (e.g., 413 returns HTML)
+              if (response.status === 413) {
+                errorMessage = "Payload too large. Try reducing batch size or certificate file sizes."
+              }
+            }
+            throw new Error(errorMessage)
+          }
 
-      console.log("[Client] Email API response:", result)
+          const result = await response.json()
+          console.log(`[Client] Batch ${i + 1} API response:`, result)
 
-      if (result.success) {
-        setEmailStatus("success")
-        setEmailsSent(result.sentCount)
-        if (result.errors.length > 0) {
-          setEmailErrors(result.errors)
-          console.error("[Client] Some emails failed:", result.errors)
+          if (result.success) {
+            totalSent += result.sentCount
+            if (result.errors && result.errors.length > 0) {
+              allErrors.push(...result.errors)
+            }
+          } else {
+            throw new Error(result.error || "Unknown error")
+          }
+        } catch (batchError) {
+          console.error(`[Client] Error in batch ${i + 1}:`, batchError)
+          // Mark all emails in this batch as failed
+          batch.forEach(recipient => {
+            allErrors.push({
+              email: recipient.email,
+              error: batchError instanceof Error ? batchError.message : "Failed to send"
+            })
+          })
         }
+        
+        // Update progress
+        setEmailsSent(totalSent)
+        setEmailErrors(allErrors)
+      }
+      
+      // Set final status
+      if (totalSent > 0) {
+        setEmailStatus("success")
+        console.log(`[Client] All batches complete: ${totalSent} sent, ${allErrors.length} failed`)
       } else {
         setEmailStatus("error")
-        setEmailErrors([{ email: "all", error: result.error || "Unknown error" }])
-        console.error("[Client] API error:", result)
       }
     } catch (error) {
       console.error("[Client] Error sending emails:", error)
@@ -1154,50 +1204,22 @@ Generated: ${new Date().toLocaleString()}
                       value={emailProvider}
                       onChange={(e) => setEmailProvider(e.target.value as "resend" | "gmail" | "senement")}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white"
+                      disabled
                     >
-                     {/* <option value="resend">Resend (Requires Domain)</option>
-                      <option value="gmail">Gmail/Educational SMTP</option>*/}
                       <option value="senement">Senement Corporate (forge@senement.com)</option>
                     </select>
                     <div className="mt-2 space-y-2">
-                      {emailProvider === "resend" ? (
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2 text-xs">
+                          <CheckCircle className="w-3 h-3 text-green-500" />
+                          <span className="text-green-700">
+                            Sends from: forge@senement.com (Senement)
+                          </span>
+                        </div>
                         <p className="text-xs text-gray-500">
-                          Use onboarding@resend.dev for testing (limited to verified email)
+                          Professional corporate email • GoDaddy SMTP • Automatic configuration
                         </p>
-                      ) : emailProvider === "senement" ? (
-                        <div className="space-y-1">
-                          <div className="flex items-center space-x-2 text-xs">
-                            <CheckCircle className="w-3 h-3 text-green-500" />
-                            <span className="text-green-700">
-                              Sends from: forge@senement.com (Senement)
-                            </span>
-                          </div>
-                          <p className="text-xs text-gray-500">
-                            Professional corporate email • GoDaddy SMTP • Automatic configuration
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="space-y-1">
-                          {isAuthenticated ? (
-                            <div className="flex items-center space-x-2 text-xs">
-                              <CheckCircle className="w-3 h-3 text-green-500" />
-                              <span className="text-green-700">
-                                Connected as: {authenticatedEmail}
-                              </span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center space-x-2 text-xs">
-                              <AlertCircle className="w-3 h-3 text-orange-500" />
-                              <span className="text-orange-700">
-                                Email credentials required (will prompt when sending)
-                              </span>
-                            </div>
-                          )}
-                          <p className="text-xs text-gray-500">
-                            Secure credential input • Session-only storage • AES-256 encrypted
-                          </p>
-                        </div>
-                      )}
+                      </div>
                     </div>
                   </div>
 
@@ -1396,7 +1418,7 @@ Generated: ${new Date().toLocaleString()}
               <div className="pt-2 border-t border-[#21808D]/20">
                 <p className="text-gray-600 text-xs">Email Provider</p>
                 <p className="text-sm font-semibold text-[#1a1a1a]">
-                  {emailProvider === "resend" ? "Resend" : "Gmail SMTP"}
+                  Senement Corporate
                 </p>
               </div>
               {generatedCertificates.length > 0 && (
