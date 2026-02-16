@@ -227,6 +227,14 @@ export function usePermissionRequests(organizationId: string | null) {
     organizationId ? `/api/permission-requests?privateOrgId=${organizationId}&status=pending` : null
   )
   
+  console.log('[usePermissionRequests]', {
+    organizationId,
+    data,
+    error,
+    isLoading,
+    requests: data?.success ? data.requests : []
+  })
+  
   return {
     requests: data?.success ? data.requests : [],
     isLoading,

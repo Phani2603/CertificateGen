@@ -4,9 +4,16 @@ import { useState } from "react"
 import { usePermissionRequests } from "@/hooks/useDashboardCache"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { CheckCircle, XCircle, Clock, User, Calendar, Trash2, Plus } from "lucide-react"
+import { CheckCircle, XCircle, Clock, User, Calendar, Info } from "lucide-react"
 import { toast } from "sonner"
 import Image from "next/image"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 interface PermissionRequest {
   _id: string
@@ -30,6 +37,16 @@ interface PermissionRequestsSectionProps {
 export function PermissionRequestsSection({ organizationId, isOwner }: PermissionRequestsSectionProps) {
   const { requests, isLoading, mutate: mutateRequests } = usePermissionRequests(isOwner ? organizationId : null)
   const [processingId, setProcessingId] = useState<string | null>(null)
+  const [selectedRequest, setSelectedRequest] = useState<PermissionRequest | null>(null)
+  
+  // Debug logging
+  console.log('[PermissionRequestsSection]', {
+    organizationId,
+    isOwner,
+    requestsCount: requests?.length || 0,
+    isLoading,
+    requests
+  })
 
   const handleApprove = async (requestId: string, request: PermissionRequest) => {
     setProcessingId(requestId)
@@ -153,118 +170,195 @@ export function PermissionRequestsSection({ organizationId, isOwner }: Permissio
   }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2 flex-wrap">
-          <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500" />
-          <span>Permission Requests</span>
-          {requests.length > 0 && (
-            <span className="bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-              {requests.length}
-            </span>
-          )}
-        </h2>
-        <p className="text-gray-600 text-xs sm:text-sm mt-1">
-          Review and approve member requests
-        </p>
-      </div>
-
+    <>
       <div className="space-y-3">
-        {requests.map((request: PermissionRequest) => (
-          <Card key={request._id} className="p-4 sm:p-5 border-2 border-orange-100 bg-orange-50/30">
-            <div className="flex flex-col sm:flex-row items-start gap-4">
-              <div className="flex items-start gap-3 sm:gap-4 flex-1 w-full">
-                {/* Icon */}
-                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0 ${
-                  request.requestType === 'create_event' 
-                    ? 'bg-green-100' 
-                    : 'bg-red-100'
-                }`}>
-                  {request.requestType === 'create_event' ? (
-                    <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
-                  ) : (
-                    <Trash2 className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" />
-                  )}
+        <div>
+          <h2 className="text-xl font-bold flex items-center gap-2 flex-wrap">
+            <Clock className="w-5 h-5 text-orange-500" />
+            <span>Permission Requests</span>
+            {requests.length > 0 && (
+              <span className="bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                {requests.length}
+              </span>
+            )}
+          </h2>
+          <p className="text-gray-600 text-xs mt-1">
+            Review and approve member requests
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          {requests.map((request: PermissionRequest) => (
+            <div key={request._id} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+              <div className="flex items-start gap-3">
+                {/* Left: Content */}
+                <div className="flex items-start gap-2 flex-1 min-w-0">
+                  <button
+                    onClick={() => setSelectedRequest(request)}
+                    className="shrink-0 mt-0.5 hover:bg-gray-200 rounded p-0.5 transition-colors"
+                    title="View details"
+                  >
+                    <Info className="w-4 h-4 text-gray-400" />
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                        request.requestType === 'create_event'
+                          ? 'bg-green-600 text-white'
+                          : 'bg-red-600 text-white'
+                      }`}>
+                        {request.requestType === 'create_event' ? 'CREATE' : 'DELETE'}
+                      </span>
+                      <h3 className="font-semibold text-sm text-gray-900 truncate">
+                        {request.eventData?.eventName || 'Unnamed Event'}
+                      </h3>
+                    </div>
+                    
+                    <div className="flex flex-wrap items-center gap-2 text-[10px] text-gray-500">
+                      <div className="flex items-center gap-1">
+                        <User className="w-3 h-3" />
+                        <span className="truncate max-w-[100px]">{request.requestedBy}</span>
+                      </div>
+                      {request.eventData?.eventDate && (
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          <span>
+                            {new Date(request.eventData.eventDate).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric'
+                            })}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                      request.requestType === 'create_event'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-red-100 text-red-700'
-                    }`}>
-                      {request.requestType === 'create_event' ? 'CREATE EVENT' : 'DELETE EVENT'}
-                    </span>
-                  </div>
-                  
-                  <h3 className="font-semibold text-base mb-1">
-                    {request.eventData?.eventName || 'Unnamed Event'}
-                  </h3>
-                  
-                  {request.eventData?.eventDescription && (
-                    <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                      {request.eventData.eventDescription}
-                    </p>
-                  )}
-                  
-                  <div className="flex items-center gap-4 text-xs text-gray-500">
-                    <div className="flex items-center gap-1">
-                      <User className="w-3 h-3" />
-                      <span>{request.requestedBy}</span>
-                    </div>
-                    {request.eventData?.eventDate && (
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        <span>
-                          {new Date(request.eventData.eventDate).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
-                          })}
-                        </span>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      <span>
-                        {new Date(request.createdAt).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric'
-                        })}
-                      </span>
-                    </div>
-                  </div>
+                {/* Right: Buttons (vertical) */}
+                <div className="flex flex-col gap-2 shrink-0">
+                  <Button
+                    size="sm"
+                    className="bg-green-600 hover:bg-green-700 text-white h-7 text-xs px-3"
+                    onClick={() => handleApprove(request._id, request)}
+                    disabled={processingId === request._id}
+                  >
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    Approve
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-gray-300 text-gray-700 hover:bg-gray-100 h-7 text-xs px-3"
+                    onClick={() => handleDeny(request._id)}
+                    disabled={processingId === request._id}
+                  >
+                    <XCircle className="w-3 h-3 mr-1" />
+                    Deny
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Details Dialog */}
+      <Dialog open={!!selectedRequest} onOpenChange={() => setSelectedRequest(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Request Details</DialogTitle>
+            <DialogDescription>
+              Full information about this permission request
+            </DialogDescription>
+          </DialogHeader>
+          {selectedRequest && (
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-semibold text-gray-700">Request Type</label>
+                <div className="mt-1">
+                  <span className={`text-xs font-semibold px-2 py-1 rounded ${
+                    selectedRequest.requestType === 'create_event'
+                      ? 'bg-green-600 text-white'
+                      : 'bg-red-600 text-white'
+                  }`}>
+                    {selectedRequest.requestType === 'create_event' ? 'CREATE EVENT' : 'DELETE EVENT'}
+                  </span>
                 </div>
               </div>
 
-              {/* Actions */}
-              <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+              <div>
+                <label className="text-sm font-semibold text-gray-700">Event Name</label>
+                <p className="text-sm text-gray-900 mt-1">{selectedRequest.eventData?.eventName || 'Unnamed Event'}</p>
+              </div>
+
+              {selectedRequest.eventData?.eventDescription && (
+                <div>
+                  <label className="text-sm font-semibold text-gray-700">Description</label>
+                  <p className="text-sm text-gray-600 mt-1">{selectedRequest.eventData.eventDescription}</p>
+                </div>
+              )}
+
+              <div>
+                <label className="text-sm font-semibold text-gray-700">Requested By</label>
+                <p className="text-sm text-gray-900 mt-1">{selectedRequest.requestedBy}</p>
+              </div>
+
+              {selectedRequest.eventData?.eventDate && (
+                <div>
+                  <label className="text-sm font-semibold text-gray-700">Event Date</label>
+                  <p className="text-sm text-gray-900 mt-1">
+                    {new Date(selectedRequest.eventData.eventDate).toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </p>
+                </div>
+              )}
+
+              <div>
+                <label className="text-sm font-semibold text-gray-700">Requested On</label>
+                <p className="text-sm text-gray-900 mt-1">
+                  {new Date(selectedRequest.createdAt).toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
+              </div>
+
+              <div className="flex gap-2 pt-4 border-t">
                 <Button
-                  size="sm"
-                  className="bg-green-600 hover:bg-green-700 text-white flex-1 sm:flex-initial"
-                  onClick={() => handleApprove(request._id, request)}
-                  disabled={processingId === request._id}
+                  className="bg-green-600 hover:bg-green-700 text-white flex-1"
+                  onClick={() => {
+                    handleApprove(selectedRequest._id, selectedRequest)
+                    setSelectedRequest(null)
+                  }}
+                  disabled={processingId === selectedRequest._id}
                 >
-                  <CheckCircle className="w-4 h-4 sm:mr-1" />
-                  <span className="hidden sm:inline">Approve</span>
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Approve
                 </Button>
                 <Button
-                  size="sm"
                   variant="outline"
-                  className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 flex-1 sm:flex-initial"
-                  onClick={() => handleDeny(request._id)}
-                  disabled={processingId === request._id}
+                  className="border-gray-300 text-gray-700 hover:bg-gray-100 flex-1"
+                  onClick={() => {
+                    handleDeny(selectedRequest._id)
+                    setSelectedRequest(null)
+                  }}
+                  disabled={processingId === selectedRequest._id}
                 >
-                  <XCircle className="w-4 h-4 sm:mr-1" />
-                  <span className="hidden sm:inline">Deny</span>
+                  <XCircle className="w-4 h-4 mr-2" />
+                  Deny
                 </Button>
               </div>
             </div>
-          </Card>
-        ))}
-      </div>
-    </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

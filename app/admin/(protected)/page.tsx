@@ -50,6 +50,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { TbBuildingBank } from "react-icons/tb"
 
 // Define colors
 const PRIMARY_COLOR = '#00D492'
@@ -142,7 +143,7 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="h-8 w-8 rounded-full bg-purple-50 flex items-center justify-center">
-              <Building2 className="w-4 h-4 text-purple-600" />
+              <TbBuildingBank className="w-4 h-4 text-purple-600" />
             </div>
           </CardContent>
         </Card>

@@ -27,7 +27,7 @@ import {
   Send,
   Mail
 } from "lucide-react"
-
+import { TbBuildingBank } from "react-icons/tb"
 interface CertificateData {
   id: string
   recipientName: string
@@ -869,7 +869,7 @@ export default function VerificationPage() {
                         <div className="space-y-1">
                           <p className="text-[11px] font-medium text-slate-500 uppercase tracking-[0.16em]">Organization</p>
                           <p className="text-slate-800 text-xs md:text-sm flex items-center gap-2">
-                            <Building2 className="h-3.5 w-3.5 text-slate-400" />
+                            <TbBuildingBank className="h-3.5 w-3.5 text-slate-400" />
                             {certificate.organizationName}
                           </p>
                         </div>

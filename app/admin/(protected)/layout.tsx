@@ -20,6 +20,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from "lucide-react"
+import { TbBuildingBank } from "react-icons/tb";
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { getGoogleFontsUrl } from "@/lib/fonts"
@@ -77,7 +78,7 @@ export default function AdminLayout({
     {
       title: "Organizations",
       href: "/admin/organizations",
-      icon: Building2,
+      icon: TbBuildingBank,
     },
     {
       title: "Access Requests",

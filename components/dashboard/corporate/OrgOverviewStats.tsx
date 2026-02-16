@@ -2,7 +2,9 @@
 
 import { useOrgStats } from "@/hooks/useDashboardCache"
 import { Card } from "@/components/ui/card"
-import { Users, Award, Calendar, TrendingUp } from "lucide-react"
+import { TbCertificate, TbCalendarMonth, TbBuildingBank } from "react-icons/tb"
+import { MdOutlineEvent } from "react-icons/md"
+import { HiOutlineUsers } from "react-icons/hi"
 
 interface OrgOverviewStatsProps {
   organizationId: string
@@ -35,33 +37,25 @@ export function OrgOverviewStats({ organizationId, memberCount }: OrgOverviewSta
     {
       title: "Total Members",
       value: stats.totalMembers,
-      icon: Users,
-      color: "from-blue-500 to-blue-600",
-      bgColor: "bg-blue-50",
+      icon: HiOutlineUsers,
       textColor: "text-blue-600"
     },
     {
       title: "Total Events",
       value: stats.totalEvents,
-      icon: Calendar,
-      color: "from-[#21808D] to-[#2a9faf]",
-      bgColor: "bg-[#21808D]/10",
+      icon: MdOutlineEvent,
       textColor: "text-[#21808D]"
     },
     {
       title: "Total Certificates",
       value: stats.totalCertificates,
-      icon: Award,
-      color: "from-purple-500 to-purple-600",
-      bgColor: "bg-purple-50",
+      icon: TbCertificate,
       textColor: "text-purple-600"
     },
     {
       title: "This Month",
       value: stats.thisMonthCertificates,
-      icon: TrendingUp,
-      color: "from-green-500 to-green-600",
-      bgColor: "bg-green-50",
+      icon: TbCalendarMonth,
       textColor: "text-green-600"
     }
   ]
@@ -90,8 +84,8 @@ export function OrgOverviewStats({ organizationId, memberCount }: OrgOverviewSta
                 <p className="text-xs sm:text-sm text-gray-600 mb-1">{stat.title}</p>
                 <p className="text-2xl sm:text-3xl font-bold text-gray-900">{stat.value}</p>
               </div>
-              <div className={`w-10 h-10 sm:w-12 sm:h-12 ${stat.bgColor} rounded-xl flex items-center justify-center shrink-0`}>
-                <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${stat.textColor}`} />
+              <div>
+                <Icon className={`w-8 h-8 sm:w-10 sm:h-10 ${stat.textColor}`} />
               </div>
             </div>
           </Card>

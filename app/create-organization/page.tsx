@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card } from "@/components/ui/card"
 import { Building2, ArrowLeft, Mail, Phone, AlertTriangle } from "lucide-react"
 import Link from "next/link"
+import { TbBuildingBank } from "react-icons/tb"
 import Image from "next/image"
 import { useIslandAlerts } from "@/components/ui/island-alerts"
 
@@ -153,7 +154,7 @@ export default function CreateOrganizationPage() {
         <Card className="bg-white p-8 md:p-12 shadow-xl">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-16 h-16 bg-[#FF5733] rounded-xl flex items-center justify-center">
-              <Building2 className="w-8 h-8 text-white" />
+              <TbBuildingBank className="w-8 h-8 text-white" />
             </div>
             <div>
               <h1 className="text-3xl font-bold">Create Your Organization</h1>

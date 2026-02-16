@@ -51,6 +51,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog"
 import { CertificatePreview } from "@/components/CertificatePreview"
+import { TbBuildingBank } from "react-icons/tb"
 
 interface UserDetails {
     _id: string
@@ -329,7 +330,7 @@ export default function UserDetailsPage() {
             change: "+2",
             changeType: "positive",
             period: "Last month",
-            icon: Building2,
+            icon: TbBuildingBank,
         },
         {
             title: "Activity Score",
