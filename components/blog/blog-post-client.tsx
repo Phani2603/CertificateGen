@@ -105,16 +105,16 @@ export default function BlogPostClient({ content, frontmatter, id }: BlogPostCli
                             <div className="flex items-center justify-center gap-4">
                                 <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-200">
                                     <Image
-                                        src="/senthil.svg"
-                                        alt="U Senthil Kumar"
+                                        src="/members.svg"
+                                        alt="U Varun Kumar"
                                         width={48}
                                         height={48}
                                         className="w-full h-full object-cover"
                                     />
                                 </div>
                                 <div className="text-left">
-                                    <p className="font-poppins font-medium text-gray-900">U Senthil Kumar</p>
-                                    <p className="font-rx100 text-sm text-gray-600">Product manager at senement</p>
+                                    <p className="font-poppins font-medium text-gray-900">U Varun Kumar</p>
+                                    <p className="font-rx100 text-sm text-gray-600">Product manager at gocertiflo</p>
                                 </div>
                             </div>
                         </AnimatedContent>

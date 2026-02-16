@@ -9,9 +9,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowLeft, Building2, User } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 import Image from "next/image"
-import { cn } from "@/lib/utils"
+import { Poppins, Raleway } from "next/font/google"
+
+const poppins = Poppins({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"] })
+const raleway = Raleway({ subsets: ["latin"], weight: ["400", "600", "700"] })
 
 function SignupContent() {
   const router = useRouter()
@@ -32,7 +35,7 @@ function SignupContent() {
     name: "",
     email: "",
     password: "",
-    userType: "" as "corporate" | "individual" | "",
+    userType: "individual" as "individual", // Default to individual only
   })
   const [agreedToTerms, setAgreedToTerms] = useState(false)
 
@@ -78,46 +81,54 @@ function SignupContent() {
     }
   }
   return (
-    <div className="min-h-screen bg-[#f6f6f6] flex items-center justify-center p-6">
-      <div className="w-full max-w-6xl grid md:grid-cols-2 gap-12 items-center">
+      <div className={`min-h-screen bg-gray-50 flex items-center justify-center p-2 md:p-3 ${poppins.className}`}>
+        {/* Mobile Back Button */}
+        <div className="md:hidden fixed top-2 left-2 z-10">
+          <Link href="/newlanding/hero-section" className="inline-flex items-center gap-1 text-gray-600 hover:text-emerald-600 transition bg-white px-2 py-1 rounded-lg shadow-sm text-xs">
+            <ArrowLeft className="h-3 w-3" />
+            <span className="font-medium">Back</span>
+          </Link>
+        </div>
+
+        <div className="w-full max-w-4xl grid md:grid-cols-2 gap-4 md:gap-6 items-center">
         {/* Left Side - Branding */}
         <div className="hidden md:block">
-          <Link href="/landing" className="inline-flex items-center gap-2 mb-8 text-gray-600 hover:text-[#21808D] transition">
-            <ArrowLeft className="h-4 w-4" />
+          <Link href="/newlanding/hero-section" className="inline-flex items-center gap-1.5 text-gray-600 hover:text-emerald-600 transition text-xs">
+            <ArrowLeft className="h-3 w-3" />
             Back to home
           </Link>
-          <h1 className="text-6xl font-black mb-6 leading-tight">
-            START YOUR
+          <h1 className={`text-3xl lg:text-4xl font-black mb-3 leading-tight ${raleway.className}`}>
+            Start Your
             <br />
-            <span className="text-[#21808D]">JOURNEY</span>
+            <span className="text-emerald-600">Journey</span>
           </h1>
-          <p className="text-xl text-gray-600 mb-8">
-            Join organizations worldwide and start creating verified certificates in minutes.
+          <p className="text-sm lg:text-base text-gray-600 mb-4">
+            Join organizations worldwide and start creating verified certificates.
           </p>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-[#FF5733] text-white p-6 rounded-2xl">
-              <div className="text-3xl font-black mb-1">1000+</div>
-              <div className="text-sm">Certificates</div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-emerald-500 text-white p-3 rounded-xl shadow-md">
+              <div className="text-xl font-black mb-0.5">1000+</div>
+              <div className="text-[10px] opacity-90">Certificates</div>
             </div>
-            <div className="bg-[#8FD6BD] text-black p-6 rounded-2xl">
-              <div className="text-3xl font-black mb-1">200+</div>
-              <div className="text-sm">Organizations</div>
+            <div className="bg-emerald-600 text-white p-3 rounded-xl shadow-md">
+              <div className="text-xl font-black mb-0.5">200+</div>
+              <div className="text-[10px] opacity-90">Organizations</div>
             </div>
           </div>
         </div>
 
         {/* Right Side - Signup Form */}
-        <Card className="bg-white p-8 md:p-12 shadow-xl">
-          <div className="flex items-center gap-2 mb-8">
-            <Image src="/cflo1.svg" alt="CertificateHash Logo" width={52} height={52} />
+        <Card className="bg-white p-4 md:p-6 lg:p-7 shadow-md rounded-xl border border-gray-100">
+          <div className="flex items-center gap-1.5 mb-4">
+            <Image src="/cflo1.svg" alt="Certiflo Logo" width={32} height={32} />
           </div>
 
-          <h2 className="text-3xl font-bold mb-2">Create account</h2>
-          <p className="text-gray-600 mb-8">
+          <h2 className={`text-lg md:text-xl font-bold mb-1 ${raleway.className}`}>Create account</h2>
+          <p className="text-gray-600 mb-4 text-xs">
             Already have an account?{" "}
-            <Link href="/login" className="text-[#21808D] hover:underline font-medium">
+            <Link href="/login" className="text-emerald-600 hover:underline font-semibold">
               Sign in
             </Link>
           </p>
@@ -125,7 +136,7 @@ function SignupContent() {
           {/* OAuth Buttons */}
           <Button
             variant="outline"
-            className="w-full mb-4 border-gray-300 hover:bg-gray-50 h-12"
+            className="w-full mb-2 border-gray-200 hover:bg-gray-50 h-9 text-xs rounded-lg transition-all"
             onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
             type="button"
           >
@@ -152,7 +163,7 @@ function SignupContent() {
 
           <Button
             variant="outline"
-            className="w-full mb-6 border-gray-300 hover:bg-gray-50 h-12"
+            className="w-full mb-3 border-gray-200 hover:bg-gray-50 h-9 text-xs rounded-lg transition-all"
             onClick={() => signIn('github', { callbackUrl: '/dashboard' })}
             type="button"
           >
@@ -162,76 +173,23 @@ function SignupContent() {
             Continue with GitHub
           </Button>
 
-          <div className="relative mb-6">
+          <div className="relative mb-3">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
+              <div className="w-full border-t border-gray-200"></div>
             </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-gray-500">Or continue with email</span>
+            <div className="relative flex justify-center text-[10px]">
+              <span className="px-2 bg-white text-gray-500 font-medium">Or continue with email</span>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* User Type Selection */}
+          <form onSubmit={handleSubmit} className="space-y-2.5">
             <div>
-              <Label>I want to use GetCertificates as</Label>
-              <div className="grid grid-cols-2 gap-3 mt-2">
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, userType: "corporate" }))}
-                  className={cn(
-                    "flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all hover:border-[#21808D]",
-                    formData.userType === "corporate"
-                      ? "border-[#21808D] bg-[#21808D]/5"
-                      : "border-gray-200 bg-white"
-                  )}
-                >
-                  <div className={cn(
-                    "w-10 h-10 rounded-lg flex items-center justify-center",
-                    formData.userType === "corporate" ? "bg-[#FF5733]" : "bg-gray-100"
-                  )}>
-                    <Building2 className={cn(
-                      "w-5 h-5",
-                      formData.userType === "corporate" ? "text-white" : "text-gray-600"
-                    )} />
-                  </div>
-                  <span className="text-sm font-medium text-center">Corporate/Business</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, userType: "individual" }))}
-                  className={cn(
-                    "flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all hover:border-[#21808D]",
-                    formData.userType === "individual"
-                      ? "border-[#21808D] bg-[#21808D]/5"
-                      : "border-gray-200 bg-white"
-                  )}
-                >
-                  <div className={cn(
-                    "w-10 h-10 rounded-lg flex items-center justify-center",
-                    formData.userType === "individual" ? "bg-[#8FD6BD]" : "bg-gray-100"
-                  )}>
-                    <User className={cn(
-                      "w-5 h-5",
-                      formData.userType === "individual" ? "text-black" : "text-gray-600"
-                    )} />
-                  </div>
-                  <span className="text-sm font-medium text-center">Individual</span>
-                </button>
-              </div>
-              {!formData.userType && (
-                <p className="text-xs text-gray-500 mt-1">Please select how you plan to use the platform</p>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="name">Full name</Label>
+              <Label htmlFor="name" className="text-xs font-semibold">Full name</Label>
               <Input
                 id="name"
                 type="text"
                 placeholder="John Doe"
-                className="h-12"
+                className="h-9 mt-1 rounded-lg border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 text-xs"
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 required
@@ -239,33 +197,33 @@ function SignupContent() {
             </div>
 
             <div>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-xs font-semibold">Email</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="you@example.com"
-                className="h-12"
+                className="h-9 mt-1 rounded-lg border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 text-xs"
                 value={formData.email}
                 onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                 required
               />
-              <p className="text-sm text-gray-500 mt-1">
-                Use your organization email
-              </p>
             </div>
 
             <div>
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-xs font-semibold">Password</Label>
               <Input
                 id="password"
                 type="password"
                 placeholder="At least 8 characters"
-                className="h-12"
+                className="h-9 mt-1 rounded-lg border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 text-xs"
                 value={formData.password}
                 onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                 required
                 minLength={8}
               />
+              <p className="text-[10px] text-gray-500 mt-0.5">
+                Must be at least 8 characters long
+              </p>
             </div>
 
             {error && (
@@ -275,32 +233,32 @@ function SignupContent() {
             )}
 
             {/* Terms & Policies Acceptance */}
-            <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="flex items-start gap-2 p-2.5 bg-gray-50 rounded-lg border border-gray-100">
               <Checkbox
                 id="terms"
                 checked={agreedToTerms}
                 onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
-                className="mt-1"
+                className="mt-0.5"
               />
               <div className="flex-1">
-                <Label htmlFor="terms" className="text-sm font-medium cursor-pointer">
+                <Label htmlFor="terms" className="text-[10px] font-medium cursor-pointer leading-relaxed">
                   I agree to the Terms & Policies
                 </Label>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-[9px] text-gray-600 mt-0.5 leading-relaxed">
                   By signing up, you agree to our{" "}
-                  <Link href="/TERMS&CONDTIONS.docx" target="_blank" className="text-[#21808D] hover:underline font-medium">
+                  <Link href="/TERMS&CONDTIONS.docx" target="_blank" className="text-emerald-600 hover:underline font-medium">
                     Terms & Conditions
                   </Link>
                   {", "}
-                  <Link href="/PRIVACY POLICY.docx" target="_blank" className="text-[#21808D] hover:underline font-medium">
+                  <Link href="/PRIVACY POLICY.docx" target="_blank" className="text-emerald-600 hover:underline font-medium">
                     Privacy Policy
                   </Link>
                   {", "}
-                  <Link href="/USER AGREEMENT.docx" target="_blank" className="text-[#21808D] hover:underline font-medium">
+                  <Link href="/USER AGREEMENT.docx" target="_blank" className="text-emerald-600 hover:underline font-medium">
                     User Agreement
                   </Link>
                   {" and "}
-                  <Link href="/USER POLICIES.docx" target="_blank" className="text-[#21808D] hover:underline font-medium">
+                  <Link href="/USER POLICIES.docx" target="_blank" className="text-emerald-600 hover:underline font-medium">
                     User Policies
                   </Link>
                   .
@@ -310,16 +268,16 @@ function SignupContent() {
 
             <Button
               type="submit"
-              className="w-full h-12 bg-[#21808D] hover:bg-[#1a6370] text-white font-semibold"
-              disabled={isLoading || !formData.userType || !agreedToTerms}
+              className="w-full h-9 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-lg transition-all active:scale-[0.98] text-xs"
+              disabled={isLoading || !agreedToTerms}
             >
               {isLoading ? 'Creating account...' : 'Create account'}
             </Button>
           </form>
 
-          <p className="text-center text-sm text-gray-500 mt-6">
+          <p className="text-center text-[10px] text-gray-500 mt-3">
             Already have an account?{" "}
-            <Link href="/login" className="text-[#21808D] hover:underline font-medium">
+            <Link href="/login" className="text-emerald-600 hover:underline font-semibold">
               Sign in
             </Link>
           </p>
@@ -332,10 +290,10 @@ function SignupContent() {
 export default function SignupPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#f6f6f6] flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#21808D] mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-500 mx-auto"></div>
+          <p className="mt-3 text-gray-600 text-sm">Loading...</p>
         </div>
       </div>
     }>

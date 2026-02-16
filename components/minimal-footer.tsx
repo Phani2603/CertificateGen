@@ -22,7 +22,7 @@ export function MinimalFooter() {
 
           {/* All Rights Reserved */}
           <span className="text-gray-500">
-            © {new Date().getFullYear()} CertificateGen. All rights reserved.
+            © {new Date().getFullYear()} gocertiflo. All rights reserved.
           </span>
 
           {/* Divider */}

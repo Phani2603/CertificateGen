@@ -11,6 +11,10 @@ import { Card } from "@/components/ui/card"
 import { ArrowLeft } from "lucide-react"
 import Image from "next/image"
 import { UserTypeSelectionModal } from "@/components/UserTypeSelectionModal"
+import { Poppins, Raleway } from "next/font/google"
+
+const poppins = Poppins({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"] })
+const raleway = Raleway({ subsets: ["latin"], weight: ["400", "600", "700"] })
 
 function LoginContent() {
   const router = useRouter()
@@ -134,54 +138,62 @@ function LoginContent() {
         onClose={() => setShowTypeSelection(false)}
       />
 
-      <div className="min-h-screen bg-[#f6f6f6] flex items-center justify-center p-6">
-        <div className="w-full max-w-6xl grid md:grid-cols-2 gap-12 items-center">
+      <div className={`min-h-screen bg-gray-50 flex items-center justify-center p-2 md:p-3 ${poppins.className}`}>
+        {/* Mobile Back Button */}
+        <div className="md:hidden fixed top-2 left-2 z-10">
+          <Link href="/newlanding/hero-section" className="inline-flex items-center gap-1 text-gray-600 hover:text-emerald-600 transition bg-white px-2 py-1 rounded-lg shadow-sm text-xs">
+            <ArrowLeft className="h-3 w-3" />
+            <span className="font-medium">Back</span>
+          </Link>
+        </div>
+
+        <div className="w-full max-w-4xl grid md:grid-cols-2 gap-4 md:gap-6 items-center">
           {/* Left Side - Branding */}
           <div className="hidden md:block">
-            <Link href="/landing" className="inline-flex items-center gap-2 mb-8 text-gray-600 hover:text-[#21808D] transition">
-              <ArrowLeft className="h-4 w-4" />
+            <Link href="/newlanding/hero-section" className="inline-flex items-center gap-1.5 mb-4 text-gray-600 hover:text-emerald-600 transition text-xs">
+              <ArrowLeft className="h-3 w-3" />
               Back to home
             </Link>
-            <h1 className="text-6xl font-black mb-6 leading-tight">
-              WELCOME
+            <h1 className={`text-3xl lg:text-4xl font-black mb-3 leading-tight ${raleway.className}`}>
+              Welcome
               <br />
-              <span className="text-[#21808D]">BACK</span>
+              <span className="text-emerald-600">Back</span>
             </h1>
-            <p className="text-xl text-gray-600 mb-8">
-              Sign in to continue generating professional certificates for your organization.
+            <p className="text-sm lg:text-base text-gray-600 mb-4">
+              Sign in to continue creating professional certificates.
             </p>
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-[#21808D] rounded-full flex items-center justify-center text-white font-bold">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 bg-emerald-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
                   ✓
                 </div>
-                <p className="text-gray-700">Bulk certificate generation</p>
+                <p className="text-xs text-gray-700">Bulk certificate generation</p>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-[#21808D] rounded-full flex items-center justify-center text-white font-bold">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 bg-emerald-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
                   ✓
                 </div>
-                <p className="text-gray-700">Unique verification links</p>
+                <p className="text-xs text-gray-700">Unique verification links</p>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-[#21808D] rounded-full flex items-center justify-center text-white font-bold">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 bg-emerald-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
                   ✓
                 </div>
-                <p className="text-gray-700">Team collaboration</p>
+                <p className="text-xs text-gray-700">Team collaboration</p>
               </div>
             </div>
           </div>
 
           {/* Right Side - Login Form */}
-          <Card className="bg-white p-8 md:p-12 shadow-xl">
-            <div className="flex items-center gap-2 mb-8">
-              <Image src="/cflo1.svg" alt="CertificateHash Logo" width={52} height={52} />
+          <Card className="bg-white p-4 md:p-6 lg:p-7 shadow-md rounded-xl border border-gray-100">
+            <div className="flex items-center gap-1.5 mb-4">
+              <Image src="/cflo1.svg" alt="Certiflo Logo" width={32} height={32} />
             </div>
 
-            <h2 className="text-3xl font-bold mb-2">Sign in</h2>
-            <p className="text-gray-600 mb-8">
+            <h2 className={`text-lg md:text-xl font-bold mb-1 ${raleway.className}`}>Sign in</h2>
+            <p className="text-gray-600 mb-4 text-xs">
               Don't have an account?{" "}
-              <Link href="/signup" className="text-[#21808D] hover:underline font-medium">
+              <Link href="/signup" className="text-emerald-600 hover:underline font-semibold">
                 Sign up
               </Link>
             </p>
@@ -189,7 +201,7 @@ function LoginContent() {
             {/* OAuth Buttons */}
             <Button
               variant="outline"
-              className="w-full mb-4 border-gray-300 hover:bg-gray-50 h-12"
+              className="w-full mb-2 border-gray-200 hover:bg-gray-50 h-9 text-xs rounded-lg transition-all"
               onClick={() => {
                 const cb = `/login${inviteToken ? `?invite=${inviteToken}` : ''}`
                 signIn('google', { callbackUrl: cb })
@@ -219,7 +231,7 @@ function LoginContent() {
 
             <Button
               variant="outline"
-              className="w-full mb-6 border-gray-300 hover:bg-gray-50 h-12"
+              className="w-full mb-3 border-gray-200 hover:bg-gray-50 h-9 text-xs rounded-lg transition-all"
               onClick={() => {
                 const cb = `/login${inviteToken ? `?invite=${inviteToken}` : ''}`
                 signIn('github', { callbackUrl: cb })
@@ -232,23 +244,23 @@ function LoginContent() {
               Continue with GitHub
             </Button>
 
-            <div className="relative mb-6">
+            <div className="relative mb-3">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
+                <div className="w-full border-t border-gray-200"></div>
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white text-gray-500">Or continue with email</span>
+              <div className="relative flex justify-center text-[10px]">
+                <span className="px-2 bg-white text-gray-500 font-medium">Or continue with email</span>
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-2.5">
               <div>
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-xs font-semibold">Email</Label>
                 <Input
                   id="email"
                   type="email"
                   placeholder="you@example.com"
-                  className="h-12"
+                  className="h-9 mt-1 rounded-lg border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 text-xs"
                   value={formData.email}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                   required
@@ -256,9 +268,9 @@ function LoginContent() {
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Link href="#" className="text-sm text-[#21808D] hover:underline">
+                <div className="flex items-center justify-between mb-1">
+                  <Label htmlFor="password" className="text-xs font-semibold">Password</Label>
+                  <Link href="#" className="text-[10px] text-gray-600 hover:text-emerald-600 hover:underline">
                     Forgot?
                   </Link>
                 </div>
@@ -266,7 +278,7 @@ function LoginContent() {
                   id="password"
                   type="password"
                   placeholder="Enter your password"
-                  className="h-12"
+                  className="h-9 rounded-lg border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 text-xs"
                   value={formData.password}
                   onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                   required
@@ -281,28 +293,28 @@ function LoginContent() {
 
               <Button
                 type="submit"
-                className="w-full h-12 bg-[#21808D] hover:bg-[#1a6370] text-white font-semibold"
+                className="w-full h-9 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-lg transition-all active:scale-[0.98] text-xs"
                 disabled={isLoading}
               >
                 {isLoading ? 'Signing in...' : 'Sign in'}
               </Button>
             </form>
 
-            <p className="text-center text-sm text-gray-500 mt-6">
+            <p className="text-center text-[10px] text-gray-500 mt-3 leading-relaxed">
               By signing in, you agree to our{" "}
-              <Link href="/TERMS&CONDTIONS.docx" target="_blank" className="text-[#21808D] hover:underline font-medium">
+              <Link href="/TERMS&CONDTIONS.docx" target="_blank" className="text-emerald-600 hover:underline font-medium">
                 Terms & Conditions
               </Link>
               {", "}
-              <Link href="/PRIVACY POLICY.docx" target="_blank" className="text-[#21808D] hover:underline font-medium">
+              <Link href="/PRIVACY POLICY.docx" target="_blank" className="text-emerald-600 hover:underline font-medium">
                 Privacy Policy
               </Link>
               {", "}
-              <Link href="/USER AGREEMENT.docx" target="_blank" className="text-[#21808D] hover:underline font-medium">
+              <Link href="/USER AGREEMENT.docx" target="_blank" className="text-emerald-600 hover:underline font-medium">
                 User Agreement
               </Link>
               {" and "}
-              <Link href="/USER POLICIES.docx" target="_blank" className="text-[#21808D] hover:underline font-medium">
+              <Link href="/USER POLICIES.docx" target="_blank" className="text-emerald-600 hover:underline font-medium">
                 User Policies
               </Link>
               .
@@ -317,10 +329,10 @@ function LoginContent() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#f6f6f6] flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#21808D] mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-500 mx-auto"></div>
+          <p className="mt-3 text-gray-600 text-sm">Loading...</p>
         </div>
       </div>
     }>

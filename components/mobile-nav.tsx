@@ -71,12 +71,16 @@ export default function MobileNav({ hideAuth = false }: MobileNavProps) {
                         {/* Auth Buttons - Conditionally Hidden */}
                         {!hideAuth && (
                             <div className="flex flex-col gap-3">
-                                <button className="w-full bg-black text-white rounded-xl py-3 text-base font-bold shadow-md active:scale-95 transition-transform">
-                                    Join Now
-                                </button>
-                                <button className="w-full bg-gray-50 text-gray-900 rounded-xl py-3 text-base font-bold hover:bg-gray-100 active:scale-95 transition-transform">
-                                    Login
-                                </button>
+                                <Link href="/signup" onClick={() => setIsOpen(false)}>
+                                    <button className="w-full bg-black text-white rounded-xl py-3 text-base font-bold shadow-md active:scale-95 transition-transform">
+                                        Join Now
+                                    </button>
+                                </Link>
+                                <Link href="/login" onClick={() => setIsOpen(false)}>
+                                    <button className="w-full bg-gray-50 text-gray-900 rounded-xl py-3 text-base font-bold hover:bg-gray-100 active:scale-95 transition-transform">
+                                        Login
+                                    </button>
+                                </Link>
                             </div>
                         )}
                     </div>
