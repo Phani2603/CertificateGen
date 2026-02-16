@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import NeumorphButton from "@/components/ui/neumorph-button"
@@ -15,6 +15,8 @@ import SiteFooterGlassmorphism from "@/components/site-footer-glassmorphism"
 import ScrollToTop from "@/components/scroll-to-top"
 import MobileNav from "@/components/mobile-nav"
 import NewLandingDesktopNav from "@/components/newlanding-desktop-nav"
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 
 const caveat = Caveat({
   subsets: ["latin"],
@@ -200,7 +202,30 @@ const styles = `
 `
 
 export default function NewLandingPage() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState("howItWorks")
+
+  // Redirect authenticated users to dashboard
+  useEffect(() => {
+    if (status === "authenticated" && session?.user) {
+      router.push("/login")
+    }
+  }, [status, session, router])
+
+  // Show loading while checking auth
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+      </div>
+    )
+  }
+
+  // Don't render content if user is authenticated (will redirect)
+  if (status === "authenticated") {
+    return null
+  }
 
   const renderTabContent = () => {
     switch (activeTab) {

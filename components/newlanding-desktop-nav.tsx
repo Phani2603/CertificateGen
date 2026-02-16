@@ -71,12 +71,16 @@ export default function NewLandingDesktopNav({ hideAuth = false }: NewLandingDes
             {/* DESKTOP RIGHT ACTIONS - Conditionally Hidden */}
             {!hideAuth && (
                 <div className="hidden md:flex items-center gap-3 pointer-events-auto">
-                    <button className="px-5 py-2 text-sm font-semibold text-gray-700 hover:text-black transition-colors">
-                        Login
-                    </button>
-                    <button className="px-5 py-2 text-sm font-semibold text-white bg-black rounded-full hover:bg-gray-800 transition-colors shadow-lg active:scale-95 transform duration-100">
-                        Join Now
-                    </button>
+                    <Link href="/login">
+                        <button className="px-5 py-2 text-sm font-semibold text-gray-700 hover:text-black transition-colors">
+                            Login
+                        </button>
+                    </Link>
+                    <Link href="/signup">
+                        <button className="px-5 py-2 text-sm font-semibold text-white bg-black rounded-full hover:bg-gray-800 transition-colors shadow-lg active:scale-95 transform duration-100">
+                            Join Now
+                        </button>
+                    </Link>
                 </div>
             )}
         </nav>

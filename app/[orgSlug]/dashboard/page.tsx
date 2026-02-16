@@ -220,15 +220,15 @@ export default function CorporateDashboard({ params }: PageProps) {
 
                 {/* Active Event or Org Name */}
                 {activeEvent ? (
-                  <div className="flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-white rounded-lg md:rounded-xl shadow-sm border border-gray-200">
+                  <div className="flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-white rounded-lg md:rounded-xl shadow-sm border border-gray-200 min-w-0 max-w-xs md:max-w-md">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shrink-0"></div>
-                    <div className="text-xs md:text-sm flex-1 min-w-0">
+                    <div className="text-xs md:text-sm flex-1 min-w-0 overflow-hidden">
                       <span className="text-gray-500 hidden sm:inline">Active Event: </span>
-                      <span className="font-semibold text-gray-900 truncate">{activeEvent.eventName}</span>
+                      <span className="font-semibold text-gray-900 truncate block">{activeEvent.eventName}</span>
                     </div>
                   </div>
                 ) : (
-                  <span className="font-semibold text-gray-900">{orgData.name}</span>
+                  <span className="font-semibold text-gray-900 truncate block max-w-[200px] md:max-w-xs">{orgData.name}</span>
                 )}
               </div>
 

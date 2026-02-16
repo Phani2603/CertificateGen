@@ -111,9 +111,9 @@ export default function ContactPage() {
                     <div className="space-y-16 font-playfair lg:pt-32">
                         <div className="space-y-2">
                             <h3 className="text-xl font-bold text-gray-400 uppercase tracking-widest mb-4">Email</h3>
-                            <a href="mailto:hello@gocertiflo.com" className="flex items-center gap-3 text-2xl lg:text-xl font-bold  hover:opacity-80 transition-opacity">
+                            <a href="mailto:support@gocertiflo.com" className="flex items-center gap-3 text-2xl lg:text-xl font-bold  hover:opacity-80 transition-opacity">
                                 <Mail className="w-6 h-6 lg:w-8 text-emerald-500 lg:h-8" />
-                                hello@gocertiflo.com
+                                support@gocertiflo.com
                             </a>
                         </div>
 

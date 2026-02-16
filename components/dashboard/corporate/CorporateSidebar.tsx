@@ -112,7 +112,7 @@ export function CorporateSidebar({
             }}
             className="w-full flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-green-600 transition-colors"
           >
-            <Avatar className="w-9 h-9 sm:w-10 sm:h-10">
+            <Avatar className="w-9 h-9 sm:w-10 sm:h-10 shrink-0">
               {userImage && (
                 <AvatarImage src={userImage} alt={userName || "User"} />
               )}
@@ -121,8 +121,8 @@ export function CorporateSidebar({
               </AvatarFallback>
             </Avatar>
             {sidebarOpen && (
-              <div className="flex-1 text-left">
-                <p className="text-sm sm:text-base font-medium text-gray-900 truncate">{userName || "User"}</p>
+              <div className="flex-1 text-left min-w-0 overflow-hidden">
+                <p className="text-sm sm:text-base font-medium text-white truncate">{userName || "User"}</p>
               </div>
             )}
           </button>
