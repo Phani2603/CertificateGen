@@ -520,7 +520,7 @@ export default function NewLandingPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-4 lg:gap-6 items-center justify-center">
               {/* Senement */}
               <div className="flex items-center justify-center">
-                <span className="text-sm lg:text-lg font-extrabold text-gray-900 font-coda">Senement</span>
+                <span className="text-sm lg:text-lg font-extrabold text-gray-900 font-coda">Organizations</span>
               </div>
 
               {/* Visey */}
@@ -530,17 +530,17 @@ export default function NewLandingPage() {
 
               {/* KL University */}
               <div className="flex items-center justify-center">
-                <span className="text-sm lg:text-lg font-extrabold text-gray-900 font-coda">KL University</span>
+                <span className="text-sm lg:text-lg font-extrabold text-gray-900 font-coda">Universities</span>
               </div>
 
               {/* S-Nest */}
               <div className="flex items-center justify-center">
-                <span className="text-sm lg:text-lg font-extrabold text-gray-900 font-coda">S-Nest</span>
+                <span className="text-sm lg:text-lg font-extrabold text-gray-900 font-coda">Startups</span>
               </div>
 
               {/* Student Tribe */}
               <div className="flex items-center justify-center">
-                <span className="text-sm lg:text-lg font-extrabold text-gray-900 font-coda">Student Tribe</span>
+                <span className="text-sm lg:text-lg font-extrabold text-gray-900 font-coda">Technical Events</span>
               </div>
 
               {/* Hashing Events */}
