@@ -1089,7 +1089,7 @@ Generated: ${new Date().toLocaleString()}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 text-left text-xs">
                 <p className="font-semibold text-blue-900 mb-1">Required CSV Format:</p>
                 <code className="text-blue-700 block">Email,ID,FirstName,LastName</code>
-                <code className="text-blue-700 block">student@klh.edu.in,123,John,Doe</code>
+                <code className="text-blue-700 block">student@university.edu.in,123,John,Doe</code>
                 <p className="text-blue-600 mt-2">💡 Email column is required for sending certificates</p>
               </div>
               <input ref={fileInputRef} type="file" accept=".csv,.txt" onChange={handleCsvUpload} className="hidden" />

@@ -121,9 +121,7 @@ export default function IndividualDashboard() {
               <div className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 font-raleway group-hover:opacity-80 transition-opacity leading-tight">
                 Certiflo
               </div>
-              <div className="text-[9px] sm:text-[10px] text-white/70 font-medium font-pacifico group-hover:opacity-80 transition-opacity leading-tight">
-                by SENEMENT
-              </div>
+              
             </Link>
 
             {/* Center - Navigation & Toggle */

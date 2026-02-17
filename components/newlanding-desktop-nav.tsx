@@ -24,9 +24,9 @@ export default function NewLandingDesktopNav({ hideAuth = false }: NewLandingDes
                     <div className={`text-2xl font-semibold text-gray-900 ${raleway.className} group-hover:opacity-80 transition-opacity`}>
                         Certiflo
                     </div>
-                    <div className={`text-sm text-gray-600 font-medium ${pacifico.className} group-hover:opacity-80 transition-opacity`}>
+                    {/* <div className={`text-sm text-gray-600 font-medium ${pacifico.className} group-hover:opacity-80 transition-opacity`}>
                         by SENEMENT
-                    </div>
+                    </div> */}
                 </Link>
             </div>
 

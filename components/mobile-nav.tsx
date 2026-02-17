@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Menu, X } from "lucide-react"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
+import { usePathname } from "next/navigation"
 
 interface MobileNavProps {
     hideAuth?: boolean
@@ -13,6 +14,9 @@ interface MobileNavProps {
 export default function MobileNav({ hideAuth = false }: MobileNavProps) {
     const [isOpen, setIsOpen] = useState(false)
     const contentRef = useRef<HTMLDivElement>(null)
+    const pathname = usePathname()
+
+    const isActive = (path: string) => pathname === path
 
     useGSAP(() => {
         if (!contentRef.current) return
@@ -34,12 +38,9 @@ export default function MobileNav({ hideAuth = false }: MobileNavProps) {
 
                 {/* HEADER */}
                 <div className="flex items-center justify-between px-2 py-1">
-                    <Link href="/" onClick={() => setIsOpen(false)} className="group">
+                    <Link href="/newlanding/hero-section" onClick={() => setIsOpen(false)} className="group">
                         <div className="text-lg font-bold text-gray-900 font-raleway group-hover:opacity-80 transition-opacity leading-none">
                             Certiflo
-                        </div>
-                        <div className="text-[7px] text-gray-500 font-medium font-pacifico group-hover:opacity-80 transition-opacity leading-none mt-0.5">
-                            by SENEMENT
                         </div>
                     </Link>
 
@@ -60,19 +61,48 @@ export default function MobileNav({ hideAuth = false }: MobileNavProps) {
                         <div className="h-px w-full bg-gray-100" />
 
                         <nav className="flex flex-col space-y-4">
-                            <Link href="#" className="text-lg font-medium text-gray-600 hover:text-black transition-colors">Home</Link>
-                            <Link href="https://semenent.com" target="_blank" className="text-lg font-medium text-gray-600 hover:text-black transition-colors">Semenent</Link>
-                            <Link href="/newlanding/pricing" className="text-lg font-medium text-gray-600 hover:text-black transition-colors">Pricing</Link>
-                            <Link href="/verify" className="text-lg font-medium text-gray-600 hover:text-black transition-colors">Verify</Link>
-                            <Link href="/newlanding/contact" className="text-lg font-medium text-gray-600 hover:text-black transition-colors">Contact</Link>
-                            <Link href="/blog" className="text-lg font-medium text-gray-600 hover:text-black transition-colors">Blog</Link>
+                            <Link 
+                                href="/newlanding/hero-section" 
+                                onClick={() => setIsOpen(false)}
+                                className={`text-lg font-medium transition-colors ${isActive("/newlanding/hero-section") ? "text-emerald-600" : "text-gray-600 hover:text-black"}`}
+                            >
+                                Home
+                            </Link>
+                            <Link 
+                                href="/newlanding/pricing" 
+                                onClick={() => setIsOpen(false)}
+                                className={`text-lg font-medium transition-colors ${isActive("/newlanding/pricing") ? "text-emerald-600" : "text-gray-600 hover:text-black"}`}
+                            >
+                                Pricing
+                            </Link>
+                            <Link 
+                                href="/verify" 
+                                onClick={() => setIsOpen(false)}
+                                className={`text-lg font-medium transition-colors ${isActive("/verify") ? "text-emerald-600" : "text-gray-600 hover:text-black"}`}
+                            >
+                                Verify
+                            </Link>
+                            <Link 
+                                href="/newlanding/contact" 
+                                onClick={() => setIsOpen(false)}
+                                className={`text-lg font-medium transition-colors ${isActive("/newlanding/contact") ? "text-emerald-600" : "text-gray-600 hover:text-black"}`}
+                            >
+                                Contact
+                            </Link>
+                            <Link 
+                                href="/blog" 
+                                onClick={() => setIsOpen(false)}
+                                className={`text-lg font-medium transition-colors ${isActive("/blog") ? "text-emerald-600" : "text-gray-600 hover:text-black"}`}
+                            >
+                                Blog
+                            </Link>
                         </nav>
 
                         {/* Auth Buttons - Conditionally Hidden */}
                         {!hideAuth && (
                             <div className="flex flex-col gap-3">
                                 <Link href="/signup" onClick={() => setIsOpen(false)}>
-                                    <button className="w-full bg-black text-white rounded-xl py-3 text-base font-bold shadow-md active:scale-95 transition-transform">
+                                    <button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl py-3 text-base font-bold shadow-md active:scale-95 transition-all">
                                         Join Now
                                     </button>
                                 </Link>
