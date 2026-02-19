@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { EmailStatusCard } from "@/components/dashboard/EmailStatusCard"
 import { Upload, Download, Loader2, CheckCircle, AlertCircle, Mail, AlertTriangle } from "lucide-react"
 import JSZip from "jszip"
 import FileSaver from "file-saver"
@@ -80,6 +81,7 @@ export default function CertificateGeneration({
   const [showDevNav, setShowDevNav] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const previewCanvasRef = useRef<HTMLCanvasElement>(null)
+  const emailStatusCardRef = useRef<HTMLDivElement>(null)
   
   // Use credentials hook
   const credentialsData = useCredentials()
@@ -320,6 +322,14 @@ export default function CertificateGeneration({
     setEmailStatus("sending")
     setEmailsSent(0)
     setEmailErrors([])
+
+    // Scroll to email status card
+    setTimeout(() => {
+      const emailStatusCard = document.getElementById('email-status-card')
+      if (emailStatusCard) {
+        emailStatusCard.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    }, 100)
 
     try {
       // Get credentials from secure storage (client-side only)
@@ -1313,21 +1323,6 @@ Generated: ${new Date().toLocaleString()}
                 </Card>
               )}
 
-              {emailStatus === "success" && (
-                <Card className="p-4 bg-green-50 border-green-200">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                    <div>
-                      <p className="font-semibold text-green-900">Emails Sent Successfully!</p>
-                      <p className="text-sm text-green-700">
-                        {emailsSent} certificate(s) sent via email.
-                        {emailErrors.length > 0 && ` (${emailErrors.length} failed)`}
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-              )}
-
               {verificationData.length > 0 && (
                 <Card className="p-4 bg-purple-50 border-purple-200">
                   <div className="flex items-start gap-3">
@@ -1415,20 +1410,6 @@ Generated: ${new Date().toLocaleString()}
                 </Card>
               )}
 
-              {emailStatus === "sending" && (
-                <Card className="p-4 bg-blue-50 border-blue-200">
-                  <div className="flex items-center gap-3">
-                    <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
-                    <div>
-                      <p className="font-semibold text-blue-900">Sending Emails...</p>
-                      <p className="text-sm text-blue-700">
-                        {emailsSent} / {csvData.length} emails sent
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-              )}
-
               {generationStatus === "error" && (
                 <Card className="p-4 bg-red-50 border-red-200">
                   <div className="flex items-center gap-3">
@@ -1447,7 +1428,7 @@ Generated: ${new Date().toLocaleString()}
         </div>
 
         {/* Summary */}
-        <div>
+        <div className="space-y-6">
           <Card className="p-6 bg-[#21808D]/5 border-[#21808D] sticky top-6">
             <h3 className="font-semibold text-[#1a1a1a] mb-4">Summary</h3>
             <div className="space-y-3 text-sm">
@@ -1516,6 +1497,17 @@ Generated: ${new Date().toLocaleString()}
               )}
             </div>
           </Card>
+
+          {/* Email Status Card */}
+          {generatedCertificates.length > 0 && (
+            <EmailStatusCard
+              status={emailStatus}
+              emailsSent={emailsSent}
+              totalEmails={generatedCertificates.length}
+              errors={emailErrors}
+              deliveryMode={deliveryMode}
+            />
+          )}
         </div>
       </div>
 
