@@ -1,11 +1,12 @@
-import { sendBulkCertificates, type EmailProvider } from "@/lib/email-service"
+import { sendBulkCertificates, type EmailProvider, type EmailDeliveryMode } from "@/lib/email-service"
 import type { SendingMode } from "@/types/certificate"
 
 export async function POST(request: Request) {
   try {
-    const { recipients, provider = "resend", sendingMode, credentials } = await request.json()
+    const { recipients, provider = "resend", sendingMode, credentials, deliveryMode = "link-only" } = await request.json()
 
     console.log("[API] Sending", recipients.length, "certificates via", provider.toUpperCase())
+    console.log("[API] Delivery mode:", deliveryMode)
     console.log("[API] Sending mode:", sendingMode || "auto")
     console.log("[API] Credentials provided:", !!credentials)
 
@@ -30,15 +31,24 @@ export async function POST(request: Request) {
       }
     }
 
-    // Convert base64 strings back to Buffers for email attachment
-    const processedRecipients = recipients.map((recipient: any) => ({
-      email: recipient.email,
-      name: recipient.name,
-      certificateBlob: Buffer.from(recipient.certificateBase64, "base64"),
-      fileName: recipient.fileName,
-      verificationId: recipient.verificationId,
-      verificationUrl: recipient.verificationUrl,
-    }))
+    // Convert base64 strings back to Buffers for email attachment (only in attachment mode)
+    const processedRecipients = deliveryMode === "link-only" 
+      ? recipients.map((recipient: any) => ({
+          email: recipient.email,
+          name: recipient.name,
+          certificateBlob: null, // No blob needed for link-only
+          fileName: recipient.fileName || "certificate.png",
+          verificationId: recipient.verificationId,
+          verificationUrl: recipient.verificationUrl,
+        }))
+      : recipients.map((recipient: any) => ({
+          email: recipient.email,
+          name: recipient.name,
+          certificateBlob: Buffer.from(recipient.certificateBase64, "base64"),
+          fileName: recipient.fileName,
+          verificationId: recipient.verificationId,
+          verificationUrl: recipient.verificationUrl,
+        }))
 
     console.log("[API] Processing", processedRecipients.length, "recipients")
 
@@ -46,7 +56,8 @@ export async function POST(request: Request) {
       processedRecipients, 
       provider as EmailProvider,
       sendingMode as SendingMode | undefined,
-      credentials
+      credentials,
+      deliveryMode as EmailDeliveryMode
     ) as Array<{
       email: string
       success: boolean

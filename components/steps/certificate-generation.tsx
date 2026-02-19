@@ -6,7 +6,9 @@ import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { Upload, Download, Loader2, CheckCircle, AlertCircle, Mail } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Upload, Download, Loader2, CheckCircle, AlertCircle, Mail, AlertTriangle } from "lucide-react"
 import JSZip from "jszip"
 import FileSaver from "file-saver"
 import type { CertificateField } from "@/types/certificate"
@@ -74,6 +76,7 @@ export default function CertificateGeneration({
   const [isSendingMail, setIsSendingMail] = useState(false)
   const [emailProvider, setEmailProvider] = useState<"resend" | "gmail" | "senement">("senement")
   const [sendingMode, setSendingMode] = useState<"auto" | "sequential" | "pooled">("auto")
+  const [deliveryMode, setDeliveryMode] = useState<"link-only" | "attachment">("link-only")
   const [showDevNav, setShowDevNav] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const previewCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -334,26 +337,44 @@ export default function CertificateGeneration({
         console.log('[sendEmailsOnly] Credentials found, proceeding with email sending')
       }
 
-      // Convert blobs to base64 before sending
-      const recipientsWithBase64 = await Promise.all(
-        generatedCertificates.map(async (recipient) => ({
+      // Convert blobs to base64 before sending (only for attachment mode)
+      let recipientsData
+      
+      if (deliveryMode === "link-only") {
+        // Link-only mode - no base64 conversion needed, just send verification data
+        console.log('[sendEmailsOnly] Using link-only mode - skipping base64 conversion')
+        recipientsData = generatedCertificates.map((recipient) => ({
           email: recipient.email,
           name: recipient.name,
-          certificateBase64: await blobToBase64(recipient.certificateBlob),
           fileName: recipient.fileName,
           verificationId: recipient.verificationId,
           verificationUrl: recipient.verificationUrl,
         }))
-      )
-      
-      // Send in batches to avoid 413 Payload Too Large errors
-      const BATCH_SIZE = 10 // Adjust based on certificate size
-      const batches = []
-      for (let i = 0; i < recipientsWithBase64.length; i += BATCH_SIZE) {
-        batches.push(recipientsWithBase64.slice(i, i + BATCH_SIZE))
+      } else {
+        // Attachment mode - convert certificates to base64
+        console.log('[sendEmailsOnly] Using attachment mode - converting to base64')
+        recipientsData = await Promise.all(
+          generatedCertificates.map(async (recipient) => ({
+            email: recipient.email,
+            name: recipient.name,
+            certificateBase64: await blobToBase64(recipient.certificateBlob),
+            fileName: recipient.fileName,
+            verificationId: recipient.verificationId,
+            verificationUrl: recipient.verificationUrl,
+          }))
+        )
       }
       
-      console.log(`[sendEmailsOnly] Sending ${recipientsWithBase64.length} emails in ${batches.length} batches`)
+      // Dynamic batch size based on delivery mode
+      // Link-only: Can send many more per batch (no payload size issues)
+      // Attachment: Need smaller batches due to large base64 payloads
+      const BATCH_SIZE = deliveryMode === "link-only" ? 50 : 3
+      const batches = []
+      for (let i = 0; i < recipientsData.length; i += BATCH_SIZE) {
+        batches.push(recipientsData.slice(i, i + BATCH_SIZE))
+      }
+      
+      console.log(`[sendEmailsOnly] Sending ${recipientsData.length} emails in ${batches.length} batches (${BATCH_SIZE} per batch, ${deliveryMode} mode)`)
       
       let totalSent = 0
       const allErrors: Array<{ email: string; error: string }> = []
@@ -370,6 +391,7 @@ export default function CertificateGeneration({
               recipients: batch, 
               provider: emailProvider,
               sendingMode: sendingMode === "auto" ? undefined : sendingMode,
+              deliveryMode: deliveryMode,
               // Pass credentials to server for Gmail
               credentials: credentials ? {
                 email: credentials.email,
@@ -1175,39 +1197,41 @@ Generated: ${new Date().toLocaleString()}
 
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Output Format</label>
-                    <select
-                      value={outputFormat}
-                      onChange={(e) => setOutputFormat(e.target.value as "png" | "pdf")}
-                      className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
-                    >
-                      <option value="png">PNG</option>
-                      {/*<option value="pdf">PDF</option>*/}
-                    </select>
+                    <label className="text-sm font-medium text-gray-700 mb-1 block">Output Format</label>
+                    <Select value={outputFormat} onValueChange={(value) => setOutputFormat(value as "png" | "pdf")}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="png">PNG</SelectItem>
+                        {/*<SelectItem value="pdf">PDF</SelectItem>*/}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Quality</label>
-                    <select
-                      value={quality}
-                      onChange={(e) => setQuality(e.target.value as "standard" | "high")}
-                      className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
-                    >
-                      <option value="standard">Standard (72 DPI)</option>
-                      <option value="high">High (300 DPI)</option>
-                    </select>
+                    <label className="text-sm font-medium text-gray-700 mb-1 block">Quality</label>
+                    <Select value={quality} onValueChange={(value) => setQuality(value as "standard" | "high")}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="standard">Standard (72 DPI)</SelectItem>
+                        <SelectItem value="high">High (300 DPI)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="pt-4 border-t border-[#21808D]/20">
                     <label className="text-sm font-medium text-gray-700 mb-2 block">Email Provider</label>
-                    <select
-                      value={emailProvider}
-                      onChange={(e) => setEmailProvider(e.target.value as "resend" | "gmail" | "senement")}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white"
-                      disabled
-                    >
-                      <option value="senement">Senement Corporate (forge@senement.com)</option>
-                    </select>
+                    <Select value={emailProvider} onValueChange={(value) => setEmailProvider(value as "resend" | "gmail" | "senement")} disabled>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="senement">Senement Corporate (forge@senement.com)</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <div className="mt-2 space-y-2">
                       <div className="space-y-1">
                         <div className="flex items-center space-x-2 text-xs">
@@ -1223,18 +1247,46 @@ Generated: ${new Date().toLocaleString()}
                     </div>
                   </div>
 
+                  <div className="pt-4 border-t border-[#21808D]/20">
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Delivery Mode</label>
+                    <Select value={deliveryMode} onValueChange={(value) => setDeliveryMode(value as "link-only" | "attachment")}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="link-only">Link Only (Recommended)</SelectItem>
+                        <SelectItem value="attachment">Certificate Attachment</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    {deliveryMode === "link-only" ? (
+                      <p className="text-xs text-gray-500 mt-2">
+                        Recipients receive a verification link to download their certificate. Faster and more reliable for large batches (50 per batch).
+                      </p>
+                    ) : (
+                      <Alert variant="destructive" className="mt-2">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertTitle>Large Payload Warning</AlertTitle>
+                        <AlertDescription>
+                          Certificate attachments create large email payloads (~4MB per certificate). Limited to 3 per batch due to email provider size constraints. May cause delivery failures with some providers.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+
                   {emailProvider === "gmail" && (
                     <div className="pt-4 border-t border-[#21808D]/20">
                       <label className="text-sm font-medium text-gray-700 mb-2 block">Sending Mode</label>
-                      <select
-                        value={sendingMode}
-                        onChange={(e) => setSendingMode(e.target.value as "auto" | "sequential" | "pooled")}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                      >
-                        <option value="auto">Auto ({generatedCertificates.length >= 50 ? "Pooled" : "Sequential"})</option>
-                        <option value="sequential">Sequential (Safer, Slower)</option>
-                        <option value="pooled">Pooled (Faster, For Bulk)</option>
-                      </select>
+                      <Select value={sendingMode} onValueChange={(value) => setSendingMode(value as "auto" | "sequential" | "pooled")}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="auto">Auto ({generatedCertificates.length >= 50 ? "Pooled" : "Sequential"})</SelectItem>
+                          <SelectItem value="sequential">Sequential (Safer, Slower)</SelectItem>
+                          <SelectItem value="pooled">Pooled (Faster, For Bulk)</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <p className="text-xs text-gray-500 mt-2">
                         {sendingMode === "sequential" 
                           ? "Sends emails one by one with 500ms delay (recommended for <50 recipients)"
