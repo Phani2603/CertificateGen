@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
+import { renderWatermark } from "@/lib/watermark-utils"
 import {
   CheckCircle2,
   XCircle,
@@ -336,6 +337,9 @@ export default function VerificationPage() {
         } else {
           console.log('[Verification] No field configuration, showing template only')
         }
+
+        // Add watermark to certificate
+        renderWatermark(ctx, canvas.width, canvas.height, 1)
 
         setCertificateGenerated(true)
         console.log("[Verification] ✅ Certificate rendered successfully")

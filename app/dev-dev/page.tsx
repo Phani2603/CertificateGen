@@ -8,6 +8,7 @@ import { PixelatedCanvas } from '@/components/ui/pixelated-canvas'
 import WorldMap from '@/components/ui/world-map'
 import FloatingLines from '@/components/FloatingLines'
 import { motion } from 'motion/react'
+import EmailForm from '@/components/dev-dev/email-modal'
 
 export default function DevDevPage() {
     const [sampleText, setSampleText] = useState('The quick brown fox jumps over the lazy dog')
@@ -57,6 +58,16 @@ export default function DevDevPage() {
     return (
         <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-7xl mx-auto space-y-24">
+
+                {/* Email Testing Section */}
+                <section>
+                    <div className="text-center mb-8">
+                        <h2 className="text-3xl font-bold text-gray-900 mb-2">Email Testing</h2>
+                        <p className="text-gray-600">Test email providers and send test emails</p>
+                    </div>
+
+                    <EmailForm />
+                </section>
 
                 {/* NEW: Problem Card Showcase Section */}
                 <section>

@@ -7,7 +7,7 @@ import { useSession } from "next-auth/react"
 function AcceptInvitationContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { status } = useSession()
+  const { status, update } = useSession()
 
   const token = searchParams.get("token") || searchParams.get("invite")
 
@@ -28,12 +28,27 @@ function AcceptInvitationContent() {
           })
           const data = await res.json()
           if (data.success && data.orgSlug) {
-            router.replace(`/${data.orgSlug}/dashboard`)
+            // Force session update and wait for it
+            console.log('[Invite Accept] Updating session...')
+            await update()
+            
+            // Force immediate profile cache refresh
+            if (typeof window !== 'undefined') {
+              const { mutate } = await import('swr')
+              console.log('[Invite Accept] Invalidating profile cache...')
+              // Force revalidation and wait for it
+              await mutate('/api/profile', undefined, { revalidate: true })
+            }
+            
+            console.log('[Invite Accept] Redirecting to dashboard with fresh flag...')
+            // Redirect with flag to indicate fresh acceptance
+            router.replace(`/${data.orgSlug}/dashboard?justAccepted=true`)
           } else {
             // Failed to accept; show login so user can retry or fix
             router.replace(`/login`)
           }
         } catch (err) {
+          console.error('[Invite Accept] Error:', err)
           router.replace(`/login`)
         }
       } else if (status === "unauthenticated") {
@@ -44,7 +59,7 @@ function AcceptInvitationContent() {
     }
 
     handleAcceptance()
-  }, [status, token, router])
+  }, [status, token, router, update])
 
   return (
     <div className="min-h-screen flex items-center justify-center">

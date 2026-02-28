@@ -299,8 +299,10 @@ export async function sendCertificateEmail(
         <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+          <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
         </head>
-        <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f5f5f5;">
+        <body style="margin: 0; padding: 0; font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif; background-color: #f5f5f5;">
           <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 20px;">
             <tr>
               <td align="center">
@@ -308,9 +310,9 @@ export async function sendCertificateEmail(
                   
                   <!-- Header with Logo -->
                   <tr>
-                    <td style="background: linear-gradient(135deg, #21808D 0%, #1a6570 100%); padding: 40px 30px; text-align: center;">
+                    <td style="background: #21808D; padding: 40px 30px; text-align: center;">
                       ${logoAttachment ? '<img src="cid:klh-logo" alt="KLH University" style="max-width: 120px; height: auto; margin-bottom: 20px;" />' : ''}
-                      <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Congratulations!</h1>
+                      <h1 style="font-family: 'Libre Baskerville', Georgia, serif; color: #ffffff; margin: 0; font-size: 32px; font-weight: 700;">Congratulations!</h1>
                     </td>
                   </tr>
                   
@@ -492,8 +494,10 @@ export async function sendCertificateEmail(
         <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+          <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
         </head>
-        <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f5f5f5;">
+        <body style="margin: 0; padding: 0; font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif; background-color: #f5f5f5;">
           <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 20px;">
             <tr>
               <td align="center">
@@ -501,9 +505,9 @@ export async function sendCertificateEmail(
                   
                   <!-- Header with Logo -->
                   <tr>
-                    <td style="background: linear-gradient(135deg, #21808D 0%, #1a6570 100%); padding: 40px 30px; text-align: center;">
+                    <td style="background: #21808D; padding: 40px 30px; text-align: center;">
                       ${logoAttachment ? '<img src="cid:klh-logo" alt="Senement" style="max-width: 120px; height: auto; margin-bottom: 20px;" />' : ''}
-                      <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Congratulations!</h1>
+                      <h1 style="font-family: 'Libre Baskerville', Georgia, serif; color: #ffffff; margin: 0; font-size: 32px; font-weight: 700;">Congratulations!</h1>
                     </td>
                   </tr>
                   
@@ -682,8 +686,10 @@ export async function sendCertificateEmail(
           <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+            <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
           </head>
-          <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f5f5f5;">
+          <body style="margin: 0; padding: 0; font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif; background-color: #f5f5f5;">
             <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 20px;">
               <tr>
                 <td align="center">
@@ -691,8 +697,8 @@ export async function sendCertificateEmail(
                     
                     <!-- Header -->
                     <tr>
-                      <td style="background: linear-gradient(135deg, #21808D 0%, #1a6570 100%); padding: 40px 30px; text-align: center;">
-                        <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Congratulations!</h1>
+                      <td style="background: #21808D; padding: 40px 30px; text-align: center;">
+                        <h1 style="font-family: 'Libre Baskerville', Georgia, serif; color: #ffffff; margin: 0; font-size: 32px; font-weight: 700;">Congratulations!</h1>
                       </td>
                     </tr>
                     
@@ -825,8 +831,10 @@ export async function sendBulkCertificatesPooled(
             <head>
               <meta charset="UTF-8">
               <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+              <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
             </head>
-            <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f5f5f5;">
+            <body style="margin: 0; padding: 0; font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif; background-color: #f5f5f5;">
               <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 20px;">
                 <tr>
                   <td align="center">
@@ -834,16 +842,16 @@ export async function sendBulkCertificatesPooled(
                       
                       <!-- Header -->
                       <tr>
-                        <td style="background: linear-gradient(135deg, #21808D 0%, #1a6570 100%); padding: 40px 30px; text-align: center;">
+                        <td style="background: #21808D; padding: 40px 30px; text-align: center;">
                           ${logoAttachment ? '<img src="cid:klh-logo" alt="KLH University" style="max-width: 120px; height: auto; margin-bottom: 20px;" />' : ''}
-                          <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Congratulations!</h1>
+                          <h1 style="font-family: 'Libre Baskerville', Georgia, serif; color: #ffffff; margin: 0; font-size: 32px; font-weight: 700;">Congratulations!</h1>
                         </td>
                       </tr>
 
                       <!-- Content -->
                       <tr>
                         <td style="padding: 40px 30px;">
-                          <h2 style="color: #333333; margin: 0 0 20px; font-size: 24px;">Dear ${recipient.name},</h2>
+                          <h2 style="font-family: 'Libre Baskerville', Georgia, serif; color: #333333; margin: 0 0 20px; font-size: 24px; font-weight: 700;">Dear ${recipient.name},</h2>
                           <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
                             Congratulations! 🎉 We are delighted to present you with your certificate of completion. 
                             This achievement is a testament to your dedication, hard work, and commitment to excellence.

@@ -40,8 +40,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 })
     }
 
-    // Update user to corporate and link to org
-    user.userType = 'corporate'
+    // Link user to org (keep original userType)
     user.privateOrgId = invitation.privateOrgId
     await user.save()
 

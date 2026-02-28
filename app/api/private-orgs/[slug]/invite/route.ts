@@ -110,8 +110,10 @@ export async function POST(
         <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+          <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
         </head>
-        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5;">
+        <body style="margin: 0; padding: 0; font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif; background-color: #f5f5f5;">
           <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 20px;">
             <tr>
               <td align="center">
@@ -119,8 +121,8 @@ export async function POST(
                   
                   <!-- Header -->
                   <tr>
-                    <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
-                      <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">You're Invited!</h1>
+                    <td style="background: #667eea; padding: 40px 30px; text-align: center;">
+                      <h1 style="font-family: 'Libre Baskerville', Georgia, serif; color: #ffffff; margin: 0; font-size: 32px; font-weight: 700;">You're Invited!</h1>
                     </td>
                   </tr>
                   
@@ -145,7 +147,7 @@ export async function POST(
                       <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
                         <tr>
                           <td align="center">
-                            <a href="${inviteUrl}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);">Accept Invitation</a>
+                            <a href="${inviteUrl}" style="display: inline-block; background: #667eea; color: white; padding: 16px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);">Accept Invitation</a>
                           </td>
                         </tr>
                       </table>

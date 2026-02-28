@@ -30,6 +30,7 @@ import Image from "next/image"
 import { useSocket } from "@/components/socket-provider"
 import { toast } from "sonner"
 import jsPDF from "jspdf"
+import { renderWatermark } from "@/lib/watermark-utils"
 
 interface Certificate {
   _id: string
@@ -287,6 +288,9 @@ export function MyCertificatesSection({ userId }: MyCertificatesSectionProps) {
               console.error('[MyCertificates] Error drawing text for field:', field.name, textError)
             }
           })
+
+          // Add watermark to certificate
+          renderWatermark(ctx, canvas.width, canvas.height, 1)
 
           console.log(`[MyCertificates] Text drawn, converting to data URL`)
           const imageData = canvas.toDataURL('image/png')

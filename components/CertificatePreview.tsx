@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { Loader2, Award } from "lucide-react"
+import { renderWatermark } from "@/lib/watermark-utils"
 
 interface FieldConfig {
     id: string
@@ -171,6 +172,10 @@ export function CertificatePreview({ certificate }: CertificatePreviewProps) {
                             }
                         })
                     }
+
+                    // Add watermark to certificate preview
+                    renderWatermark(ctx, canvas.width, canvas.height, 1)
+
                     setGenerated(true)
                     setLoading(false)
                 }
