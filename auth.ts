@@ -91,15 +91,32 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return true
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id
       }
+      
+      // Refresh user data from database on session update
+      if (trigger === "update" || !token.userType) {
+        try {
+          await connectDB()
+          const dbUser = await User.findOne({ email: token.email })
+          if (dbUser) {
+            token.userType = dbUser.userType
+            token.privateOrgId = dbUser.privateOrgId?.toString()
+          }
+        } catch (error) {
+          console.error("Error refreshing user data in JWT:", error)
+        }
+      }
+      
       return token
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string
+        session.user.userType = token.userType as string
+        session.user.privateOrgId = token.privateOrgId as string
       }
       return session
     },

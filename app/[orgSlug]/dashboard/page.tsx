@@ -29,10 +29,11 @@ interface PageProps {
 }
 
 export default function CorporateDashboard({ params }: PageProps) {
-  const { data: session, status } = useSession()
+  const { data: session, status, update } = useSession()
   const [showTypeSelection, setShowTypeSelection] = useState(false)
   const [resolvedParams, setResolvedParams] = useState<{ orgSlug: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [justAccepted, setJustAccepted] = useState(false)
 
   // Use SWR hooks for cached data fetching
   const { userData, isLoading: profileLoading, mutate: mutateProfile } = useProfile()
@@ -71,6 +72,35 @@ export default function CorporateDashboard({ params }: PageProps) {
     params.then(setResolvedParams)
   }, [params])
 
+  // Handle fresh invitation acceptance
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      if (urlParams.get('justAccepted') === 'true') {
+        console.log('[Dashboard] Detected fresh invitation acceptance')
+        setJustAccepted(true)
+        
+        // Force refresh of session and profile data
+        const refreshData = async () => {
+          console.log('[Dashboard] Force refreshing session and profile...')
+          await update()
+          await mutateProfile()
+          
+          // Clean up URL after 2 seconds
+          setTimeout(() => {
+            const url = new URL(window.location.href)
+            url.searchParams.delete('justAccepted')
+            window.history.replaceState({}, '', url.toString())
+            setJustAccepted(false)
+            console.log('[Dashboard] Refresh complete, flag cleared')
+          }, 2000)
+        }
+        
+        refreshData()
+      }
+    }
+  }, [update, mutateProfile])
+
   // Restore last visited page per org
   useEffect(() => {
     if (!resolvedParams) return
@@ -82,15 +112,33 @@ export default function CorporateDashboard({ params }: PageProps) {
 
   // Validate user access when data is loaded
   useEffect(() => {
+    // Skip validation if we just accepted an invitation (data is still refreshing)
+    if (justAccepted) {
+      console.log('[Dashboard] Skipping validation during refresh period')
+      return
+    }
+    
     if (status === "authenticated" && userData && orgData && resolvedParams) {
       // Check if user has no type selected (OAuth users)
-      if (!userData.userType) {
+      // Use session data first for instant check, fallback to userData
+      const userType = session?.user?.userType || userData.userType
+      const userPrivateOrgId = session?.user?.privateOrgId || userData.privateOrgId
+      
+      console.log('[Dashboard] Access validation:', {
+        userType,
+        userPrivateOrgId,
+        sessionUserType: session?.user?.userType,
+        userDataType: userData.userType
+      })
+      
+      if (!userType) {
         setShowTypeSelection(true)
         return
       }
 
-      // Check if user is corporate type
-      if (userData.userType !== 'corporate') {
+      // Check if user is corporate type or has been invited to an org
+      if (userType !== 'corporate' && !userPrivateOrgId) {
+        console.log('[Dashboard] Access denied - redirecting to individual dashboard')
         redirect('/individual-dashboard')
         return
       }
@@ -120,7 +168,7 @@ export default function CorporateDashboard({ params }: PageProps) {
     if (!orgLoading && !orgData && resolvedParams) {
       setError("Organization not found")
     }
-  }, [status, userData, orgData, resolvedParams, orgLoading])
+  }, [status, userData, orgData, resolvedParams, orgLoading, session, justAccepted])
 
   // Persist current page per org
   useEffect(() => {

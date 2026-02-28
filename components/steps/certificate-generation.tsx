@@ -17,6 +17,7 @@ import { saveSession, loadSession, clearSession, base64ToBlob } from "@/utils/st
 import { useCredentials } from "@/hooks/useCredentials"
 import DevNav from "@/components/DevNav"
 import { toast } from "sonner"
+import { renderWatermark } from "@/lib/watermark-utils"
 
 interface CertificateGenerationProps {
   templateImage: string
@@ -260,6 +261,9 @@ export default function CertificateGeneration({
           field.alignment === "center" ? field.x : field.alignment === "right" ? field.x + (field.maxWidth || 0) : field.x
         ctx.fillText(text, x, field.y, field.maxWidth)
       })
+
+      // Add watermark to preview
+      renderWatermark(ctx, canvas.width, canvas.height, 1)
     }
     
     // Use getTemplateUrl to handle both S3 and base64
@@ -1088,6 +1092,9 @@ Generated: ${new Date().toLocaleString()}
             field.alignment === "center" ? field.x : field.alignment === "right" ? field.x + (field.maxWidth || 0) : field.x
           ctx.fillText(text, x, field.y, field.maxWidth)
         })
+
+        // Add watermark to certificate
+        renderWatermark(ctx, canvas.width, canvas.height, scale)
 
         resolve(canvas)
       }
