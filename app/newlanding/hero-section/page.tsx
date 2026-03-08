@@ -11,6 +11,7 @@ import CookieConsent from "@/components/cookie-consent"
 import ScrollRevealSection from "@/components/ScrollRevealSection"
 import { SectionSeparator } from "@/components/ui/section-separator"
 import ReadyToStart from "@/components/ready-to-start"
+import MainPricing from "@/components/newlanding/MainPricing"
 import SiteFooterGlassmorphism from "@/components/site-footer-glassmorphism"
 import ScrollToTop from "@/components/scroll-to-top"
 import MobileNav from "@/components/mobile-nav"
@@ -744,6 +745,16 @@ export default function NewLandingPage() {
                 </div>
 
               </div>
+            </div>
+          </ScrollRevealSection>
+          <div className="max-w-[90%] mx-auto px-0">
+            <SectionSeparator />
+          </div>
+
+          {/* Pricing Section */}
+          <ScrollRevealSection>
+            <div className="max-w-[90%] mx-auto px-0">
+              <MainPricing />
             </div>
           </ScrollRevealSection>
           <div className="max-w-[90%] mx-auto px-0">

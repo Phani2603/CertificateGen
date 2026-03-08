@@ -18,7 +18,8 @@ import {
   Search,
   MoreHorizontal,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Mail
 } from "lucide-react"
 import { TbBuildingBank } from "react-icons/tb";
 import { Button } from "@/components/ui/button"
@@ -79,6 +80,11 @@ export default function AdminLayout({
       title: "Organizations",
       href: "/admin/organizations",
       icon: TbBuildingBank,
+    },
+    {
+      title: "Contact Forms",
+      href: "/admin/contact-forms",
+      icon: Mail,
     },
     {
       title: "Access Requests",
