@@ -397,18 +397,18 @@ export async function sendCertificateEmail(
       console.log("[Email Service] Gmail Success! Message ID:", info.messageId)
       return { success: true, messageId: info.messageId, provider: "gmail" }
     } else if (provider === "senement") {
-      // Send via Senement (GoDaddy SMTP)
-      if (!process.env.CORPORATE_EMAIL_USER || !process.env.CORPORATE_EMAIL_PASSWORD) {
-        throw new Error("Senement email configuration not found in environment variables")
+      // Send via Certiflo Support (Hostinger SMTP)
+      if (!process.env.GOCERTIFLO_SUPPORT_USER || !process.env.GOCERTIFLO_SUPPORT_PASSWORD) {
+        throw new Error("Certiflo support email configuration not found in environment variables")
       }
 
       const transporter = nodemailer.createTransport({
-        host: "smtpout.secureserver.net",
-        port: 465,
-        secure: true,
+        host: "smtp.hostinger.com",
+        port: 587,
+        secure: false,
         auth: {
-          user: process.env.CORPORATE_EMAIL_USER,
-          pass: process.env.CORPORATE_EMAIL_PASSWORD,
+          user: process.env.GOCERTIFLO_SUPPORT_USER,
+          pass: process.env.GOCERTIFLO_SUPPORT_PASSWORD,
         },
       })
 
@@ -582,7 +582,7 @@ export async function sendCertificateEmail(
       }
 
       const info = await transporter.sendMail({
-        from: `"Senement - Certificate Team" <${process.env.CORPORATE_EMAIL_USER}>`,
+        from: `"Certiflo - Certificate Team" <${process.env.GOCERTIFLO_SUPPORT_USER}>`,
         to: email,
         subject: `🎓 Congratulations ${recipientName}! Your Certificate is Ready`,
         html: htmlContent,

@@ -68,21 +68,21 @@ export async function POST(
     // 4. Resend Email
     const inviteUrl = `${process.env.NEXTAUTH_URL}/invitations/accept?token=${newToken}`
     
-    // Use GoDaddy SMTP for corporate invitations
+    // Use Certiflo Support email for corporate invitations
     const transporter = nodemailer.createTransport({
-      host: 'smtpout.secureserver.net',
-      port: 465,
-      secure: true,
+      host: 'smtp.hostinger.com',
+      port: 587,
+      secure: false,
       auth: {
-        user: process.env.CORPORATE_EMAIL_USER,
-        pass: process.env.CORPORATE_EMAIL_PASSWORD,
+        user: process.env.GOCERTIFLO_SUPPORT_USER,
+        pass: process.env.GOCERTIFLO_SUPPORT_PASSWORD,
       },
     })
 
     await transporter.sendMail({
-      from: `"Senement" <${process.env.CORPORATE_EMAIL_USER}>`,
+      from: `"Certiflo" <${process.env.GOCERTIFLO_SUPPORT_USER}>`,
       to: invitation.email,
-      subject: `Reminder: Invitation to join ${organization.name} on CertificateGen`,
+      subject: `Reminder: Invitation to join ${organization.name} on Certiflo`,
       html: `
         <!DOCTYPE html>
         <html>

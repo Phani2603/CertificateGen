@@ -21,11 +21,11 @@ export async function POST(request: Request) {
       )
     }
 
-    // Validate Senement provider env vars
+    // Validate Certiflo provider env vars
     if (provider === "senement") {
-      if (!process.env.CORPORATE_EMAIL_USER || !process.env.CORPORATE_EMAIL_PASSWORD) {
+      if (!process.env.GOCERTIFLO_SUPPORT_USER || !process.env.GOCERTIFLO_SUPPORT_PASSWORD) {
         return Response.json(
-          { success: false, error: "Senement email configuration missing in environment variables" },
+          { success: false, error: "Certiflo email configuration missing in environment variables" },
           { status: 500 }
         )
       }
