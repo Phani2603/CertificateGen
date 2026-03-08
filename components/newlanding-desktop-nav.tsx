@@ -39,8 +39,8 @@ export default function NewLandingDesktopNav({ hideAuth = false }: NewLandingDes
                     Home
                 </Link>
                 <Link
-                    href="/"
-                    className={`px-5 py-2 rounded-full transition-all duration-200 text-sm font-medium ${isActive("/") ? "text-black bg-gray-50 shadow-sm" : "text-gray-600 hover:text-black hover:bg-gray-50"
+                    href="/pricing"
+                    className={`px-5 py-2 rounded-full transition-all duration-200 text-sm font-medium ${isActive("/pricing") ? "text-black bg-gray-50 shadow-sm" : "text-gray-600 hover:text-black hover:bg-gray-50"
                         }`}
                 >
                     Pricing

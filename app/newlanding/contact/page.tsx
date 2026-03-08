@@ -22,18 +22,56 @@ export default function ContactPage() {
         email: "",
         message: ""
     })
+    const [loading, setLoading] = useState(false)
+    const [success, setSuccess] = useState(false)
+    const [error, setError] = useState("")
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormState({
             ...formState,
             [e.target.name]: e.target.value
         })
+        // Clear error when user starts typing
+        if (error) setError("")
     }
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        // Handle form submission
-        console.log("Form submitted:", formState)
+        setLoading(true)
+        setError("")
+        setSuccess(false)
+
+        try {
+            const response = await fetch('/api/contact', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formState),
+            })
+
+            const data = await response.json()
+
+            if (response.ok) {
+                setSuccess(true)
+                setFormState({ name: "", email: "", message: "" })
+                
+                // Show warning if email failed
+                if (data.emailSent === false) {
+                    console.warn('Email notification failed:', data.emailError)
+                }
+                
+                // Auto-hide success message after 5 seconds
+                setTimeout(() => setSuccess(false), 5000)
+            } else {
+                setError(data.error || 'Failed to send message. Please try again.')
+            }
+        } catch (err) {
+            console.error('Contact form error:', err)
+            setError('Failed to send message. Please check your connection and try again.')
+        } finally {
+            setLoading(false)
+        }
     }
 
     return (
@@ -60,6 +98,26 @@ export default function ContactPage() {
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-8 font-playfair mt-12">
+                            {/* Success Message */}
+                            {success && (
+                                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+                                    <p className="text-emerald-800 font-medium flex items-center gap-2">
+                                        <span className="text-xl">✓</span>
+                                        Thank you! Your message has been sent successfully. We'll get back to you soon.
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Error Message */}
+                            {error && (
+                                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                                    <p className="text-red-800 font-medium flex items-center gap-2">
+                                        <span className="text-xl">⚠</span>
+                                        {error}
+                                    </p>
+                                </div>
+                            )}
+
                             <div className="space-y-2 font-playfair relative group">
                                 <label className="text-lg font-bold text-gray-500 uppercase tracking-widest">Name</label>
                                 <input
@@ -99,9 +157,19 @@ export default function ContactPage() {
                             <div className="pt-4">
                                 <Button
                                     type="submit"
-                                    className="bg-emerald-500 text-white rounded-lg px-8 py-6 text-sm font-semibold hover:bg-emerald-600 hover:shadow-lg transition-all flex items-center gap-2"
+                                    disabled={loading || !formState.name || !formState.email || !formState.message}
+                                    className="bg-emerald-500 text-white rounded-lg px-8 py-6 text-sm font-semibold hover:bg-emerald-600 hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    Send Message <Send className="w-4 h-4" />
+                                    {loading ? (
+                                        <>
+                                            <span className="animate-spin">⏳</span>
+                                            Sending...
+                                        </>
+                                    ) : (
+                                        <>
+                                            Send Message <Send className="w-4 h-4" />
+                                        </>
+                                    )}
                                 </Button>
                             </div>
                         </form>

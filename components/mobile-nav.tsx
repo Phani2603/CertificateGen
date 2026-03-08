@@ -69,9 +69,9 @@ export default function MobileNav({ hideAuth = false }: MobileNavProps) {
                                 Home
                             </Link>
                             <Link 
-                                href="/newlanding/pricing" 
+                                href="/pricing" 
                                 onClick={() => setIsOpen(false)}
-                                className={`text-lg font-medium transition-colors ${isActive("/newlanding/pricing") ? "text-emerald-600" : "text-gray-600 hover:text-black"}`}
+                                className={`text-lg font-medium transition-colors ${isActive("/pricing") ? "text-emerald-600" : "text-gray-600 hover:text-black"}`}
                             >
                                 Pricing
                             </Link>
