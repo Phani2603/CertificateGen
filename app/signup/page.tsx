@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Eye, EyeOff } from "lucide-react"
 import Image from "next/image"
 import { Poppins, Raleway } from "next/font/google"
 
@@ -31,6 +31,7 @@ function SignupContent() {
 
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -38,6 +39,26 @@ function SignupContent() {
     userType: "individual" as "individual", // Default to individual only
   })
   const [agreedToTerms, setAgreedToTerms] = useState(false)
+
+  // Password strength indicators
+  const [passwordStrength, setPasswordStrength] = useState({
+    hasLength: false,
+    hasUpperCase: false,
+    hasLowerCase: false,
+    hasNumber: false,
+    hasSpecialChar: false,
+  })
+
+  useEffect(() => {
+    // Check password requirements
+    setPasswordStrength({
+      hasLength: formData.password.length >= 8,
+      hasUpperCase: /[A-Z]/.test(formData.password),
+      hasLowerCase: /[a-z]/.test(formData.password),
+      hasNumber: /[0-9]/.test(formData.password),
+      hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(formData.password),
+    })
+  }, [formData.password])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -211,19 +232,58 @@ function SignupContent() {
 
             <div>
               <Label htmlFor="password" className="text-xs font-semibold">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="At least 8 characters"
-                className="h-9 mt-1 rounded-lg border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 text-xs"
-                value={formData.password}
-                onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                required
-                minLength={8}
-              />
-              <p className="text-[10px] text-gray-500 mt-0.5">
-                Must be at least 8 characters long
-              </p>
+              <div className="relative mt-1">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Create a strong password"
+                  className="h-9 rounded-lg border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 text-xs pr-10"
+                  value={formData.password}
+                  onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                  required
+                  minLength={8}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+              {formData.password && (
+                <div className="mt-2 space-y-1">
+                  <div className="flex items-center gap-1.5 text-[10px]">
+                    <div className={`w-1 h-1 rounded-full ${passwordStrength.hasLength ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+                    <span className={passwordStrength.hasLength ? 'text-emerald-600' : 'text-gray-500'}>
+                      8+ characters
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[10px]">
+                    <div className={`w-1 h-1 rounded-full ${passwordStrength.hasUpperCase && passwordStrength.hasLowerCase ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+                    <span className={passwordStrength.hasUpperCase && passwordStrength.hasLowerCase ? 'text-emerald-600' : 'text-gray-500'}>
+                      Upper & lowercase
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[10px]">
+                    <div className={`w-1 h-1 rounded-full ${passwordStrength.hasNumber ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+                    <span className={passwordStrength.hasNumber ? 'text-emerald-600' : 'text-gray-500'}>
+                      Number
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[10px]">
+                    <div className={`w-1 h-1 rounded-full ${passwordStrength.hasSpecialChar ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+                    <span className={passwordStrength.hasSpecialChar ? 'text-emerald-600' : 'text-gray-500'}>
+                      Special character
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {error && (

@@ -42,6 +42,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           throw new Error("Invalid credentials")
         }
 
+        // Check if user account is blocked or suspended
+        if (user.isBlocked) {
+          throw new Error("Your account has been blocked. Please contact support.")
+        }
+
+        if (user.isSuspended) {
+          const suspendedUntil = user.suspendedUntil ? new Date(user.suspendedUntil) : null
+          if (suspendedUntil && suspendedUntil > new Date()) {
+            throw new Error(`Your account is suspended until ${suspendedUntil.toLocaleDateString()}`)
+          } else if (!suspendedUntil) {
+            throw new Error("Your account has been suspended. Please contact support.")
+          }
+          // If suspension has expired, clear the flag
+          user.isSuspended = false
+          user.suspendedUntil = undefined
+          await user.save()
+        }
+
         const isCorrectPassword = await bcrypt.compare(
           credentials.password as string,
           user.password
@@ -49,6 +67,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!isCorrectPassword) {
           throw new Error("Invalid credentials")
+        }
+
+        // Additional safety check - ensure user account is valid
+        if (!user._id || !user.email) {
+          throw new Error("Invalid user account")
         }
 
         return {
@@ -68,7 +91,29 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           
           const existingUser = await User.findOne({ email: user.email })
           
-          if (!existingUser && user.email && user.name) {
+          // Check if existing user is blocked or suspended
+          if (existingUser) {
+            if (existingUser.isBlocked) {
+              console.error("[SignIn] Blocked user attempted login:", user.email)
+              return false
+            }
+            
+            if (existingUser.isSuspended) {
+              const suspendedUntil = existingUser.suspendedUntil ? new Date(existingUser.suspendedUntil) : null
+              if (suspendedUntil && suspendedUntil > new Date()) {
+                console.error("[SignIn] Suspended user attempted login:", user.email)
+                return false
+              }
+              // If suspension has expired, clear the flag
+              existingUser.isSuspended = false
+              existingUser.suspendedUntil = undefined
+            }
+            
+            // Update existing user
+            existingUser.name = user.name || existingUser.name
+            existingUser.image = user.image || existingUser.image
+            await existingUser.save()
+          } else if (user.email && user.name) {
             // Create new user for OAuth
             const newUser = new User({
               email: user.email,
@@ -78,11 +123,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               providerId: account.providerAccountId,
             })
             await newUser.save()
-          } else if (existingUser) {
-            // Update existing user
-            existingUser.name = user.name || existingUser.name
-            existingUser.image = user.image || existingUser.image
-            await existingUser.save()
           }
         } catch (error) {
           console.error("Error in signIn callback:", error)
@@ -96,18 +136,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.id = user.id
       }
       
-      // Refresh user data from database on session update
-      if (trigger === "update" || !token.userType) {
-        try {
-          await connectDB()
-          const dbUser = await User.findOne({ email: token.email })
-          if (dbUser) {
-            token.userType = dbUser.userType
-            token.privateOrgId = dbUser.privateOrgId?.toString()
-          }
-        } catch (error) {
-          console.error("Error refreshing user data in JWT:", error)
+      // Always verify user still exists in database
+      try {
+        await connectDB()
+        const dbUser = await User.findOne({ email: token.email })
+        
+        // If user doesn't exist in database (deleted), invalidate the token
+        if (!dbUser) {
+          console.log("[JWT] User not found in database, invalidating token:", token.email)
+          return null as any // This will cause the session to be invalid
         }
+        
+        // Refresh user data from database on session update or if missing
+        if (trigger === "update" || !token.userType) {
+          token.userType = dbUser.userType
+          token.privateOrgId = dbUser.privateOrgId?.toString()
+        }
+      } catch (error) {
+        console.error("Error refreshing user data in JWT:", error)
       }
       
       return token

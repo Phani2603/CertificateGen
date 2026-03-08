@@ -162,10 +162,21 @@ export async function PUT(request: NextRequest) {
     if (organization !== undefined) user.organization = organization
     if (bannerColor !== undefined) user.bannerColor = bannerColor
     
-    // Allow updating userType if it's not set or if explicitly allowed
-    // This is mainly for the initial setup modal
-    if (userType && (!user.userType || ['individual', 'corporate', 'academic'].includes(userType))) {
-      user.userType = userType
+    // Restrict userType updates - corporate requires admin approval
+    // Only allow individual or academic for regular users
+    if (userType && !user.userType) {
+      // First-time setup: only allow 'individual' or 'academic'
+      // 'corporate' can only be set by admin
+      if (userType === 'corporate') {
+        return NextResponse.json(
+          { success: false, error: 'Corporate account type requires admin approval. Please contact our team.' },
+          { status: 403 }
+        )
+      }
+      
+      if (['individual', 'academic'].includes(userType)) {
+        user.userType = userType
+      }
     }
 
     await user.save()
