@@ -357,7 +357,7 @@ export function CorporateProfileOverlay({ trigger }: CorporateProfileOverlayProp
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <Button type="submit" className="bg-[#21808D] hover:bg-[#1a6570]" disabled={isSaving}>
+                    <Button type="submit" className="bg-[#21808D] hover:bg-[#1a6370]" disabled={isSaving}>
                       {isSaving ? "Saving..." : "Save changes"}
                     </Button>
                     <Button type="button" variant="outline" onClick={() => setViewMode("certs")}>
@@ -390,3 +390,4 @@ export function CorporateProfileOverlay({ trigger }: CorporateProfileOverlayProp
     </ExpandableScreen>
   )
 }
+

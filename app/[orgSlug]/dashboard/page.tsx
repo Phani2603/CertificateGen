@@ -12,6 +12,7 @@ import { PermissionRequestsSection } from "@/components/dashboard/corporate/Perm
 import { InvitationsSection } from "@/components/dashboard/corporate/InvitationsSection"
 import { CorporateSettings } from "@/components/dashboard/corporate/CorporateSettings"
 import { CorporateProfileContent } from "@/components/dashboard/corporate/CorporateProfileContent"
+import { QuotaDisplay } from "@/components/dashboard/corporate/QuotaDisplay"
 import { UserTypeSelectionModal } from "@/components/UserTypeSelectionModal"
 import { CorporateSidebar, CorporatePage } from "@/components/dashboard/corporate/CorporateSidebar"
 import { Menu, AlertCircle, ArrowLeft } from "lucide-react"
@@ -178,9 +179,9 @@ export default function CorporateDashboard({ params }: PageProps) {
 
   if (status === "loading" || isLoading || !resolvedParams) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f6f6f6]">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-[#21808D] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Loading dashboard...</p>
         </div>
       </div>
@@ -193,7 +194,7 @@ export default function CorporateDashboard({ params }: PageProps) {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#f6f6f6] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-white flex items-center justify-center p-4">
         <Card className="max-w-md w-full p-8 text-center">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="h-8 w-8 text-red-600" />
@@ -205,7 +206,7 @@ export default function CorporateDashboard({ params }: PageProps) {
               : error}
           </p>
           <div className="flex flex-col gap-3">
-            <Button onClick={() => window.location.reload()} className="w-full bg-[#21808D]">
+            <Button onClick={() => window.location.reload()} className="w-full bg-blue-600 hover:bg-blue-700">
               Try Again
             </Button>
             <Button variant="outline" onClick={() => window.location.href = '/individual-dashboard'} className="w-full">
@@ -288,13 +289,13 @@ export default function CorporateDashboard({ params }: PageProps) {
               {/* Right side: Profile */}
               <button 
                 onClick={() => setCurrentPage("profile")}
-                className="focus:outline-none focus:ring-2 focus:ring-[#21808D] rounded-full"
+                className="focus:outline-none focus:ring-2 focus:ring-blue-600 rounded-full"
               >
                 <Avatar className="w-10 h-10 md:w-12 md:h-12 cursor-pointer ring-2 ring-white shadow-lg" title="Open profile">
                   {(userData?.image || session?.user?.image) && (
                     <AvatarImage src={userData?.image || session?.user?.image} alt={userData?.name || session?.user?.name || "User"} />
                   )}
-                  <AvatarFallback className="bg-[#21808D] text-white text-sm md:text-base">
+                  <AvatarFallback className="bg-blue-600 text-white text-sm md:text-base">
                     {(userData?.name || session?.user?.name) ? (userData?.name || session?.user?.name || '').split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
                   </AvatarFallback>
                 </Avatar>
@@ -311,6 +312,9 @@ export default function CorporateDashboard({ params }: PageProps) {
                       isOwner={String(orgData.ownerId) === String(userData?.id || userData?._id)}
                       onEditClick={() => setCurrentPage("settings")}
                     />
+
+                    {/* Certificate Quota Display */}
+                    <QuotaDisplay organizationSlug={orgData.slug} showAlerts={true} />
 
                     {/* Permission Requests - Show First for Visibility (Owner Only) */}
                     <PermissionRequestsSection

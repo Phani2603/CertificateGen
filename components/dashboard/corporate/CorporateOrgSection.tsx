@@ -121,3 +121,4 @@ export function CorporateOrgSection({ organization, isOwner, onEditClick }: Corp
     </div>
   )
 }
+

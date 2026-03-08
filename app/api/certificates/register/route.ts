@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb'
 import Certificate from '@/models/Certificate'
 import Event from '@/models/Event'
 import { randomUUID } from 'crypto'
+import { checkOrgQuota, consumeOrgQuota, QuotaExceededError } from '@/lib/quota-service'
 
 export async function POST(request: NextRequest) {
   console.log('\n[API /certificates/register] ===== NEW REQUEST =====')
@@ -11,7 +12,7 @@ export async function POST(request: NextRequest) {
     await connectDB()
 
     const body = await request.json()
-    const { certificates, batchId, generatedBy, eventId, fieldConfiguration, templateS3Key } = body
+    const { certificates, batchId, generatedBy, eventId, fieldConfiguration, templateS3Key, orgId, orgName } = body
     
     console.log('[API /certificates/register] Request data:', {
       certificateCount: certificates?.length,
@@ -22,6 +23,8 @@ export async function POST(request: NextRequest) {
       hasTemplateS3Key: !!templateS3Key,
       templateS3KeyValue: templateS3Key, // NEW: Log actual value
       hasCertificateImages: certificates?.[0]?.certificateImage ? 'yes' : 'no', // NEW: Check for images
+      orgId, // Organization ID for quota checking
+      orgName, // Organization name
     })
 
     if (!certificates || !Array.isArray(certificates) || certificates.length === 0) {
@@ -30,6 +33,37 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'No certificates provided' },
         { status: 400 }
       )
+    }
+
+    // Check organization quota before processing (if orgId provided)
+    if (orgId) {
+      try {
+        console.log(`[API /certificates/register] Checking quota for org ${orgName} (${orgId})...`)
+        const quotaCheck = await checkOrgQuota(orgId, certificates.length)
+        
+        if (!quotaCheck.hasQuota) {
+          console.error('[API /certificates/register] ❌ Quota exceeded')
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'quota_exceeded',
+              message: `Insufficient quota. You have ${quotaCheck.available} certificates remaining but trying to generate ${certificates.length}.`,
+              quota: quotaCheck.quota,
+              used: quotaCheck.used,
+              available: quotaCheck.available,
+            },
+            { status: 403 }
+          )
+        }
+        
+        console.log(`[API /certificates/register] ✅ Quota check passed: ${quotaCheck.available} available (unlimited: ${quotaCheck.quota === -1})`)
+      } catch (error) {
+        console.error('[API /certificates/register] Error checking quota:', error)
+        // Continue without quota check if there's an error (fail open)
+        console.warn('[API /certificates/register] ⚠️ Proceeding without quota check due to error')
+      }
+    } else {
+      console.log('[API /certificates/register] No orgId provided - skipping quota check')
     }
 
     console.log(`[API /certificates/register] Registering ${certificates.length} certificates`)
@@ -140,6 +174,20 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`[API /certificates/register] ✅ Successfully registered ${registeredCertificates.length}/${certificates.length} certificates`)
+    
+    // Consume organization quota for successfully registered certificates
+    if (orgId && registeredCertificates.length > 0) {
+      try {
+        console.log(`[API /certificates/register] Consuming ${registeredCertificates.length} quota for org ${orgName}...`)
+        await consumeOrgQuota(orgId, registeredCertificates.length, batchId, generatedBy)
+        console.log('[API /certificates/register] ✅ Quota consumed successfully')
+      } catch (error) {
+        console.error('[API /certificates/register] ⚠️ Error consuming quota:', error)
+        // Don't fail the request if quota consumption fails - certificates are already registered
+        // Admin can manually adjust quota if needed
+      }
+    }
+    
     console.log('[API /certificates/register] ===== REQUEST COMPLETE =====\n')
 
     return NextResponse.json({

@@ -150,3 +150,4 @@ export function CorporateSettings({ organization, onUpdate }: CorporateSettingsP
     </div>
   )
 }
+

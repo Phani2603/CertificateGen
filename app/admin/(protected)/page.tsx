@@ -51,6 +51,8 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { TbBuildingBank } from "react-icons/tb"
+import { QuotaAnalytics } from "@/components/admin/QuotaAnalytics"
+import { QuotaAlertBanner } from "@/components/admin/QuotaAlertBanner"
 
 // Define colors
 const PRIMARY_COLOR = '#00D492'
@@ -99,6 +101,9 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6 pb-8">
+      {/* Quota Alert Banner */}
+      <QuotaAlertBanner />
+
       {/* System Status & Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -370,6 +375,9 @@ export default function AdminDashboard() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Certificate Quota Management */}
+      <QuotaAnalytics />
     </div>
   )
 }
