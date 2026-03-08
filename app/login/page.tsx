@@ -3,14 +3,14 @@
 import { Suspense, useState, FormEvent, useEffect } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { signIn, useSession } from "next-auth/react"
+import { signIn, signOut, useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Eye, EyeOff } from "lucide-react"
 import Image from "next/image"
-import { UserTypeSelectionModal } from "@/components/UserTypeSelectionModal"
+import { ForgotPasswordModal } from "@/components/ForgotPasswordModal"
 import { Poppins, Raleway } from "next/font/google"
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"] })
@@ -23,7 +23,8 @@ function LoginContent() {
   const { data: session, status } = useSession()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
-  const [showTypeSelection, setShowTypeSelection] = useState(false)
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const [hasCheckedRedirect, setHasCheckedRedirect] = useState(false)
   const [formData, setFormData] = useState({
     email: "",
@@ -75,27 +76,32 @@ function LoginContent() {
 
           if (!response.ok) {
             console.error('Profile fetch failed:', response.status)
+            // If user is authenticated but profile doesn't exist (deleted account)
+            // Sign them out immediately and show error
+            if (response.status === 404 || response.status === 401) {
+              console.log('[Login] User account not found, signing out')
+              setError("Your account no longer exists. Please sign up again.")
+              // Force sign out to clear the session completely
+              await signOut({ redirect: false })
+              setHasCheckedRedirect(false)
+            }
             return
           }
 
           const data = await response.json()
 
           if (data.success && data.user) {
+            // All users are individual by default - no type selection needed
             if (!data.user.userType) {
-              setShowTypeSelection(true)
-            } else if (data.user.userType === 'individual') {
-              router.push('/individual-dashboard')
-            } else if (data.user.userType === 'corporate') {
-              // Check if user has organization
-              if (data.user.privateOrg) {
-                router.push(`/${data.user.privateOrg.slug}/dashboard`)
-              } else {
-                router.push('/create-organization')
-              }
-            } else if (data.user.userType === 'academic') {
-              // Academic users go to general dashboard
-              router.push('/dashboard')
+              // Set user type to individual automatically
+              await fetch('/api/profile', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userType: 'individual' })
+              })
             }
+            // Always redirect to individual dashboard
+            router.push('/individual-dashboard')
           }
         } catch (error) {
           console.error('Error checking user type:', error)
@@ -133,9 +139,9 @@ function LoginContent() {
 
   return (
     <>
-      <UserTypeSelectionModal
-        isOpen={showTypeSelection}
-        onClose={() => setShowTypeSelection(false)}
+      <ForgotPasswordModal
+        isOpen={showForgotPassword}
+        onClose={() => setShowForgotPassword(false)}
       />
 
       <div className={`min-h-screen bg-gray-50 flex items-center justify-center p-2 md:p-3 ${poppins.className}`}>
@@ -268,21 +274,39 @@ function LoginContent() {
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1">
+                <div className="flex justify-between items-center mb-1">
                   <Label htmlFor="password" className="text-xs font-semibold">Password</Label>
-                  <Link href="#" className="text-[10px] text-gray-600 hover:text-emerald-600 hover:underline">
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPassword(true)}
+                    className="text-[10px] text-gray-600 hover:text-emerald-600 hover:underline"
+                  >
                     Forgot?
-                  </Link>
+                  </button>
                 </div>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  className="h-9 rounded-lg border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 text-xs"
-                  value={formData.password}
-                  onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    className="h-9 rounded-lg border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 text-xs pr-10"
+                    value={formData.password}
+                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               {error && (

@@ -21,7 +21,7 @@ interface UserTypeSelectionModalProps {
 
 export function UserTypeSelectionModal({ isOpen, onClose }: UserTypeSelectionModalProps) {
   const router = useRouter()
-  const [selectedType, setSelectedType] = useState<"corporate" | "individual" | null>(null)
+  const [selectedType, setSelectedType] = useState<"individual" | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
 
@@ -43,11 +43,9 @@ export function UserTypeSelectionModal({ isOpen, onClose }: UserTypeSelectionMod
         throw new Error(data.error || 'Failed to update user type')
       }
 
-      // Redirect based on type
+      // Redirect - only individual is allowed for regular users
       if (selectedType === "individual") {
         router.push("/individual-dashboard")
-      } else {
-        router.push("/create-organization")
       }
       
       router.refresh()
@@ -59,56 +57,40 @@ export function UserTypeSelectionModal({ isOpen, onClose }: UserTypeSelectionMod
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl">
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      // Only allow closing if not loading and onClose is provided
+      if (!open && !isLoading && onClose) {
+        onClose()
+      }
+    }}>
+      <DialogContent 
+        className="sm:max-w-2xl" 
+        onInteractOutside={(e) => {
+          // Prevent closing by clicking outside
+          e.preventDefault()
+        }}
+        onEscapeKeyDown={(e) => {
+          // Prevent closing with escape key
+          if (isLoading) {
+            e.preventDefault()
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-center">
-            How do you want to use GetCertificates?
+            Welcome to Certiflo!
           </DialogTitle>
           <DialogDescription className="text-center text-base">
-            We'll personalize your setup experience accordingly.
+            Let's set up your account to get started.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-          {/* Corporate/Business Card */}
-          <button
-            onClick={() => setSelectedType("corporate")}
-            className={cn(
-              "flex flex-col items-center gap-4 p-6 rounded-xl border-2 transition-all",
-              selectedType === "corporate"
-                ? "border-[#21808D] bg-[#21808D]/5"
-                : "border-gray-200 hover:border-gray-300"
-            )}
-          >
-            <div className={cn(
-              "w-16 h-16 rounded-xl flex items-center justify-center transition-colors",
-              selectedType === "corporate" ? "bg-[#FF5733]" : "bg-gray-100"
-            )}>
-              <TbBuildingBank className={cn(
-                "w-8 h-8",
-                selectedType === "corporate" ? "text-white" : "text-gray-600"
-              )} />
-            </div>
-            <div className="text-center">
-              <h3 className="font-semibold text-lg mb-2">Corporate/Business</h3>
-              <p className="text-sm text-gray-600 mb-3">
-                Generate certificates for your company events, training programs, and employee recognition
-              </p>
-              <ul className="text-xs text-gray-500 space-y-1 text-left">
-                <li>✓ Custom organization dashboard</li>
-                <li>✓ Invite team members</li>
-                <li>✓ Manage company events</li>
-                <li>✓ Bulk certificate generation</li>
-              </ul>
-            </div>
-          </button>
-
-          {/* Individual Card */}
+        <div className="flex justify-center mt-6">
+          {/* Individual Card - Primary option for regular users */}
           <button
             onClick={() => setSelectedType("individual")}
             className={cn(
-              "flex flex-col items-center gap-4 p-6 rounded-xl border-2 transition-all",
+              "flex flex-col items-center gap-4 p-6 rounded-xl border-2 transition-all max-w-md w-full",
               selectedType === "individual"
                 ? "border-[#21808D] bg-[#21808D]/5"
                 : "border-gray-200 hover:border-gray-300"
@@ -120,22 +102,35 @@ export function UserTypeSelectionModal({ isOpen, onClose }: UserTypeSelectionMod
             )}>
               <User className={cn(
                 "w-8 h-8",
-                selectedType === "individual" ? "text-black" : "text-gray-600"
+                selectedType === "individual" ? "text-white" : "text-gray-600"
               )} />
             </div>
             <div className="text-center">
               <h3 className="font-semibold text-lg mb-2">Individual</h3>
               <p className="text-sm text-gray-600 mb-3">
-                Verify and manage certificates you've received from organizations and events
+                Perfect for freelancers, educators, and event organizers who create certificates individually
               </p>
               <ul className="text-xs text-gray-500 space-y-1 text-left">
-                <li>✓ View your certificates</li>
-                <li>✓ Verify authenticity</li>
-                <li>✓ Download and share</li>
-                <li>✓ Track your achievements</li>
+                <li>✓ Personal dashboard</li>
+                <li>✓ Quick certificate creation</li>
+                <li>✓ Template library access</li>
+                <li>✓ Unlimited certificates</li>
               </ul>
             </div>
           </button>
+
+          {/* Corporate/Business Card - REMOVED from public signup */}
+          {/* Corporate accounts require admin approval */}
+          {/* Contact admin for corporate access */}
+        </div>
+
+        <div className="mt-4 text-center">
+          <p className="text-xs text-gray-500">
+            Need a corporate account?{" "}
+            <a href="mailto:admin@getcertificates.com" className="text-[#21808D] hover:underline">
+              Contact our team
+            </a>
+          </p>
         </div>
 
         {error && (

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useSession } from "next-auth/react"
+import { useSession, signOut } from "next-auth/react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -102,14 +102,14 @@ export function ProfileSection() {
 
       if (data.success) {
         toast.success("Account deleted successfully")
-        window.location.href = "/"
+        // Sign out the user and redirect to home page
+        await signOut({ redirect: true, callbackUrl: "/" })
       } else {
         throw new Error(data.error)
       }
     } catch (error) {
       console.error("Failed to delete account:", error)
       toast.error("Failed to delete account")
-    } finally {
       setIsDeleting(false)
     }
   }
