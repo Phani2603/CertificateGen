@@ -277,7 +277,7 @@ export function InvitationsSection({ organizationId, organizationSlug, isOwner }
                       variant="ghost"
                       size="sm"
                       onClick={() => handleTransferOwnership(member._id)}
-                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      className="text-teal-600 hover:text-teal-700 hover:bg-teal-50"
                       title="Transfer ownership"
                     >
                       <Shield className="w-4 h-4" />
@@ -418,3 +418,4 @@ export function InvitationsSection({ organizationId, organizationSlug, isOwner }
     </div>
   )
 }
+

@@ -38,7 +38,7 @@ export function OrgOverviewStats({ organizationId, memberCount }: OrgOverviewSta
       title: "Total Members",
       value: stats.totalMembers,
       icon: HiOutlineUsers,
-      textColor: "text-blue-600"
+      textColor: "text-teal-600"
     },
     {
       title: "Total Events",
@@ -94,3 +94,4 @@ export function OrgOverviewStats({ organizationId, memberCount }: OrgOverviewSta
     </div>
   )
 }
+

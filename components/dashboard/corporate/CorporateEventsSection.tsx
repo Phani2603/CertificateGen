@@ -94,7 +94,7 @@ export function CorporateEventsSection({
     "from-[#FF5733] to-[#ff7a59]",
     "from-[#8FD6BD] to-[#a8e0cd]",
     "from-[#F4E04D] to-[#f7e878]",
-    "from-[#21808D] to-[#2a9faf]",
+    "from-[#21808D] to-[#1a6370]",
     "from-purple-500 to-purple-600",
     "from-pink-500 to-pink-600"
   ]
@@ -368,7 +368,7 @@ export function CorporateEventsSection({
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 -mt-1 h-7 w-7 p-0"
+                              className="text-teal-600 hover:text-teal-700 hover:bg-teal-50 -mt-1 h-7 w-7 p-0"
                               onClick={() => {
                                 setInfoEvent(event)
                                 setShowInfoModal(true)
@@ -448,7 +448,7 @@ export function CorporateEventsSection({
                                 onClick={() => setCurrentPage(page)}
                                 className={`h-8 w-8 p-0 ${
                                   currentPage === page 
-                                    ? "bg-[#21808D] hover:bg-[#1a6570] text-white" 
+                                    ? "bg-[#21808D] hover:bg-[#1a6370] text-white" 
                                     : ""
                                 }`}
                               >
@@ -533,7 +533,8 @@ export function CorporateEventsSection({
                   }}
                   organization={{
                     id: organizationId,
-                    name: organizationName
+                    name: organizationName,
+                    slug: organizationSlug
                   }}
                 />
               )}
@@ -561,7 +562,8 @@ export function CorporateEventsSection({
                   onAddToHistory={addToHistory}
                   organization={{
                     id: organizationId,
-                    name: organizationName
+                    name: organizationName,
+                    slug: organizationSlug
                   }}
                 />
               )}
@@ -638,7 +640,7 @@ export function CorporateEventsSection({
                   </Button>
                   <Button 
                     type="submit"
-                    className="flex-1 bg-[#21808D] hover:bg-[#1a6570] text-white"
+                    className="flex-1 bg-[#21808D] hover:bg-[#1a6370] text-white"
                     disabled={isCreating}
                   >
                     {isCreating ? 'Creating...' : 'Create Event'}
@@ -727,3 +729,4 @@ export function CorporateEventsSection({
     </>
   )
 }
+

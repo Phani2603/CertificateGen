@@ -63,7 +63,7 @@ export function CorporateActiveEventsSection({ organizationId, organizationName 
     "from-[#FF5733] to-[#ff7a59]",
     "from-[#8FD6BD] to-[#a8e0cd]",
     "from-[#F4E04D] to-[#f7e878]",
-    "from-[#21808D] to-[#2a9faf]",
+    "from-[#21808D] to-[#60a5fa]",
     "from-purple-500 to-purple-600",
     "from-pink-500 to-pink-600"
   ]
@@ -146,3 +146,4 @@ export function CorporateActiveEventsSection({ organizationId, organizationName 
     </div>
   )
 }
+

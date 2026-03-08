@@ -215,7 +215,7 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
                               onClick={() => setCurrentPage(page)}
                               className={`h-8 w-8 p-0 ${
                                 currentPage === page 
-                                  ? "bg-[#21808D] hover:bg-[#1a6570] text-white" 
+                                  ? "bg-[#21808D] hover:bg-[#1a6370] text-white" 
                                   : ""
                               }`}
                             >
@@ -345,3 +345,4 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
     </>
   )
 }
+

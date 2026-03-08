@@ -9,6 +9,20 @@ export interface IPrivateOrg extends Document {
   ownerId: mongoose.Types.ObjectId
   allowedUsers: mongoose.Types.ObjectId[]
   isPublic: boolean
+  // Certificate Quota System
+  certificateQuota: number // -1 = unlimited, positive number = limit
+  certificatesUsed: number
+  quotaMetadata?: {
+    allocatedBy?: mongoose.Types.ObjectId | string // ObjectId or 'admin' string
+    allocatedAt?: Date
+    lastUpdatedBy?: mongoose.Types.ObjectId | string // ObjectId or 'admin' string
+    lastUpdatedAt?: Date
+    notes?: string
+    // Future Phase 2 fields (optional)
+    quotaType?: 'one-time' | 'monthly' | 'yearly' | 'rolling'
+    resetDay?: number
+    autoRefund?: boolean
+  }
   createdAt: Date
   updatedAt: Date
 }
@@ -57,6 +71,38 @@ const PrivateOrgSchema = new Schema<IPrivateOrg, IPrivateOrgModel>(
     isPublic: {
       type: Boolean,
       default: false,
+    },
+    // Certificate Quota System
+    certificateQuota: {
+      type: Number,
+      default: 0, // New orgs start with 0 quota until admin allocates
+      min: -1,    // -1 = unlimited, 0+ = limited quota
+      index: true, // For admin analytics queries
+    },
+    certificatesUsed: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    quotaMetadata: {
+      allocatedBy: {
+        type: Schema.Types.Mixed, // Can be ObjectId or string for cookie auth
+        ref: 'User',
+      },
+      allocatedAt: Date,
+      lastUpdatedBy: {
+        type: Schema.Types.Mixed, // Can be ObjectId or string for cookie auth
+        ref: 'User',
+      },
+      lastUpdatedAt: Date,
+      notes: String,
+      // Future Phase 2 fields (optional, not implemented yet)
+      quotaType: {
+        type: String,
+        enum: ['one-time', 'monthly', 'yearly', 'rolling'],
+      },
+      resetDay: Number,
+      autoRefund: Boolean,
     },
   },
   {

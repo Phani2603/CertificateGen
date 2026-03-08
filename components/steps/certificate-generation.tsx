@@ -8,6 +8,16 @@ import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { EmailStatusCard } from "@/components/dashboard/EmailStatusCard"
 import { Upload, Download, Loader2, CheckCircle, AlertCircle, Mail, AlertTriangle } from "lucide-react"
 import JSZip from "jszip"
@@ -27,7 +37,7 @@ interface CertificateGenerationProps {
   onBack: () => void
   selectedEvent?: {club: string, eventId: string, eventName: string} | null
   onAddToHistory?: (eventName: string, clubName: string, count: number, totalSizeBytes: number) => void
-  organization?: {id: string, name: string, logoUrl?: string} | null
+  organization?: {id: string, name: string, slug: string, logoUrl?: string} | null
   clubs?: Array<{id: string, name: string, members: number, color: string, logoUrl?: string}>
 }
 
@@ -78,6 +88,10 @@ export default function CertificateGeneration({
   const [isSendingMail, setIsSendingMail] = useState(false)
   const [emailProvider, setEmailProvider] = useState<"resend" | "gmail" | "senement">("senement")
   const [sendingMode, setSendingMode] = useState<"auto" | "sequential" | "pooled">("auto")
+  
+  // Quota validation state
+  const [quotaExceeded, setQuotaExceeded] = useState(false)
+  const [quotaAvailable, setQuotaAvailable] = useState<number | null>(null)
   const [deliveryMode, setDeliveryMode] = useState<"link-only" | "attachment">("link-only")
   const [showDevNav, setShowDevNav] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -157,12 +171,12 @@ export default function CertificateGeneration({
     }
   }, [selectedEvent?.eventId])
 
-  const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCsvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
     const reader = new FileReader()
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const text = event.target?.result as string
       const lines = text.split("\n").filter((line) => line.trim())
 
@@ -184,6 +198,58 @@ export default function CertificateGeneration({
         )
       })
 
+      // **QUOTA VALIDATION FIRST**: Check quota BEFORE setting CSV data
+      if (organization?.slug) {
+        try {
+          const quotaResponse = await fetch(`/api/quota/org/${organization.slug}`)
+          const quotaResult = await quotaResponse.json()
+          
+          if (quotaResult.success && quotaResult.data) {
+            const { unlimited, available, quota, used } = quotaResult.data
+            
+            if (!unlimited && data.length > available) {
+              // QUOTA EXCEEDED - Block immediately
+              setQuotaExceeded(true)
+              setQuotaAvailable(available)
+              
+              toast.error("Certificate Quota Exceeded", {
+                description: `You have ${available} certificates remaining but tried to upload ${data.length}. Please reduce rows in CSV or contact your administrator.`,
+                duration: 15000,
+              })
+              
+              // Reset file input
+              if (fileInputRef.current) {
+                fileInputRef.current.value = ''
+              }
+              
+              console.error(`[CSV Upload] BLOCKED: Quota exceeded - Available ${available}, Requested ${data.length}`)
+              return // STOP - Don't set any data
+            }
+            
+            // Quota OK - Reset exceeded flag
+            setQuotaExceeded(false)
+            setQuotaAvailable(available)
+            
+            // Show warning if using more than 80% of remaining quota
+            if (!unlimited && available > 0) {
+              const percentUsed = ((used + data.length) / quota) * 100
+              if (percentUsed >= 80 && percentUsed < 100) {
+                toast.warning("Quota Warning", {
+                  description: `This upload will use ${data.length} certificates, leaving you with ${available - data.length} remaining (${Math.round(percentUsed)}% of your quota).`,
+                  duration: 8000,
+                })
+              }
+            }
+            
+            console.log(`[CSV Upload] Quota check passed: ${data.length} <= ${available} available`)
+          }
+        } catch (err) {
+          console.warn('[CSV Upload] Could not verify quota:', err)
+          // Continue anyway - don't block upload on quota check failure
+        }
+      }
+
+      // Only set data if quota check passed
       setCsvData(data)
       onCsvUpload(data)
       setGenerationStatus("idle")
@@ -478,6 +544,48 @@ export default function CertificateGeneration({
       return
     }
 
+    // **CRITICAL QUOTA CHECK**: Block if quota exceeded
+    if (quotaExceeded) {
+      toast.error("Certificate Generation Blocked", {
+        description: `You have ${quotaAvailable || 0} certificates remaining but trying to generate ${csvData.length}. Please contact your administrator to increase your quota.`,
+        duration: 15000,
+      })
+      setGenerationStatus("error")
+      console.error(`[Generation] BLOCKED: Quota exceeded - Available ${quotaAvailable}, Requested ${csvData.length}`)
+      return
+    }
+
+    // **DOUBLE-CHECK QUOTA**: Validate quota before ANY processing
+    if (organization?.id) {
+      try {
+        const quotaResponse = await fetch(`/api/quota/org/${organization.id}`)
+        const quotaResult = await quotaResponse.json()
+        
+        if (quotaResult.success && quotaResult.data) {
+          const { unlimited, available } = quotaResult.data
+          
+          if (!unlimited && csvData.length > available) {
+            // BLOCK GENERATION - Quota exceeded
+            toast.error("Certificate Generation Blocked", {
+              description: `You have ${available} certificates remaining but trying to generate ${csvData.length}. Please contact your administrator to increase your quota.`,
+              duration: 15000,
+            })
+            setGenerationStatus("error")
+            setQuotaExceeded(true)
+            setQuotaAvailable(available)
+            console.error(`[Generation] BLOCKED: Insufficient quota - Available ${available}, Requested ${csvData.length}`)
+            return // STOP immediately
+          }
+          
+          console.log(`[Generation] Quota validated: ${csvData.length} <= ${available} available`)
+        }
+      } catch (err) {
+        console.warn('[Generation] Could not verify quota before generation:', err)
+        // Show warning but allow proceeding (backend will still validate)
+        toast.warning("Could not verify quota availability. Generation will proceed but may fail if quota is exceeded.")
+      }
+    }
+
     // Warn users when generating a very large number of certificates
     if (csvData.length >= 1000) {
       toast.info(`Generating ${csvData.length} certificates. This may take a few minutes. We will process them in safe batches.`)
@@ -664,6 +772,8 @@ export default function CertificateGeneration({
                 eventId: selectedEvent.eventId,
                 fieldConfiguration: fields,
                 templateS3Key: templateS3Key,
+                orgId: organization?.id, // Organization ID for quota tracking
+                orgName: organization?.name, // Organization name for error messages
               }),
             })
 
@@ -676,8 +786,20 @@ export default function CertificateGeneration({
                 const next = prev + batch.length
                 return next > totalToRegisterLocal ? totalToRegisterLocal : next
               })
+            } else if (result.error === 'quota_exceeded') {
+              // Quota exceeded - show detailed error to user
+              console.error("[Certificate Registration] Quota exceeded:", result.message)
+              toast.error("Certificate Quota Exceeded", {
+                description: result.message || `You have ${result.available || 0} certificates remaining but trying to generate ${batch.length}.`,
+                duration: 8000,
+              })
+              // Stop processing further batches
+              throw new Error(result.message || "Certificate quota exceeded")
             } else {
               console.warn("[Certificate Registration] Batch registration failed:", result.error)
+              toast.error("Registration Failed", {
+                description: result.error || "Failed to register certificates",
+              })
             }
           }
 
@@ -1118,6 +1240,18 @@ Generated: ${new Date().toLocaleString()}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* CSV Upload */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Quota Exceeded Alert */}
+          {quotaExceeded && (
+            <Alert className="border-red-200 bg-red-50">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertTitle className="text-red-800 font-semibold">Certificate Quota Exceeded</AlertTitle>
+              <AlertDescription className="text-sm text-red-700">
+                You have {quotaAvailable || 0} certificates remaining. Your CSV contains {csvData.length} rows. 
+                Please reduce the number of rows or contact your administrator to increase your quota before proceeding.
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <Card className="p-6 border-2 border-dashed border-gray-300 hover:border-[#21808D] transition-colors">
             <div className="text-center">
               <Upload className="w-12 h-12 text-[#21808D] mx-auto mb-4" />
@@ -1129,7 +1263,7 @@ Generated: ${new Date().toLocaleString()}
                 <p className="font-semibold text-blue-900 mb-1">Required CSV Format:</p>
                 <code className="text-blue-700 block">Email,ID,FirstName,LastName</code>
                 <code className="text-blue-700 block">student@university.edu.in,123,John,Doe</code>
-                <p className="text-blue-600 mt-2">💡 Email column is required for sending certificates</p>
+                <p className="text-blue-600 mt-2">Note: Email column is required for sending certificates</p>
               </div>
               <input ref={fileInputRef} type="file" accept=".csv,.txt" onChange={handleCsvUpload} className="hidden" />
               <Button
@@ -1546,13 +1680,18 @@ Generated: ${new Date().toLocaleString()}
         )}
         <Button
           onClick={generateCertificates}
-          disabled={csvData.length === 0 || isGenerating}
+          disabled={csvData.length === 0 || isGenerating || quotaExceeded}
           className="flex-1 bg-[#21808D] hover:bg-[#1a6570] text-white disabled:opacity-50"
         >
           {isGenerating ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               Generating... ({generatedCount}/{csvData.length})
+            </>
+          ) : quotaExceeded ? (
+            <>
+              <AlertCircle className="w-4 h-4 mr-2" />
+              Quota Exceeded - Blocked
             </>
           ) : (
             <>
@@ -1595,6 +1734,67 @@ Generated: ${new Date().toLocaleString()}
           })
         }}
       />
+
+      {/* Quota Exceeded AlertDialog */}
+      <AlertDialog open={quotaExceeded} onOpenChange={setQuotaExceeded}>
+        <AlertDialogContent className="border-red-500 sm:max-w-md">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center shrink-0">
+                <AlertCircle className="h-6 w-6 text-red-600" />
+              </div>
+              <AlertDialogTitle className="text-red-900 text-xl">
+                Certificate Quota Exceeded
+              </AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="text-red-800 space-y-3 text-left">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="font-semibold text-base mb-2">
+                  You have only <span className="text-2xl text-red-600 font-bold">{quotaAvailable}</span> certificates remaining in your quota.
+                </p>
+                <p className="text-sm">
+                  Your CSV contains <span className="font-bold text-lg">{csvData.length}</span> entries, which exceeds your available quota by <span className="font-bold text-red-600">{csvData.length - (quotaAvailable || 0)}</span>.
+                </p>
+              </div>
+              
+              <div className="space-y-2 text-sm">
+                <p className="font-semibold text-red-900">Required Actions:</p>
+                <ul className="list-disc list-inside space-y-1.5 text-red-700">
+                  <li>Reduce the number of rows in your CSV to <strong>{quotaAvailable}</strong> or fewer</li>
+                  <li>Contact your organization administrator to increase your quota</li>
+                  <li>Remove this CSV and upload a smaller file</li>
+                </ul>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="sm:space-x-2">
+            <AlertDialogAction
+              onClick={() => {
+                // Clear CSV data and reset file input
+                setCsvData([])
+                setCsvHeaders([])
+                setFieldMapping({})
+                setQuotaExceeded(false)
+                if (fileInputRef.current) {
+                  fileInputRef.current.value = ''
+                }
+                toast.info('CSV cleared. Please upload a file with fewer entries.')
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Clear CSV & Try Again
+            </AlertDialogAction>
+            <AlertDialogCancel
+              onClick={() => {
+                // Just close dialog, keep the CSV data visible but blocked
+                setQuotaExceeded(false)
+              }}
+            >
+              Keep CSV (Review Only)
+            </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
