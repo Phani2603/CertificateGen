@@ -24,17 +24,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
-import { Award, Infinity, TrendingUp, Edit, History, AlertTriangle, RotateCcw } from "lucide-react"
+import { Award, Infinity, TrendingUp, Edit, History, AlertTriangle, RotateCcw, Plus } from "lucide-react"
 import { format } from "date-fns"
 
 interface QuotaManagementProps {
   organizationSlug: string
   organizationName: string
+  currentQuota?: number
   onQuotaUpdated?: () => void
 }
 
-export function QuotaManagement({ organizationSlug, organizationName, onQuotaUpdated }: QuotaManagementProps) {
+export function QuotaManagement({ organizationSlug, organizationName, currentQuota, onQuotaUpdated }: QuotaManagementProps) {
   const [loading, setLoading] = useState(false)
   const [quota, setQuota] = useState<string>("")
   const [reason, setReason] = useState<string>("")
@@ -43,6 +45,7 @@ export function QuotaManagement({ organizationSlug, organizationName, onQuotaUpd
   const [resetDialogOpen, setResetDialogOpen] = useState(false)
   const [history, setHistory] = useState<any[]>([])
   const [quotaInfo, setQuotaInfo] = useState<any>(null)
+  const [operationMode, setOperationMode] = useState<"set" | "add">("set")
 
   const handleUpdateQuota = async () => {
     if (!reason.trim()) {
@@ -57,21 +60,33 @@ export function QuotaManagement({ organizationSlug, organizationName, onQuotaUpd
       return
     }
 
+    // For add mode, validate against current quota
+    if (operationMode === "add" && currentQuota === -1) {
+      toast.error("Cannot add to unlimited quota. Switch to 'Set' mode to change it.")
+      return
+    }
+
     setLoading(true)
     try {
       const response = await fetch(`/api/admin/orgs/${organizationSlug}/quota`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quota: quotaValue, reason }),
+        body: JSON.stringify({ 
+          quota: quotaValue, 
+          reason,
+          mode: operationMode // 'set' or 'add'
+        }),
       })
 
       const result = await response.json()
 
       if (result.success) {
-        toast.success(`Quota updated for ${organizationName}`)
+        const modeText = operationMode === "add" ? "added to" : "set for"
+        toast.success(`Quota ${modeText} ${organizationName}`)
         setDialogOpen(false)
         setQuota("")
         setReason("")
+        setOperationMode("set") // Reset to default
         onQuotaUpdated?.()
       } else {
         toast.error(result.error || 'Failed to update quota')
@@ -139,62 +154,133 @@ export function QuotaManagement({ organizationSlug, organizationName, onQuotaUpd
   const getTransactionBadge = (type: string) => {
     const styles = {
       allocation: "bg-blue-50 text-blue-700 border-blue-200",
-      usage: "bg-green-50 text-green-700 border-green-200",
+      addition: "bg-green-50 text-green-700 border-green-200",
+      usage: "bg-gray-50 text-gray-700 border-gray-200",
       refund: "bg-orange-50 text-orange-700 border-orange-200",
       reset: "bg-purple-50 text-purple-700 border-purple-200",
-      adjustment: "bg-gray-50 text-gray-700 border-gray-200",
+      adjustment: "bg-yellow-50 text-yellow-700 border-yellow-200",
     }
     return styles[type as keyof typeof styles] || styles.adjustment
   }
 
   return (
     <div className="flex gap-2">
-      {/* Set Quota Dialog */}
+      {/* Set/Add Quota Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogTrigger asChild>
           <Button variant="outline" size="sm" className="h-8">
             <Edit className="w-3 h-3 mr-1" />
-            Set Quota
+            Manage Quota
           </Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Set Certificate Quota</DialogTitle>
+            <DialogTitle>Manage Certificate Quota</DialogTitle>
             <DialogDescription>
               Configure certificate generation limit for {organizationName}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="quota">Quota Amount</Label>
-              <Input
-                id="quota"
-                type="number"
-                placeholder="Enter quota (use -1 for unlimited)"
-                value={quota}
-                onChange={(e) => setQuota(e.target.value)}
-              />
-              <p className="text-xs text-gray-500">
-                Enter -1 for unlimited certificates, or a positive number for a specific limit
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="reason">Reason</Label>
-              <Textarea
-                id="reason"
-                placeholder="Why are you changing the quota?"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                rows={3}
-              />
-            </div>
-          </div>
+          
+          <Tabs value={operationMode} onValueChange={(v) => setOperationMode(v as "set" | "add")} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="set" className="flex items-center gap-1">
+                <Edit className="w-3 h-3" />
+                Set Quota
+              </TabsTrigger>
+              <TabsTrigger value="add" className="flex items-center gap-1">
+                <Plus className="w-3 h-3" />
+                Add Quota
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="set" className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
+                <p className="text-xs text-blue-800">
+                  <strong>Set Mode:</strong> Replace the total quota with a new value.
+                  {currentQuota !== undefined && (
+                    <> Current: <strong>{currentQuota === -1 ? 'Unlimited' : currentQuota.toLocaleString()}</strong></>
+                  )}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quota-set">New Quota Amount</Label>
+                <Input
+                  id="quota-set"
+                  type="number"
+                  placeholder="Enter quota (use -1 for unlimited)"
+                  value={quota}
+                  onChange={(e) => setQuota(e.target.value)}
+                />
+                <p className="text-xs text-gray-500">
+                  Enter -1 for unlimited certificates, or a positive number for a specific limit
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="reason-set">Reason</Label>
+                <Textarea
+                  id="reason-set"
+                  placeholder="Why are you changing the quota?"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  rows={3}
+                />
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="add" className="space-y-4">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-4">
+                <p className="text-xs text-green-800">
+                  <strong>Add Mode:</strong> Increase the quota by adding this amount to the current total.
+                  {currentQuota !== undefined && currentQuota !== -1 && (
+                    <> Current: <strong>{currentQuota.toLocaleString()}</strong>, 
+                    {quota && parseInt(quota) > 0 && (
+                      <> New will be: <strong>{(currentQuota + parseInt(quota)).toLocaleString()}</strong></>
+                    )}
+                    </>
+                  )}
+                  {currentQuota === -1 && (
+                    <span className="block mt-1 text-orange-700">⚠️ Current quota is unlimited. Use "Set" mode to change it.</span>
+                  )}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quota-add">Amount to Add</Label>
+                <Input
+                  id="quota-add"
+                  type="number"
+                  placeholder="Enter amount to add"
+                  value={quota}
+                  onChange={(e) => setQuota(e.target.value)}
+                  disabled={currentQuota === -1}
+                />
+                <p className="text-xs text-gray-500">
+                  This amount will be added to the current quota
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="reason-add">Reason</Label>
+                <Textarea
+                  id="reason-add"
+                  placeholder="Why are you adding quota?"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  rows={3}
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
+          
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <Button variant="outline" onClick={() => {
+              setDialogOpen(false)
+              setQuota("")
+              setReason("")
+              setOperationMode("set")
+            }}>
               Cancel
             </Button>
             <Button onClick={handleUpdateQuota} disabled={loading}>
-              {loading ? "Updating..." : "Update Quota"}
+              {loading ? "Updating..." : operationMode === "add" ? "Add Quota" : "Set Quota"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -53,6 +53,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { TbBuildingBank } from "react-icons/tb"
 import { QuotaAnalytics } from "@/components/admin/QuotaAnalytics"
 import { QuotaAlertBanner } from "@/components/admin/QuotaAlertBanner"
+import { ContactFormsSummary } from "@/components/admin/ContactFormsSummary"
 
 // Define colors
 const PRIMARY_COLOR = '#00D492'
@@ -378,6 +379,9 @@ export default function AdminDashboard() {
 
       {/* Certificate Quota Management */}
       <QuotaAnalytics />
+
+      {/* Contact Forms Summary */}
+      <ContactFormsSummary />
     </div>
   )
 }

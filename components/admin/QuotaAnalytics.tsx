@@ -13,8 +13,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { QuotaManagement } from "@/components/admin/QuotaManagement"
-import { Search, Infinity, TrendingUp, Award, AlertTriangle, Building2 } from "lucide-react"
+import { Search, Infinity, TrendingUp, Award, AlertTriangle, Building2, ChevronLeft, ChevronRight } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 
 interface Organization {
@@ -33,6 +40,16 @@ export function QuotaAnalytics() {
   const [searchQuery, setSearchQuery] = useState("")
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<any>(null)
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  
+  // Calculate paginated data
+  const totalPages = Math.ceil(filteredOrgs.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedOrgs = filteredOrgs.slice(startIndex, endIndex)
 
   const fetchOrganizations = async () => {
     try {
@@ -91,6 +108,7 @@ export function QuotaAnalytics() {
   useEffect(() => {
     if (!searchQuery.trim()) {
       setFilteredOrgs(organizations)
+      setCurrentPage(1) // Reset to first page
       return
     }
 
@@ -100,6 +118,7 @@ export function QuotaAnalytics() {
       org.slug.toLowerCase().includes(query)
     )
     setFilteredOrgs(filtered)
+    setCurrentPage(1) // Reset to first page when search changes
   }, [searchQuery, organizations])
 
   const getQuotaStatus = (org: Organization) => {
@@ -229,8 +248,8 @@ export function QuotaAnalytics() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredOrgs.length > 0 ? (
-                filteredOrgs.map((org) => {
+              {paginatedOrgs.length > 0 ? (
+                paginatedOrgs.map((org) => {
                   const status = getQuotaStatus(org)
                   const quota = org.certificateQuota ?? -1
                   const used = org.certificatesUsed ?? 0
@@ -286,6 +305,7 @@ export function QuotaAnalytics() {
                         <QuotaManagement
                           organizationSlug={org.slug}
                           organizationName={org.name}
+                          currentQuota={quota}
                           onQuotaUpdated={fetchOrganizations}
                         />
                       </TableCell>
@@ -301,6 +321,70 @@ export function QuotaAnalytics() {
               )}
             </TableBody>
           </Table>
+          
+          {/* Pagination Controls */}
+          {filteredOrgs.length > 0 && (
+            <div className="flex items-center justify-between px-2 py-4 border-t">
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-gray-700">
+                  Showing <span className="font-medium">{startIndex + 1}</span> to{" "}
+                  <span className="font-medium">{Math.min(endIndex, filteredOrgs.length)}</span> of{" "}
+                  <span className="font-medium">{filteredOrgs.length}</span> organizations
+                </p>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-700">Rows per page:</span>
+                  <Select
+                    value={itemsPerPage.toString()}
+                    onValueChange={(value) => {
+                      setItemsPerPage(Number(value))
+                      setCurrentPage(1)
+                    }}
+                  >
+                    <SelectTrigger className="h-8 w-[70px]">
+                      <SelectValue placeholder={itemsPerPage} />
+                    </SelectTrigger>
+                    <SelectContent side="top">
+                      {[10, 25, 50, 100].map((pageSize) => (
+                        <SelectItem key={pageSize} value={pageSize.toString()}>
+                          {pageSize}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="h-8 w-8 p-0"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="flex items-center gap-1 px-2">
+                    <span className="text-sm text-gray-700">
+                      Page <span className="font-medium">{currentPage}</span> of{" "}
+                      <span className="font-medium">{totalPages}</span>
+                    </span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="h-8 w-8 p-0"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
