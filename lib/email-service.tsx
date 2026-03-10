@@ -13,17 +13,17 @@ const getResend = () => {
   return resend
 }
 
-// Helper function to safely get logo attachment
+// Helper function to safely get company logo attachment
 const getLogoAttachment = () => {
   try {
-    const logoPath = path.join(process.cwd(), "public", "klh.png")
+    const logoPath = path.join(process.cwd(), "public", "cflo1.png")
     // Check if file exists before trying to attach
     if (fs.existsSync(logoPath)) {
       console.log("[Email Service] Logo file found at:", logoPath)
       return {
-        filename: "klh-logo.png",
+        filename: "certiflo-logo.png",
         path: logoPath,
-        cid: "klh-logo",
+        cid: "certiflo-logo",
       }
     } else {
       console.warn("[Email Service] Logo file not found at:", logoPath)
@@ -182,7 +182,8 @@ export async function sendCertificateEmail(
   credentials?: { email: string; appPassword: string },
   verificationId?: string,
   verificationUrl?: string,
-  deliveryMode: EmailDeliveryMode = "attachment"
+  deliveryMode: EmailDeliveryMode = "attachment",
+  organizationName?: string
 ) {
   try {
     // Handle both Blob and Buffer types (only for attachment mode)
@@ -310,9 +311,9 @@ export async function sendCertificateEmail(
                   
                   <!-- Header with Logo -->
                   <tr>
-                    <td style="background: #21808D; padding: 40px 30px; text-align: center;">
-                      ${logoAttachment ? '<img src="cid:klh-logo" alt="KLH University" style="max-width: 120px; height: auto; margin-bottom: 20px;" />' : ''}
-                      <h1 style="font-family: 'Libre Baskerville', Georgia, serif; color: #ffffff; margin: 0; font-size: 32px; font-weight: 700;">Congratulations!</h1>
+                    <td style="background: #ffffff; padding: 40px 30px; text-align: center; border-bottom: 2px solid #f0f0f0;">
+                      ${logoAttachment ? '<img src="cid:certiflo-logo" alt="Certiflo" style="max-width: 150px; height: auto; margin-bottom: 20px;" />' : ''}
+                      <h1 style="font-family: 'Libre Baskerville', Georgia, serif; color: #333333; margin: 0; font-size: 32px; font-weight: 700;">Congratulations!</h1>
                     </td>
                   </tr>
                   
@@ -355,11 +356,11 @@ export async function sendCertificateEmail(
                       <p style="color: #666666; font-size: 14px; margin: 0 0 10px; line-height: 1.6;">
                         <strong>Best regards,</strong><br/>
                         Certificate Team<br/>
-                        KLH University
+                        Certiflo
                       </p>
                       <p style="color: #999999; font-size: 12px; margin: 15px 0 0; line-height: 1.5;">
                         This is an automated email. Please do not reply to this message.<br/>
-                        If you need assistance, please contact your program coordinator.
+                        If you need assistance, please contact support at support@gocertiflo.com
                       </p>
                     </td>
                   </tr>
@@ -387,9 +388,9 @@ export async function sendCertificateEmail(
       }
       
       const info = await transporter.sendMail({
-        from: `"KLH University - Certificate Team" <${credentials.email}>`,
+        from: `"${organizationName || 'Certiflo'} - Certificate Team" <${credentials.email}>`,
         to: email,
-        subject: `🎓 Congratulations ${recipientName}! Your Certificate is Ready`,
+        subject: `🎓 Congratulations! Your Certificate from ${organizationName || 'Certiflo'}`,
         html: htmlContent,
         attachments: attachments.length > 0 ? attachments : undefined,
       })
@@ -397,18 +398,21 @@ export async function sendCertificateEmail(
       console.log("[Email Service] Gmail Success! Message ID:", info.messageId)
       return { success: true, messageId: info.messageId, provider: "gmail" }
     } else if (provider === "senement") {
-      // Send via Certiflo Support (Hostinger SMTP)
-      if (!process.env.GOCERTIFLO_SUPPORT_USER || !process.env.GOCERTIFLO_SUPPORT_PASSWORD) {
-        throw new Error("Certiflo support email configuration not found in environment variables")
+      // Send via Corporate Email (GoDaddy SMTP)
+      if (!process.env.CORPORATE_EMAIL_USER || !process.env.CORPORATE_EMAIL_PASSWORD) {
+        throw new Error("Corporate email configuration not found in environment variables")
       }
 
       const transporter = nodemailer.createTransport({
-        host: "smtp.hostinger.com",
-        port: 587,
-        secure: false,
+        host: "smtpout.secureserver.net",
+        port: 465,
+        secure: true,
         auth: {
-          user: process.env.GOCERTIFLO_SUPPORT_USER,
-          pass: process.env.GOCERTIFLO_SUPPORT_PASSWORD,
+          user: process.env.CORPORATE_EMAIL_USER,
+          pass: process.env.CORPORATE_EMAIL_PASSWORD,
+        },
+        tls: {
+          rejectUnauthorized: false
         },
       })
 
@@ -505,9 +509,9 @@ export async function sendCertificateEmail(
                   
                   <!-- Header with Logo -->
                   <tr>
-                    <td style="background: #21808D; padding: 40px 30px; text-align: center;">
-                      ${logoAttachment ? '<img src="cid:klh-logo" alt="Senement" style="max-width: 120px; height: auto; margin-bottom: 20px;" />' : ''}
-                      <h1 style="font-family: 'Libre Baskerville', Georgia, serif; color: #ffffff; margin: 0; font-size: 32px; font-weight: 700;">Congratulations!</h1>
+                    <td style="background: #ffffff; padding: 40px 30px; text-align: center; border-bottom: 2px solid #f0f0f0;">
+                      ${logoAttachment ? '<img src="cid:certiflo-logo" alt="Certiflo" style="max-width: 150px; height: auto; margin-bottom: 20px;" />' : ''}
+                      <h1 style="font-family: 'Libre Baskerville', Georgia, serif; color: #333333; margin: 0; font-size: 32px; font-weight: 700;">Congratulations!</h1>
                     </td>
                   </tr>
                   
@@ -549,12 +553,12 @@ export async function sendCertificateEmail(
                     <td style="background-color: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #e0e0e0;">
                       <p style="color: #666666; font-size: 14px; margin: 0 0 10px; line-height: 1.6;">
                         <strong>Best regards,</strong><br/>
-                        Certificate Team<br/>
-                        Senement
+                        ${organizationName || 'Certificate Team'}<br/>
+                        <span style="color: #999999; font-size: 12px;">Powered by Certiflo</span>
                       </p>
                       <p style="color: #999999; font-size: 12px; margin: 15px 0 0; line-height: 1.5;">
                         This is an automated email. Please do not reply to this message.<br/>
-                        If you need assistance, please contact support.
+                        If you need assistance, please contact support at support@gocertiflo.com
                       </p>
                     </td>
                   </tr>
@@ -582,9 +586,9 @@ export async function sendCertificateEmail(
       }
 
       const info = await transporter.sendMail({
-        from: `"Certiflo - Certificate Team" <${process.env.GOCERTIFLO_SUPPORT_USER}>`,
+        from: `"${organizationName || 'Certiflo'} - Certificate Team" <${process.env.CORPORATE_EMAIL_USER}>`,
         to: email,
-        subject: `🎓 Congratulations ${recipientName}! Your Certificate is Ready`,
+        subject: `🎓 Congratulations! Your Certificate from ${organizationName || 'Certiflo'}`,
         html: htmlContent,
         attachments: attachments.length > 0 ? attachments : undefined,
       })
@@ -679,7 +683,7 @@ export async function sendCertificateEmail(
       const response = await resendClient.emails.send({
         from: process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev",
         to: email,
-        subject: `🎓 Congratulations ${recipientName}! Your Certificate is Ready`,
+        subject: `🎓 Congratulations! Your Certificate from ${organizationName || 'Certiflo'}`,
         html: `
           <!DOCTYPE html>
           <html>
@@ -697,8 +701,9 @@ export async function sendCertificateEmail(
                     
                     <!-- Header -->
                     <tr>
-                      <td style="background: #21808D; padding: 40px 30px; text-align: center;">
-                        <h1 style="font-family: 'Libre Baskerville', Georgia, serif; color: #ffffff; margin: 0; font-size: 32px; font-weight: 700;">Congratulations!</h1>
+                      <td style="background: #ffffff; padding: 40px 30px 30px; text-align: center; border-bottom: 2px solid #f0f0f0;">
+                        ${organizationName ? `<p style="color: #333333; font-size: 20px; font-weight: 600; margin: 0 0 15px; line-height: 1.3;">${organizationName}</p>` : ''}
+                        <h1 style="font-family: 'Libre Baskerville', Georgia, serif; color: #333333; margin: 0; font-size: 32px; font-weight: 700;">Congratulations!</h1>
                       </td>
                     </tr>
                     
@@ -740,12 +745,12 @@ export async function sendCertificateEmail(
                       <td style="background-color: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #e0e0e0;">
                         <p style="color: #666666; font-size: 14px; margin: 0 0 10px; line-height: 1.6;">
                           <strong>Best regards,</strong><br/>
-                          Certificate Team<br/>
-                          KLH University
+                          ${organizationName || 'Certificate Team'}<br/>
+                          <span style="color: #999999; font-size: 12px;">Powered by Certiflo</span>
                         </p>
                         <p style="color: #999999; font-size: 12px; margin: 15px 0 0; line-height: 1.5;">
                           This is an automated email. Please do not reply to this message.<br/>
-                          If you need assistance, please contact your program coordinator.
+                          If you need assistance, please contact support at support@gocertiflo.com
                         </p>
                       </td>
                     </tr>
@@ -790,6 +795,7 @@ export async function sendBulkCertificatesPooled(
     fileName: string
     verificationId?: string
     verificationUrl?: string
+    organizationName?: string
   }>,
   credentials: { email: string; appPassword: string },
   deliveryMode: EmailDeliveryMode = "link-only"
@@ -842,9 +848,10 @@ export async function sendBulkCertificatesPooled(
                       
                       <!-- Header -->
                       <tr>
-                        <td style="background: #21808D; padding: 40px 30px; text-align: center;">
-                          ${logoAttachment ? '<img src="cid:klh-logo" alt="KLH University" style="max-width: 120px; height: auto; margin-bottom: 20px;" />' : ''}
-                          <h1 style="font-family: 'Libre Baskerville', Georgia, serif; color: #ffffff; margin: 0; font-size: 32px; font-weight: 700;">Congratulations!</h1>
+                        <td style="background: #ffffff; padding: 40px 30px; text-align: center; border-bottom: 2px solid #f0f0f0;">
+                          ${logoAttachment ? '<img src="cid:certiflo-logo" alt="Certiflo" style="max-width: 150px; height: auto; margin-bottom: 20px;" />' : ''}
+                          <h1 style="font-family: 'Libre Baskerville', Georgia, serif; color: #333333; margin: 0; font-size: 32px; font-weight: 700;">Congratulations!</h1>
+                          ${recipient.organizationName ? `<p style="color: #666666; font-size: 14px; margin: 10px 0 0;">Certificate from <strong>${recipient.organizationName}</strong></p>` : ''}
                         </td>
                       </tr>
 
@@ -873,7 +880,7 @@ export async function sendBulkCertificatesPooled(
                           </p>
                           <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0;">
                             <strong>Best regards,</strong><br/>
-                            <span style="color: #667eea; font-weight: 600;">KLH University Academic Team</span>
+                            <span style="color: #333333; font-weight: 600;">${recipient.organizationName || 'Certiflo Certificate Team'}</span>
                           </p>
                         </td>
                       </tr>
@@ -883,12 +890,12 @@ export async function sendBulkCertificatesPooled(
                         <td style="background-color: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #e0e0e0;">
                           <p style="color: #666666; font-size: 14px; margin: 0 0 10px; line-height: 1.6;">
                             <strong>Best regards,</strong><br/>
-                            Certificate Team<br/>
-                            KLH University
+                            ${recipient.organizationName || 'Certificate Team'}<br/>
+                            <span style="color: #999999; font-size: 12px;">Powered by Certiflo</span>
                           </p>
                           <p style="color: #999999; font-size: 12px; margin: 15px 0 0; line-height: 1.5;">
                             This is an automated email. Please do not reply to this message.<br/>
-                            If you need assistance, please contact your program coordinator.
+                            If you need assistance, please contact support at support@gocertiflo.com
                           </p>
                         </td>
                       </tr>
@@ -913,9 +920,9 @@ export async function sendBulkCertificatesPooled(
           })
 
           const info = await pooledTransporter.sendMail({
-            from: `"KLH University - Certificate Team" <${credentials?.email}>`,
+            from: `"${recipient.organizationName || 'Certiflo'} - Certificate Team" <${credentials?.email}>`,
             to: recipient.email,
-            subject: `🎓 Congratulations ${recipient.name}! Your Certificate is Ready`,
+            subject: `🎓 Congratulations! Your Certificate from ${recipient.organizationName || 'Certiflo'}`,
             html: htmlContent,
             attachments: attachments,
           })
@@ -960,6 +967,7 @@ export async function sendBulkCertificates(
     fileName: string
     verificationId?: string
     verificationUrl?: string
+    organizationName?: string
   }>,
   provider: EmailProvider = "resend",
   sendingMode?: "sequential" | "pooled",
@@ -993,7 +1001,8 @@ export async function sendBulkCertificates(
       credentials,
       recipient.verificationId,
       recipient.verificationUrl,
-      deliveryMode
+      deliveryMode,
+      recipient.organizationName
     )
     results.push({
       email: recipient.email,

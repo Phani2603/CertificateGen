@@ -23,9 +23,9 @@ export async function POST(request: Request) {
 
     // Validate Certiflo provider env vars
     if (provider === "senement") {
-      if (!process.env.GOCERTIFLO_SUPPORT_USER || !process.env.GOCERTIFLO_SUPPORT_PASSWORD) {
+      if (!process.env.CORPORATE_EMAIL_USER || !process.env.CORPORATE_EMAIL_PASSWORD) {
         return Response.json(
-          { success: false, error: "Certiflo email configuration missing in environment variables" },
+          { success: false, error: "Corporate email configuration missing in environment variables" },
           { status: 500 }
         )
       }
@@ -40,6 +40,7 @@ export async function POST(request: Request) {
           fileName: recipient.fileName || "certificate.png",
           verificationId: recipient.verificationId,
           verificationUrl: recipient.verificationUrl,
+          organizationName: recipient.organizationName,
         }))
       : recipients.map((recipient: any) => ({
           email: recipient.email,
@@ -48,6 +49,7 @@ export async function POST(request: Request) {
           fileName: recipient.fileName,
           verificationId: recipient.verificationId,
           verificationUrl: recipient.verificationUrl,
+          organizationName: recipient.organizationName,
         }))
 
     console.log("[API] Processing", processedRecipients.length, "recipients")
