@@ -27,12 +27,28 @@ export async function PATCH(
     await connectDB()
 
     const { slug } = await params
-    const { quota, reason } = await request.json()
+    const { quota, reason, mode = 'set' } = await request.json()
+
+    // Validate mode
+    if (mode !== 'set' && mode !== 'add') {
+      return NextResponse.json(
+        { success: false, error: 'Mode must be either "set" or "add"' },
+        { status: 400 }
+      )
+    }
 
     // Validate quota
     if (typeof quota !== 'number') {
       return NextResponse.json(
         { success: false, error: 'Quota must be a number' },
+        { status: 400 }
+      )
+    }
+
+    // For add mode, quota must be positive
+    if (mode === 'add' && (quota <= 0 || quota === -1)) {
+      return NextResponse.json(
+        { success: false, error: 'Amount to add must be a positive number' },
         { status: 400 }
       )
     }
@@ -55,17 +71,40 @@ export async function PATCH(
       )
     }
 
-    // Allocate quota
-    const updatedOrg = await allocateOrgQuota(org._id, quota, 'admin', reason)
+    // Calculate final quota based on mode
+    let finalQuota: number
+    if (mode === 'add') {
+      const currentQuota = org.certificateQuota ?? -1
+      
+      // Cannot add to unlimited quota
+      if (currentQuota === -1) {
+        return NextResponse.json(
+          { success: false, error: 'Cannot add to unlimited quota. Use "set" mode to change it.' },
+          { status: 400 }
+        )
+      }
+      
+      finalQuota = currentQuota + quota
+    } else {
+      // Set mode - direct replacement
+      finalQuota = quota
+    }
 
+    // Allocate quota
+    const updatedOrg = await allocateOrgQuota(org._id, finalQuota, 'admin', reason, mode)
+
+    const modeText = mode === 'add' ? `Added ${quota} to quota` : 'Quota set'
+    
     return NextResponse.json({
       success: true,
-      message: `Quota updated successfully for ${org.name}`,
+      message: `${modeText} successfully for ${org.name}`,
       data: {
         orgName: updatedOrg.name,
         orgSlug: updatedOrg.slug,
         previousQuota: org.certificateQuota ?? -1,
         newQuota: updatedOrg.certificateQuota,
+        amountChanged: mode === 'add' ? quota : null,
+        mode,
         used: updatedOrg.certificatesUsed,
         available: updatedOrg.certificateQuota === -1 
           ? -1 

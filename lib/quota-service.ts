@@ -147,13 +147,15 @@ export async function consumeOrgQuota(
  * @param newQuota - New quota amount (-1 for unlimited, positive number for limit)
  * @param adminId - Admin user who is setting the quota
  * @param reason - Reason for quota allocation/change
+ * @param mode - Operation mode: 'set' (replace) or 'add' (increment)
  * @returns Updated organization document
  */
 export async function allocateOrgQuota(
   orgId: mongoose.Types.ObjectId | string,
   newQuota: number,
   adminId: mongoose.Types.ObjectId | string,
-  reason: string
+  reason: string,
+  mode: 'set' | 'add' = 'set'
 ): Promise<any> {
   // Validate quota value
   if (newQuota !== -1 && (newQuota < 0 || !Number.isInteger(newQuota))) {
@@ -189,11 +191,14 @@ export async function allocateOrgQuota(
 
   await org.save()
 
+  // Determine transaction type based on mode
+  const transactionType = mode === 'add' ? 'addition' : 'allocation'
+  
   // Create audit log transaction
   await QuotaTransaction.create({
     orgId: org._id,
     orgName: org.name,
-    transactionType: 'allocation',
+    transactionType,
     amount: newQuota - previousQuota,
     previousQuota,
     newQuota,
