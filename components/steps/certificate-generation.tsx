@@ -429,6 +429,7 @@ export default function CertificateGeneration({
           fileName: recipient.fileName,
           verificationId: recipient.verificationId,
           verificationUrl: recipient.verificationUrl,
+          organizationName: organization?.name || 'Certiflo',
         }))
       } else {
         // Attachment mode - convert certificates to base64
@@ -441,6 +442,7 @@ export default function CertificateGeneration({
             fileName: recipient.fileName,
             verificationId: recipient.verificationId,
             verificationUrl: recipient.verificationUrl,
+            organizationName: organization?.name || 'Certiflo',
           }))
         )
       }
