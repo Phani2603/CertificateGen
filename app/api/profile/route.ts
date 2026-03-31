@@ -110,6 +110,7 @@ export async function GET(request: NextRequest) {
         bio: user.bio || '',
         bannerColor: user.bannerColor || '#21808D',
         userType: user.userType,
+        privateOrgId: user.privateOrgId ? user.privateOrgId.toString() : null,
         organization: organizationData,
         privateOrg: privateOrgData,
         clubs: user.clubs || [],

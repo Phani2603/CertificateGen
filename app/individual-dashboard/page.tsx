@@ -8,6 +8,7 @@ import DashboardToggle from '@/components/DashboardToggle'
 import { UserTypeSelectionModal } from "@/components/UserTypeSelectionModal"
 import { SuspensionChecker } from "@/components/SuspensionChecker"
 import { useIslandAlerts } from "@/components/ui/island-alerts"
+import { Button } from "@/components/ui/button"
 import { useProfile, useDashboardStats } from "@/hooks/useDashboardCache"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -24,6 +25,14 @@ import { UserProfileCard } from "@/components/dashboard/individual/user-profile-
 import { MyCertificatesSection } from "@/components/dashboard/individual/MyCertificatesSection"
 import Calendar from "@/components/calendar-01"
 import { MinimalFooter } from "@/components/minimal-footer"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { FiUser, FiSettings, FiCreditCard, FiUsers, FiHome, FiChevronRight, FiLogOut } from "react-icons/fi"
 import { MdPalette, MdPersonAdd } from "react-icons/md"
 import { BsCalendar2Event, BsStars, BsTrophy, BsLightning, BsBell, BsShield } from "react-icons/bs"
@@ -35,6 +44,7 @@ export default function IndividualDashboard() {
   const router = useRouter()
   const { addAlert } = useIslandAlerts()
   const [showTypeSelection, setShowTypeSelection] = useState(false)
+  const [showUpgradeApprovedModal, setShowUpgradeApprovedModal] = useState(false)
   const [privateOrg, setPrivateOrg] = useState<any>(null)
   
   // Use SWR hooks for data fetching with caching
@@ -59,6 +69,13 @@ export default function IndividualDashboard() {
   useEffect(() => {
     if (!userData || status !== 'authenticated') return
 
+    const hasCorporateOrg = Boolean(userData?.privateOrg?.id || userData?.privateOrgId)
+
+    if (userData.userType === 'corporate' && !hasCorporateOrg) {
+      setShowUpgradeApprovedModal(true)
+      return
+    }
+
     const pollInterval = setInterval(async () => {
       try {
         // Revalidate profile data from cache
@@ -73,9 +90,7 @@ export default function IndividualDashboard() {
               duration: 10000,
             })
 
-            setTimeout(() => {
-              window.location.href = '/create-organization'
-            }, 2000)
+            setShowUpgradeApprovedModal(true)
 
             clearInterval(pollInterval)
           }
@@ -110,6 +125,27 @@ export default function IndividualDashboard() {
         isOpen={showTypeSelection}
         onClose={() => setShowTypeSelection(false)}
       />
+      <Dialog open={showUpgradeApprovedModal} onOpenChange={setShowUpgradeApprovedModal}>
+        <DialogContent className="sm:max-w-md font-montserrat">
+          <DialogHeader>
+            <DialogTitle>Corporate Upgrade Approved</DialogTitle>
+            <DialogDescription>
+              Your account is now corporate. You can create your organization now or continue for later.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:justify-end">
+            <Button variant="outline" onClick={() => setShowUpgradeApprovedModal(false)}>
+              Wait
+            </Button>
+            <Button
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              onClick={() => router.push('/create-organization')}
+            >
+              Go to Setup Form
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Header */}
       <header className="bg-primary border-b border-primary min-h-[301px] md:min-h-[351px] lg:min-h-[401px] flex flex-col relative">

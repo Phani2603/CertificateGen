@@ -158,7 +158,7 @@ function SignupContent() {
           <Button
             variant="outline"
             className="w-full mb-2 border-gray-200 hover:bg-gray-50 h-9 text-xs rounded-lg transition-all"
-            onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+            onClick={() => signIn('google', { callbackUrl: '/individual-dashboard' })}
             type="button"
           >
             <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
@@ -185,7 +185,7 @@ function SignupContent() {
           <Button
             variant="outline"
             className="w-full mb-3 border-gray-200 hover:bg-gray-50 h-9 text-xs rounded-lg transition-all"
-            onClick={() => signIn('github', { callbackUrl: '/dashboard' })}
+            onClick={() => signIn('github', { callbackUrl: '/individual-dashboard' })}
             type="button"
           >
             <svg className="mr-3 h-5 w-5" viewBox="0 0 24 24" fill="currentColor">

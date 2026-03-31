@@ -22,7 +22,7 @@ export default function DashboardToggle({ userData, privateOrgSlug }: Props) {
     }
   }, [pathname])
 
-  const handleSwitch = (view: 'individual' | 'corporate') => {
+  const handleSwitch = async (view: 'individual' | 'corporate') => {
     if (view === active) return // Don't navigate if already on that view
     
     setActive(view)
@@ -34,7 +34,22 @@ export default function DashboardToggle({ userData, privateOrgSlug }: Props) {
       if (slug) {
         router.push(`/${slug}/dashboard`)
       } else {
-        router.push('/dashboard')
+        try {
+          const res = await fetch('/api/private-orgs')
+          const data = await res.json()
+
+          if (data?.success && Array.isArray(data.organizations) && data.organizations.length > 0) {
+            const firstOrgWithSlug = data.organizations.find((org: any) => org?.slug)
+            if (firstOrgWithSlug?.slug) {
+              router.push(`/${firstOrgWithSlug.slug}/dashboard`)
+              return
+            }
+          }
+        } catch (error) {
+          console.error('[DashboardToggle] Failed to resolve organization slug:', error)
+        }
+
+        router.push('/create-organization')
       }
     }
   }
