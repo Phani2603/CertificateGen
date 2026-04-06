@@ -44,6 +44,7 @@ interface Certificate {
   eventId?: string
   organizationName?: string
   privateOrgName?: string
+  watermarkEnabledAtIssue?: boolean
 }
 
 interface MyCertificatesSectionProps {
@@ -289,8 +290,10 @@ export function MyCertificatesSection({ userId }: MyCertificatesSectionProps) {
             }
           })
 
-          // Add watermark to certificate
-          renderWatermark(ctx, canvas.width, canvas.height, 1)
+          // Immutable rule: use watermark setting captured at issuance.
+          if (cert.watermarkEnabledAtIssue !== false) {
+            renderWatermark(ctx, canvas.width, canvas.height, 1)
+          }
 
           console.log(`[MyCertificates] Text drawn, converting to data URL`)
           const imageData = canvas.toDataURL('image/png')

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
 import {
   Table,
   TableBody,
@@ -23,6 +24,7 @@ import {
 import { QuotaManagement } from "@/components/admin/QuotaManagement"
 import { Search, Infinity, TrendingUp, Award, AlertTriangle, Building2, ChevronLeft, ChevronRight } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
+import { toast } from "sonner"
 
 interface Organization {
   _id: string
@@ -30,6 +32,7 @@ interface Organization {
   slug: string
   certificateQuota: number
   certificatesUsed: number
+  watermarkDisabledByAdmin?: boolean
   allowedUsers: any[]
   ownerId: any
 }
@@ -39,6 +42,7 @@ export function QuotaAnalytics() {
   const [filteredOrgs, setFilteredOrgs] = useState<Organization[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [loading, setLoading] = useState(true)
+  const [updatingWatermark, setUpdatingWatermark] = useState<Record<string, boolean>>({})
   const [stats, setStats] = useState<any>(null)
   
   // Pagination state
@@ -135,6 +139,55 @@ export function QuotaAnalytics() {
     if (percentage >= 80) return { percentage, status: 'warning', color: 'orange' }
     if (percentage >= 50) return { percentage, status: 'moderate', color: 'yellow' }
     return { percentage, status: 'healthy', color: 'green' }
+  }
+
+  const handleWatermarkToggle = async (org: Organization, nextChecked: boolean) => {
+    const nextDisabled = !nextChecked
+
+    setUpdatingWatermark((prev) => ({ ...prev, [org.slug]: true }))
+
+    // Optimistic update for smooth UX.
+    setOrganizations((prev) => prev.map((item) => (
+      item.slug === org.slug ? { ...item, watermarkDisabledByAdmin: nextDisabled } : item
+    )))
+    setFilteredOrgs((prev) => prev.map((item) => (
+      item.slug === org.slug ? { ...item, watermarkDisabledByAdmin: nextDisabled } : item
+    )))
+
+    try {
+      const response = await fetch(`/api/admin/orgs/${org.slug}/watermark`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ watermarkDisabledByAdmin: nextDisabled }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to update watermark setting')
+      }
+
+      const marker = Date.now().toString()
+      localStorage.setItem('watermark-config-updated-at', marker)
+      window.dispatchEvent(new Event('watermark-config-updated'))
+
+      toast.success(
+        nextDisabled
+          ? `Watermark disabled for ${org.name}`
+          : `Watermark enabled for ${org.name}`
+      )
+    } catch (error) {
+      // Revert optimistic update on failure.
+      setOrganizations((prev) => prev.map((item) => (
+        item.slug === org.slug ? { ...item, watermarkDisabledByAdmin: !!org.watermarkDisabledByAdmin } : item
+      )))
+      setFilteredOrgs((prev) => prev.map((item) => (
+        item.slug === org.slug ? { ...item, watermarkDisabledByAdmin: !!org.watermarkDisabledByAdmin } : item
+      )))
+      toast.error(error instanceof Error ? error.message : 'Failed to update watermark setting')
+    } finally {
+      setUpdatingWatermark((prev) => ({ ...prev, [org.slug]: false }))
+    }
   }
 
   if (loading) {
@@ -244,6 +297,7 @@ export function QuotaAnalytics() {
                 <TableHead>Used</TableHead>
                 <TableHead>Available</TableHead>
                 <TableHead>Usage</TableHead>
+                <TableHead>Watermark</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -301,6 +355,19 @@ export function QuotaAnalytics() {
                           </div>
                         )}
                       </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={!org.watermarkDisabledByAdmin}
+                            onCheckedChange={(checked) => handleWatermarkToggle(org, checked)}
+                            disabled={!!updatingWatermark[org.slug]}
+                            aria-label={`Toggle watermark for ${org.name}`}
+                          />
+                          <span className="text-xs text-gray-600">
+                            {org.watermarkDisabledByAdmin ? 'Disabled' : 'Enabled'}
+                          </span>
+                        </div>
+                      </TableCell>
                       <TableCell className="text-right">
                         <QuotaManagement
                           organizationSlug={org.slug}
@@ -314,7 +381,7 @@ export function QuotaAnalytics() {
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center text-gray-500">
+                  <TableCell colSpan={7} className="h-24 text-center text-gray-500">
                     {searchQuery ? 'No organizations found matching your search' : 'No organizations yet'}
                   </TableCell>
                 </TableRow>

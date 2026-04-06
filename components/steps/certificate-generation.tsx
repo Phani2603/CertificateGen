@@ -27,7 +27,8 @@ import { saveSession, loadSession, clearSession, base64ToBlob } from "@/utils/st
 import { useCredentials } from "@/hooks/useCredentials"
 import DevNav from "@/components/DevNav"
 import { toast } from "sonner"
-import { renderWatermark } from "@/lib/watermark-utils"
+import { isWatermarkEnabled, renderWatermark } from "@/lib/watermark-utils"
+import { useWatermarkConfig } from "@/hooks/useWatermarkConfig"
 
 interface CertificateGenerationProps {
   templateImage: string
@@ -36,8 +37,17 @@ interface CertificateGenerationProps {
   onCsvUpload: (data: Array<Record<string, string>>) => void
   onBack: () => void
   selectedEvent?: {club: string, eventId: string, eventName: string} | null
-  onAddToHistory?: (eventName: string, clubName: string, count: number, totalSizeBytes: number) => void
-  organization?: {id: string, name: string, slug: string, logoUrl?: string} | null
+  onAddToHistory?: (
+    eventName: string,
+    clubName: string,
+    count: number,
+    totalSizeBytes: number,
+    metadata?: {
+      registrationBatchIds?: string[]
+      certificateIds?: string[]
+    }
+  ) => void
+  organization?: {id: string, name: string, slug?: string, logoUrl?: string} | null
   clubs?: Array<{id: string, name: string, members: number, color: string, logoUrl?: string}>
 }
 
@@ -52,6 +62,7 @@ export default function CertificateGeneration({
   organization,
   clubs,
 }: CertificateGenerationProps) {
+  const { watermarkReady, watermarkVersion } = useWatermarkConfig(organization?.slug)
   const [csvData, setCsvData] = useState<Array<Record<string, string>>>([])
   const [csvHeaders, setCsvHeaders] = useState<string[]>([])
   const [fieldMapping, setFieldMapping] = useState<Record<string, string>>({})
@@ -287,7 +298,7 @@ export default function CertificateGeneration({
   }
 
   useEffect(() => {
-    if (!previewCanvasRef.current || csvData.length === 0) return
+    if (!previewCanvasRef.current || csvData.length === 0 || !watermarkReady) return
 
     const canvas = previewCanvasRef.current
     const ctx = canvas.getContext("2d")
@@ -339,7 +350,7 @@ export default function CertificateGeneration({
       console.error('[CertGen] Error loading template:', err)
       img.src = templateImage // Fallback to original
     })
-  }, [csvData, fieldMapping, fields, templateImage, cachedTemplateUrl])
+  }, [csvData, fieldMapping, fields, templateImage, cachedTemplateUrl, watermarkReady, watermarkVersion])
 
   // Helper function to convert Blob to base64
   const blobToBase64 = (blob: Blob): Promise<string> => {
@@ -546,6 +557,11 @@ export default function CertificateGeneration({
       return
     }
 
+    if (!watermarkReady) {
+      toast.info("Preparing watermark configuration. Please try again in a moment.")
+      return
+    }
+
     // **CRITICAL QUOTA CHECK**: Block if quota exceeded
     if (quotaExceeded) {
       toast.error("Certificate Generation Blocked", {
@@ -724,6 +740,7 @@ export default function CertificateGeneration({
           const selectedClub = clubs?.find(c => c.id === selectedEvent.club)
           const clubName = selectedClub?.name || 'Unknown Club'
           const organizationName = organization?.name || 'Unknown Organization'
+          const watermarkEnabledAtIssue = isWatermarkEnabled()
 
           const certificatesToRegister = emailRecipients.map(recipient => ({
             recipientName: recipient.name,
@@ -734,6 +751,7 @@ export default function CertificateGeneration({
             clubName: clubName,
             templateS3Key: templateS3Key || null,
             fieldConfiguration: fields || null,
+            watermarkEnabledAtIssue,
           }))
 
           console.log("[Certificate Registration] Templates to register:", {
@@ -1158,12 +1176,26 @@ Generated: ${new Date().toLocaleString()}
         // Get club name from clubs array using club ID
         const selectedClub = clubs?.find(c => c.id === selectedEvent.club)
         const clubName = selectedClub?.name || 'Unknown Club'
+        const certificateIds = registeredVerificationData
+          .map((item: any) => item?.certificateId)
+          .filter((id: any) => typeof id === 'string' && id.length > 0)
+        const registrationBatchIds = Array.from(
+          new Set(
+            registeredVerificationData
+              .map((item: any) => item?.batchId)
+              .filter((id: any) => typeof id === 'string' && id.length > 0)
+          )
+        )
         
         onAddToHistory(
           selectedEvent.eventName,
           clubName,
           csvData.length,
-          zipBlob.size
+          zipBlob.size,
+          {
+            registrationBatchIds,
+            certificateIds,
+          }
         )
       }
 
@@ -1217,8 +1249,10 @@ Generated: ${new Date().toLocaleString()}
           ctx.fillText(text, x, field.y, field.maxWidth)
         })
 
-        // Add watermark to certificate
-        renderWatermark(ctx, canvas.width, canvas.height, scale)
+        // Add watermark to certificate only after runtime config is loaded.
+        if (watermarkReady) {
+          renderWatermark(ctx, canvas.width, canvas.height, scale)
+        }
 
         resolve(canvas)
       }

@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation"
 import { useAdminStats } from "@/hooks/useDashboardCache"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
+import { setWatermarkEnabled } from "@/lib/watermark-utils"
 import {
   Shield,
   Users,
@@ -21,7 +24,8 @@ import {
   Filter,
   ChevronRight,
   Download,
-  Activity
+  Activity,
+  Loader2
 } from "lucide-react"
 import Link from "next/link"
 import { useIslandAlerts } from "@/components/ui/island-alerts"
@@ -66,6 +70,9 @@ export default function AdminDashboard() {
   // Use SWR hook for cached data fetching
   const { stats, isLoading, mutate: mutateStats } = useAdminStats()
   const [previousPendingRequests, setPreviousPendingRequests] = useState(0)
+  const [watermarkEnabled, setWatermarkEnabled] = useState(true)
+  const [loadingWatermark, setLoadingWatermark] = useState(true)
+  const [savingWatermark, setSavingWatermark] = useState(false)
 
   // Handle 401 redirects
   useEffect(() => {
@@ -96,6 +103,73 @@ export default function AdminDashboard() {
 
     return () => clearInterval(pollInterval)
   }, [previousPendingRequests, addAlert, mutateStats])
+
+  useEffect(() => {
+    const fetchWatermarkSettings = async () => {
+      try {
+        setLoadingWatermark(true)
+        const response = await fetch('/api/admin/watermark-config', { cache: 'no-store' })
+
+        if (!response.ok) {
+          throw new Error('Failed to load watermark settings')
+        }
+
+        const data: { settings?: { watermarkEnabled?: boolean } } = await response.json()
+        setWatermarkEnabled(data?.settings?.watermarkEnabled ?? true)
+      } catch (error) {
+        console.error('[Admin Dashboard] Failed to fetch watermark settings:', error)
+        setWatermarkEnabled(true)
+      } finally {
+        setLoadingWatermark(false)
+      }
+    }
+
+    fetchWatermarkSettings()
+  }, [])
+
+  const handleWatermarkToggle = async (nextValue: boolean) => {
+    const previousValue = watermarkEnabled
+    setWatermarkEnabled(nextValue)
+    setSavingWatermark(true)
+
+    try {
+      const response = await fetch('/api/admin/watermark-config', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ watermarkEnabled: nextValue }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update watermark settings')
+      }
+
+      addAlert({
+        title: 'Watermark Settings Updated',
+        message: `Watermark is now ${nextValue ? 'enabled' : 'disabled'} globally.`,
+        type: 'success',
+        duration: 4000,
+      })
+
+      // Sync in-memory value + notify all listeners in current tab and other tabs.
+      setWatermarkEnabled(nextValue)
+      const marker = Date.now().toString()
+      localStorage.setItem('watermark-config-updated-at', marker)
+      window.dispatchEvent(new Event('watermark-config-updated'))
+    } catch (error) {
+      console.error('[Admin Dashboard] Failed to update watermark settings:', error)
+      setWatermarkEnabled(previousValue)
+      addAlert({
+        title: 'Update Failed',
+        message: 'Unable to update watermark settings. Please try again.',
+        type: 'error',
+        duration: 5000,
+      })
+    } finally {
+      setSavingWatermark(false)
+    }
+  }
 
   // Calculate some derived stats for the UI
   const totalOrgs = (stats?.totalOrganizations || 0) + (stats?.totalPrivateOrgs || 0)
@@ -198,6 +272,38 @@ export default function AdminDashboard() {
           loading={isLoading}
         />
       </div>
+
+      {/* Watermark Control */}
+      <Card className="border-none shadow-sm ring-1 ring-black/5 bg-white">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg font-semibold text-gray-900">Certificate Watermark</CardTitle>
+          <CardDescription>Control whether the "Issued by Certiflo" watermark appears on generated certificates.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
+            <div className="space-y-1">
+              <Label htmlFor="watermark-toggle" className="text-sm font-medium text-gray-900">
+                Enable watermark globally
+              </Label>
+              <p className="text-xs text-gray-500">
+                Default is enabled. Turn this off only if you explicitly want watermark-free certificates.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              {savingWatermark && <Loader2 className="h-4 w-4 animate-spin text-gray-500" />}
+              <Switch
+                id="watermark-toggle"
+                checked={watermarkEnabled}
+                onCheckedChange={handleWatermarkToggle}
+                disabled={loadingWatermark || savingWatermark}
+              />
+              <span className={cn("text-xs font-medium", watermarkEnabled ? "text-green-700" : "text-gray-500")}>
+                {loadingWatermark ? 'Loading...' : watermarkEnabled ? 'Enabled' : 'Disabled'}
+              </span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Main Chart Section */}
       <Card className="border-none shadow-sm ring-1 ring-black/5">
