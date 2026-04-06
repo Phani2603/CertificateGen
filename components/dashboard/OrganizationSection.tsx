@@ -305,7 +305,7 @@ export function OrganizationSection({
 
             />
           </div>
-          <h2 className="text-3xl md:text-4xl lg:text-8xl font-semibold mb-3 md:mb-4">Welcome to Forge!</h2>
+          <h2 className="text-3xl md:text-4xl lg:text-8xl font-semibold mb-3 md:mb-4">Welcome to Certiflo!</h2>
           <p className="text-lg md:text-xl lg:text-2xl text-gray-600 mb-6 md:mb-8 max-w-2xl mx-auto px-4">
             To start generating certificates, you need to join or create an organization.
           </p>

@@ -27,7 +27,7 @@ import { saveSession, loadSession, clearSession, base64ToBlob } from "@/utils/st
 import { useCredentials } from "@/hooks/useCredentials"
 import DevNav from "@/components/DevNav"
 import { toast } from "sonner"
-import { isWatermarkEnabled, renderWatermark } from "@/lib/watermark-utils"
+import { renderWatermark } from "@/lib/watermark-utils"
 import { useWatermarkConfig } from "@/hooks/useWatermarkConfig"
 
 interface CertificateGenerationProps {
@@ -740,7 +740,6 @@ export default function CertificateGeneration({
           const selectedClub = clubs?.find(c => c.id === selectedEvent.club)
           const clubName = selectedClub?.name || 'Unknown Club'
           const organizationName = organization?.name || 'Unknown Organization'
-          const watermarkEnabledAtIssue = isWatermarkEnabled()
 
           const certificatesToRegister = emailRecipients.map(recipient => ({
             recipientName: recipient.name,
@@ -751,7 +750,6 @@ export default function CertificateGeneration({
             clubName: clubName,
             templateS3Key: templateS3Key || null,
             fieldConfiguration: fields || null,
-            watermarkEnabledAtIssue,
           }))
 
           console.log("[Certificate Registration] Templates to register:", {

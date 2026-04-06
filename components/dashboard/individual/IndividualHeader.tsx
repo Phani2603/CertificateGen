@@ -21,7 +21,7 @@ export function IndividualHeader({ userName, userEmail, userImage }: IndividualH
             <div className="bg-black rounded-md p-1.5 h-9 w-9 flex items-center justify-center">
               <Image src="/cflo1.svg" alt="Logo" width={20} height={20} className="invert" />
             </div>
-            <span className="font-bold text-lg tracking-tight text-black">Forge</span>
+            <span className="font-bold text-lg tracking-tight text-black">Certiflo</span>
           </Link>
 
           {/* Right Side - Avatar Only */}
