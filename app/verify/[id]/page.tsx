@@ -584,7 +584,7 @@ export default function VerificationPage() {
         <meta name="twitter:image" content={certificate.certificateUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/api/certificates/${certificate.id}/image`} />
 
         {/* LinkedIn specific */}
-        <meta property="og:site_name" content="Forge Certificate Platform" />
+        <meta property="og:site_name" content="Certiflo Certificate Platform" />
       </Head>
       <div className="min-h-screen w-full bg-linear-to-br from-slate-50 via-slate-100 to-slate-50 relative overflow-hidden"
         style={{
