@@ -29,6 +29,72 @@ export const WATERMARK_CONFIG: WatermarkConfig = {
   position: 'bottom-right',
 }
 
+let watermarkConfigLoaded = false
+let pendingWatermarkFetch: Promise<boolean> | null = null
+let loadedScopeKey = 'global'
+
+export function setWatermarkEnabled(enabled: boolean): void {
+  WATERMARK_CONFIG.enabled = enabled
+  watermarkConfigLoaded = true
+}
+
+export function isWatermarkEnabled(): boolean {
+  return WATERMARK_CONFIG.enabled
+}
+
+/**
+ * Fetches watermark configuration from backend and applies it globally.
+ * Defaults to enabled if request fails or response is malformed.
+ */
+export async function loadWatermarkConfig(
+  forceRefresh: boolean = false,
+  orgSlug?: string
+): Promise<boolean> {
+  const normalizedOrgSlug = orgSlug?.trim().toLowerCase()
+  const scopeKey = normalizedOrgSlug ? `org:${normalizedOrgSlug}` : 'global'
+
+  if (watermarkConfigLoaded && !forceRefresh && loadedScopeKey === scopeKey) {
+    return WATERMARK_CONFIG.enabled
+  }
+
+  if (pendingWatermarkFetch && !forceRefresh && loadedScopeKey === scopeKey) {
+    return pendingWatermarkFetch
+  }
+
+  loadedScopeKey = scopeKey
+
+  pendingWatermarkFetch = (async () => {
+    try {
+      const endpoint = normalizedOrgSlug
+        ? `/api/watermark-config?orgSlug=${encodeURIComponent(normalizedOrgSlug)}`
+        : '/api/watermark-config'
+
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        cache: 'no-store',
+      })
+
+      if (!response.ok) {
+        setWatermarkEnabled(true)
+        return true
+      }
+
+      const data: { settings?: { watermarkEnabled?: boolean } } = await response.json()
+      const enabled = data?.settings?.watermarkEnabled
+      setWatermarkEnabled(typeof enabled === 'boolean' ? enabled : true)
+      return WATERMARK_CONFIG.enabled
+    } catch (error) {
+      console.error('[Watermark] Failed to load config, using default enabled:', error)
+      setWatermarkEnabled(true)
+      return true
+    } finally {
+      pendingWatermarkFetch = null
+    }
+  })()
+
+  return pendingWatermarkFetch
+}
+
 /**
  * Determines if a watermark should be shown for an organization
  * 

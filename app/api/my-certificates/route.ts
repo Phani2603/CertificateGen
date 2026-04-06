@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
       .sort({ issueDate: -1 })
       // Select all fields needed by the dashboard, including schema's issueDate
       .select(
-        'verificationId recipientName recipientEmail eventName issueDate templateS3Key fieldConfiguration eventId organizationName clubName organizationId privateOrgId'
+        'verificationId recipientName recipientEmail eventName issueDate templateS3Key fieldConfiguration eventId organizationName clubName organizationId privateOrgId watermarkEnabledAtIssue'
       )
       .lean()
 

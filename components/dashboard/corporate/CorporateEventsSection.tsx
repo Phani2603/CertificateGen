@@ -259,7 +259,20 @@ export function CorporateEventsSection({
     if (currentStep === "upload") setViewMode("list")
   }
 
-  const addToHistory = async (eventName: string, clubName: string, count: number, totalSizeBytes: number) => {
+  const addToHistory = async (
+    eventName: string,
+    clubName: string,
+    count: number,
+    totalSizeBytes: number,
+    metadata?: {
+      registrationBatchIds?: string[]
+      certificateIds?: string[]
+    }
+  ) => {
+    const registrationBatchIds = metadata?.registrationBatchIds || []
+    const primaryBatchId = registrationBatchIds[0] || crypto.randomUUID()
+    const certificateIds = metadata?.certificateIds || []
+
     try {
       await fetch('/api/history', {
         method: 'POST',
@@ -271,8 +284,9 @@ export function CorporateEventsSection({
           clubName: organizationName,
           certificateCount: count,
           totalSize: totalSizeBytes,
-          batchId: crypto.randomUUID(),
-          certificateIds: [],
+          batchId: primaryBatchId,
+          registrationBatchIds,
+          certificateIds,
           privateOrgId: organizationId,
         }),
       })
@@ -361,7 +375,7 @@ export function CorporateEventsSection({
                       <div className="space-y-2">
                         {/* Event Icon */}
                         <div className="flex items-start justify-between">
-                          <div className={`w-10 h-10 bg-gradient-to-br ${colors[(startIndex + index) % colors.length]} rounded-lg flex items-center justify-center shrink-0`}>
+                          <div className={`w-10 h-10 bg-linear-to-br ${colors[(startIndex + index) % colors.length]} rounded-lg flex items-center justify-center shrink-0`}>
                             <Image src="/13.svg" alt="Event" width={20} height={20} />
                           </div>
                           <div className="flex items-center gap-1">

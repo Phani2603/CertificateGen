@@ -10,7 +10,7 @@ import { toast } from "sonner"
 interface TemplateUploadProps {
   onUpload: (data: { image: string; s3Key?: string }) => void
   selectedEvent?: { club: string; eventId: string; eventName: string } | null
-  organization?: { id: string; name: string; slug: string; logoUrl?: string } | null
+  organization?: { id: string; name: string; slug?: string; logoUrl?: string } | null
 }
 
 interface ExistingTemplate {

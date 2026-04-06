@@ -141,6 +141,8 @@ export async function POST(request: NextRequest) {
           certificateHash,
           recipientName: cert.recipientName,
           recipientEmail: cert.recipientEmail,
+          recipientNameLower: String(cert.recipientName || '').toLowerCase().trim(),
+          recipientEmailLower: String(cert.recipientEmail || '').toLowerCase().trim(),
           eventId: eventId || null, // NEW: Store eventId reference
           eventName: cert.eventName,
           eventDate: cert.eventDate, // Keep as string for hash consistency
@@ -150,6 +152,7 @@ export async function POST(request: NextRequest) {
           isValid: true,
           templateS3Key: cert.templateS3Key || null, // NEW: Store S3 key for template
           fieldConfiguration: cert.fieldConfiguration || null, // NEW: Store field configuration
+          watermarkEnabledAtIssue: cert.watermarkEnabledAtIssue !== false,
           metadata: {
             batchId,
             generatedBy,
@@ -157,9 +160,11 @@ export async function POST(request: NextRequest) {
         })
 
         registeredCertificates.push({
+          certificateId: newCertificate._id.toString(),
           recipientEmail: cert.recipientEmail,
           recipientName: cert.recipientName,
           verificationId: newCertificate.verificationId,
+          batchId,
           verificationUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/verify/${newCertificate.verificationId}`,
         })
 

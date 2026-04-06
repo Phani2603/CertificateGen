@@ -12,6 +12,7 @@ export interface ICertificateHistory extends Document {
   totalSize: number // in bytes
   successRate: number
   batchId: string
+  registrationBatchIds?: string[]
   certificateIds: mongoose.Types.ObjectId[]
   createdAt: Date
   updatedAt: Date
@@ -69,6 +70,10 @@ const CertificateHistorySchema = new Schema<ICertificateHistory>(
       required: true,
       unique: true,
     },
+    registrationBatchIds: [{
+      type: String,
+      trim: true,
+    }],
     certificateIds: [{
       type: Schema.Types.ObjectId,
       ref: 'Certificate',
@@ -83,6 +88,7 @@ const CertificateHistorySchema = new Schema<ICertificateHistory>(
 CertificateHistorySchema.index({ userId: 1, createdAt: -1 })
 CertificateHistorySchema.index({ organizationId: 1, createdAt: -1 })
 CertificateHistorySchema.index({ clubId: 1, createdAt: -1 })
+CertificateHistorySchema.index({ privateOrgId: 1, createdAt: -1 })
 // Note: batchId index is created by unique: true constraint
 
 const CertificateHistory: Model<ICertificateHistory> =

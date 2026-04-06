@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { History, Download, ChevronLeft, ChevronRight, X } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { History, Download, ChevronLeft, ChevronRight, X, Users, Search } from "lucide-react"
 import { toast } from "sonner"
 import Image from "next/image"
 
@@ -16,6 +17,24 @@ interface HistoryItem {
   timestamp: number
   successRate: number
   totalSize: string
+  registrationBatchIds?: string[]
+}
+
+interface ParticipantItem {
+  id: string
+  recipientName: string
+  recipientEmail: string
+  verificationId: string
+  issuedAt: string
+}
+
+interface ParticipantsPagination {
+  currentPage: number
+  totalPages: number
+  totalItems: number
+  itemsPerPage: number
+  hasNextPage: boolean
+  hasPrevPage: boolean
 }
 
 interface CorporateHistorySectionProps {
@@ -29,6 +48,20 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
   const [currentPage, setCurrentPage] = useState(1)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<HistoryItem | null>(null)
+  const [showParticipantsModal, setShowParticipantsModal] = useState(false)
+  const [participants, setParticipants] = useState<ParticipantItem[]>([])
+  const [participantsLoading, setParticipantsLoading] = useState(false)
+  const [participantsSearch, setParticipantsSearch] = useState("")
+  const [participantsDebouncedSearch, setParticipantsDebouncedSearch] = useState("")
+  const [participantsPage, setParticipantsPage] = useState(1)
+  const [participantsPagination, setParticipantsPagination] = useState<ParticipantsPagination>({
+    currentPage: 1,
+    totalPages: 0,
+    totalItems: 0,
+    itemsPerPage: 20,
+    hasNextPage: false,
+    hasPrevPage: false,
+  })
   const itemsPerPage = 5
 
   useEffect(() => {
@@ -41,6 +74,7 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
       document.body.style.overflow = 'hidden'
     } else {
       document.body.style.overflow = 'unset'
+      setShowParticipantsModal(false)
     }
     
     // Cleanup on unmount
@@ -48,6 +82,15 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
       document.body.style.overflow = 'unset'
     }
   }, [showDetailModal])
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setParticipantsDebouncedSearch(participantsSearch.trim())
+      setParticipantsPage(1)
+    }, 250)
+
+    return () => window.clearTimeout(timeout)
+  }, [participantsSearch])
 
   const fetchHistory = async () => {
     setIsLoading(true)
@@ -68,6 +111,63 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
       setIsLoading(false)
     }
   }
+
+  const fetchParticipants = async (
+    historyId: string,
+    page = 1,
+    query = '',
+    signal?: AbortSignal
+  ) => {
+    setParticipantsLoading(true)
+
+    try {
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: '20',
+      })
+
+      if (query) {
+        params.set('q', query)
+      }
+
+      const response = await fetch(`/api/history/${historyId}/participants?${params.toString()}`, { signal })
+      const data = await response.json()
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to load participants')
+      }
+
+      setParticipants(data.participants || [])
+      setParticipantsPagination(
+        data.pagination || {
+          currentPage: 1,
+          totalPages: 0,
+          totalItems: 0,
+          itemsPerPage: 20,
+          hasNextPage: false,
+          hasPrevPage: false,
+        }
+      )
+    } catch (error: any) {
+      if (error?.name !== 'AbortError') {
+        console.error('Error fetching participants:', error)
+        toast.error(error?.message || 'Failed to load participants')
+      }
+    } finally {
+      setParticipantsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!showParticipantsModal || !selectedHistoryItem?.id) {
+      return
+    }
+
+    const controller = new AbortController()
+    fetchParticipants(selectedHistoryItem.id, participantsPage, participantsDebouncedSearch, controller.signal)
+
+    return () => controller.abort()
+  }, [showParticipantsModal, selectedHistoryItem?.id, participantsPage, participantsDebouncedSearch])
 
   const exportToCSV = () => {
     if (history.length === 0) {
@@ -158,7 +258,7 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
                     className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 md:p-4 border-2 border-gray-100 rounded-lg hover:shadow-md transition-all bg-white gap-3"
                   >
                     <div className="flex items-center gap-3 md:gap-4 w-full sm:w-auto">
-                      <div className={`w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br ${colors[(startIndex + i) % 3]} rounded-lg flex items-center justify-center shrink-0`}>
+                      <div className={`w-12 h-12 md:w-14 md:h-14 bg-linear-to-br ${colors[(startIndex + i) % 3]} rounded-lg flex items-center justify-center shrink-0`}>
                         <Image src="/13.svg" alt="Event" width={32} height={32} />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -261,6 +361,7 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
             // Close modal when clicking on backdrop
             if (e.target === e.currentTarget) {
               setShowDetailModal(false)
+              setShowParticipantsModal(false)
               setSelectedHistoryItem(null)
             }
           }}
@@ -280,6 +381,7 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
               </div>
               <Button variant="ghost" size="sm" className="shrink-0" onClick={() => {
                 setShowDetailModal(false)
+                setShowParticipantsModal(false)
                 setSelectedHistoryItem(null)
               }}>
                 <X className="h-4 w-4 md:h-5 md:w-5" />
@@ -292,18 +394,35 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
               onTouchMove={(e) => e.stopPropagation()}
             >
               <div className="grid grid-cols-3 gap-1.5 md:gap-3 lg:gap-4">
-                <Card className="p-2 md:p-3 lg:p-4 bg-gradient-to-br from-[#FF5733] to-[#ff7a59] text-white">
+                <Card className="p-2 md:p-3 lg:p-4 bg-linear-to-br from-[#FF5733] to-[#ff7a59] text-white">
                   <div className="text-lg md:text-2xl lg:text-3xl font-bold">{selectedHistoryItem.certificateCount}</div>
                   <div className="text-[9px] md:text-[10px] lg:text-sm opacity-90">Generated</div>
                 </Card>
-                <Card className="p-2 md:p-3 lg:p-4 bg-gradient-to-br from-[#8FD6BD] to-[#a8e0cd] text-gray-900">
+                <Card className="p-2 md:p-3 lg:p-4 bg-linear-to-br from-[#8FD6BD] to-[#a8e0cd] text-gray-900">
                   <div className="text-lg md:text-2xl lg:text-3xl font-bold">{selectedHistoryItem.successRate}%</div>
                   <div className="text-[9px] md:text-[10px] lg:text-sm opacity-80">Success Rate</div>
                 </Card>
-                <Card className="p-2 md:p-3 lg:p-4 bg-gradient-to-br from-[#F4E04D] to-[#f7e878] text-gray-900">
+                <Card className="p-2 md:p-3 lg:p-4 bg-linear-to-br from-[#F4E04D] to-[#f7e878] text-gray-900">
                   <div className="text-lg md:text-2xl lg:text-3xl font-bold">{selectedHistoryItem.totalSize}</div>
                   <div className="text-[9px] md:text-[10px] lg:text-sm opacity-80">Total Size</div>
                 </Card>
+              </div>
+
+              <div className="flex items-center justify-end">
+                <Button
+                  variant="outline"
+                  className="border-[#21808D] text-[#21808D] hover:bg-[#21808D] hover:text-white"
+                  onClick={() => {
+                    setParticipants([])
+                    setParticipantsSearch('')
+                    setParticipantsDebouncedSearch('')
+                    setParticipantsPage(1)
+                    setShowParticipantsModal(true)
+                  }}
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  View Participants
+                </Button>
               </div>
 
               <div className="p-3 md:p-4 lg:p-6 bg-gray-50 rounded-lg">
@@ -339,6 +458,107 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
                 </p>
               </div>
             </div>
+          </Card>
+        </div>
+      )}
+
+      {showParticipantsModal && selectedHistoryItem && (
+        <div
+          className="fixed inset-0 bg-black/55 flex items-center justify-center z-60 p-2 md:p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowParticipantsModal(false)
+            }
+          }}
+        >
+          <Card className="bg-white p-3 md:p-5 rounded-xl md:rounded-2xl w-full max-w-[96vw] md:max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <div className="min-w-0">
+                <h3 className="text-base md:text-xl font-bold truncate">Participants - {selectedHistoryItem.eventName}</h3>
+                <p className="text-xs md:text-sm text-gray-500 mt-1">
+                  {participantsPagination.totalItems} recipient{participantsPagination.totalItems === 1 ? '' : 's'}
+                </p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setShowParticipantsModal(false)}>
+                <X className="h-4 w-4 md:h-5 md:w-5" />
+              </Button>
+            </div>
+
+            <div className="relative mb-4">
+              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Input
+                value={participantsSearch}
+                onChange={(e) => setParticipantsSearch(e.target.value)}
+                placeholder="Search participants by name or email"
+                className="pl-9"
+              />
+            </div>
+
+            <div className="flex-1 overflow-auto border border-gray-200 rounded-lg">
+              {participantsLoading ? (
+                <div className="py-12 text-center">
+                  <div className="w-8 h-8 border-4 border-[#21808D] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                  <p className="text-sm text-gray-600">Loading participants...</p>
+                </div>
+              ) : participants.length === 0 ? (
+                <div className="py-12 text-center">
+                  <Users className="w-10 h-10 mx-auto text-gray-300 mb-3" />
+                  <p className="text-sm text-gray-600">No participants found</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {participantsDebouncedSearch ? 'Try a different search term.' : 'No recipients are linked to this history entry yet.'}
+                  </p>
+                </div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 sticky top-0 z-10">
+                    <tr>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Name</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Email</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Verification ID</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Issued</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {participants.map((participant) => (
+                      <tr key={participant.id} className="border-t border-gray-100 hover:bg-gray-50/60">
+                        <td className="px-4 py-3 text-gray-900">{participant.recipientName}</td>
+                        <td className="px-4 py-3 text-gray-700">{participant.recipientEmail}</td>
+                        <td className="px-4 py-3 text-gray-700 font-mono text-xs md:text-sm">{participant.verificationId}</td>
+                        <td className="px-4 py-3 text-gray-600">
+                          {participant.issuedAt ? new Date(participant.issuedAt).toLocaleString() : '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {participantsPagination.totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4 gap-3">
+                <p className="text-xs md:text-sm text-gray-600">
+                  Page {participantsPagination.currentPage} of {participantsPagination.totalPages}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!participantsPagination.hasPrevPage || participantsLoading}
+                    onClick={() => setParticipantsPage((prev) => Math.max(1, prev - 1))}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!participantsPagination.hasNextPage || participantsLoading}
+                    onClick={() => setParticipantsPage((prev) => prev + 1)}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </Card>
         </div>
       )}

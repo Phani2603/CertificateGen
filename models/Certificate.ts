@@ -6,6 +6,8 @@ export interface ICertificate extends Document {
   certificateHash: string
   recipientName: string
   recipientEmail: string
+  recipientNameLower?: string
+  recipientEmailLower?: string
   eventId?: mongoose.Types.ObjectId // NEW: Reference to Event model
   eventName: string // KEPT: For backward compatibility
   eventDate: string
@@ -15,6 +17,7 @@ export interface ICertificate extends Document {
   isValid: boolean
   templateS3Key?: string // NEW: S3 key for certificate template
   fieldConfiguration?: any[] // NEW: Field configuration for rendering certificate
+  watermarkEnabledAtIssue?: boolean
   metadata?: {
     templateUsed?: string
     generatedBy?: string
@@ -58,6 +61,16 @@ const CertificateSchema = new Schema<ICertificate>(
       type: String,
       required: true,
     },
+    recipientNameLower: {
+      type: String,
+      required: false,
+      index: true,
+    },
+    recipientEmailLower: {
+      type: String,
+      required: false,
+      index: true,
+    },
     eventId: {
       type: Schema.Types.ObjectId,
       ref: 'Event',
@@ -95,6 +108,12 @@ const CertificateSchema = new Schema<ICertificate>(
     fieldConfiguration: {
       type: Schema.Types.Mixed,
       default: null,
+    },
+    watermarkEnabledAtIssue: {
+      type: Boolean,
+      required: false,
+      default: true,
+      index: true,
     },
     metadata: {
       templateUsed: String,
@@ -146,6 +165,11 @@ CertificateSchema.statics.verifyHash = function (certificate: ICertificate): boo
   
   return recalculatedHash === certificate.certificateHash
 }
+
+// Optimized participant lookups for history rows and prefix search.
+CertificateSchema.index({ "metadata.batchId": 1, issueDate: -1 })
+CertificateSchema.index({ "metadata.batchId": 1, recipientNameLower: 1 })
+CertificateSchema.index({ "metadata.batchId": 1, recipientEmailLower: 1 })
 
 // Prevent model recompilation during hot reload
 const Certificate: ICertificateModel =

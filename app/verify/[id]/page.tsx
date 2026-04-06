@@ -44,6 +44,7 @@ interface CertificateData {
   eventId?: string // MongoDB ObjectId reference
   templateS3Key?: string
   fieldConfiguration?: FieldConfig[]
+  watermarkEnabledAtIssue?: boolean
 }
 
 interface FieldConfig {
@@ -338,8 +339,10 @@ export default function VerificationPage() {
           console.log('[Verification] No field configuration, showing template only')
         }
 
-        // Add watermark to certificate
-        renderWatermark(ctx, canvas.width, canvas.height, 1)
+        // Immutable rule: use stored issuance state, never recalculate from current settings.
+        if (certificate.watermarkEnabledAtIssue !== false) {
+          renderWatermark(ctx, canvas.width, canvas.height, 1)
+        }
 
         setCertificateGenerated(true)
         console.log("[Verification] ✅ Certificate rendered successfully")

@@ -66,6 +66,7 @@ export async function GET(request: NextRequest) {
       successRate: item.successRate,
       totalSize: formatBytes(item.totalSize),
       batchId: item.batchId,
+      registrationBatchIds: item.registrationBatchIds || [],
     }))
 
     const response = NextResponse.json({
@@ -102,7 +103,18 @@ export async function POST(request: NextRequest) {
     await connectDB()
 
     const body = await request.json()
-    const { eventId, eventName, clubId, clubName, certificateCount, totalSize, batchId, certificateIds, privateOrgId } = body
+    const {
+      eventId,
+      eventName,
+      clubId,
+      clubName,
+      certificateCount,
+      totalSize,
+      batchId,
+      registrationBatchIds,
+      certificateIds,
+      privateOrgId,
+    } = body
 
     const user = await User.findOne({ email: session.user.email })
     if (!user) {
@@ -126,6 +138,7 @@ export async function POST(request: NextRequest) {
       totalSize,
       successRate: 100,
       batchId,
+      registrationBatchIds: Array.isArray(registrationBatchIds) ? registrationBatchIds : [],
       certificateIds: certificateIds || [],
     })
 

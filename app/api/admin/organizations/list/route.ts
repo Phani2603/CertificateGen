@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch all private organizations with quota information
     const organizations = await PrivateOrg.find({})
-      .select('name slug certificateQuota certificatesUsed allowedUsers ownerId createdAt updatedAt')
+      .select('name slug certificateQuota certificatesUsed watermarkDisabledByAdmin allowedUsers ownerId createdAt updatedAt')
       .populate('ownerId', 'name email')
       .lean()
       .sort({ createdAt: -1 })

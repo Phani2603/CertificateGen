@@ -21,7 +21,16 @@ interface GenerateCertificatesSectionProps {
   appState: AppState
   setAppState: (state: AppState | ((prev: AppState) => AppState)) => void
   selectedEvent: {club: string, eventId: string, eventName: string} | null
-  onAddToHistory: (eventName: string, clubName: string, count: number, totalSizeBytes: number) => void
+  onAddToHistory: (
+    eventName: string,
+    clubName: string,
+    count: number,
+    totalSizeBytes: number,
+    metadata?: {
+      registrationBatchIds?: string[]
+      certificateIds?: string[]
+    }
+  ) => void
   organization: {id: string, name: string, logoUrl?: string} | null
   clubs: Array<{id: string, name: string, members: number, color: string, logoUrl?: string}>
 }
@@ -92,7 +101,7 @@ export function GenerateCertificatesSection({
           <TemplateUpload 
             onUpload={handleTemplateUpload}
             selectedEvent={selectedEvent}
-            organization={organization}
+            organization={organization ? { ...organization, slug: organization.name } : null}
           />
         )}
         {currentStep === "configure" && appState.templateImage && (
@@ -113,7 +122,7 @@ export function GenerateCertificatesSection({
             onBack={handleBack}
             selectedEvent={selectedEvent}
             onAddToHistory={onAddToHistory}
-            organization={organization}
+            organization={organization ? { ...organization, slug: organization.name } : null}
             clubs={clubs}
           />
         )}

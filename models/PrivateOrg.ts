@@ -9,6 +9,7 @@ export interface IPrivateOrg extends Document {
   ownerId: mongoose.Types.ObjectId
   allowedUsers: mongoose.Types.ObjectId[]
   isPublic: boolean
+  watermarkDisabledByAdmin?: boolean
   // Certificate Quota System
   certificateQuota: number // -1 = unlimited, positive number = limit
   certificatesUsed: number
@@ -71,6 +72,11 @@ const PrivateOrgSchema = new Schema<IPrivateOrg, IPrivateOrgModel>(
     isPublic: {
       type: Boolean,
       default: false,
+    },
+    watermarkDisabledByAdmin: {
+      type: Boolean,
+      default: false,
+      index: true,
     },
     // Certificate Quota System
     certificateQuota: {

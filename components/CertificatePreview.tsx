@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { Loader2, Award } from "lucide-react"
 import { renderWatermark } from "@/lib/watermark-utils"
+import { useWatermarkConfig } from "@/hooks/useWatermarkConfig"
 
 interface FieldConfig {
     id: string
@@ -37,6 +38,7 @@ interface CertificatePreviewProps {
 
 export function CertificatePreview({ certificate }: CertificatePreviewProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null)
+    const { watermarkReady, watermarkVersion } = useWatermarkConfig()
     const [loading, setLoading] = useState(true)
     const [templateUrl, setTemplateUrl] = useState<string | null>(null)
     const [fieldConfig, setFieldConfig] = useState<FieldConfig[]>([])
@@ -100,7 +102,7 @@ export function CertificatePreview({ certificate }: CertificatePreviewProps) {
     }, [certificate])
 
     useEffect(() => {
-        if (!templateUrl || !canvasRef.current) return
+        if (!templateUrl || !canvasRef.current || !watermarkReady) return
 
         const render = async () => {
             const canvas = canvasRef.current!
@@ -192,7 +194,7 @@ export function CertificatePreview({ certificate }: CertificatePreviewProps) {
         }
 
         render()
-    }, [templateUrl, fieldConfig, certificate])
+    }, [templateUrl, fieldConfig, certificate, watermarkReady, watermarkVersion])
 
     if (!templateUrl && !loading) {
         return (
