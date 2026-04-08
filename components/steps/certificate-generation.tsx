@@ -19,7 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { EmailStatusCard } from "@/components/dashboard/EmailStatusCard"
-import { Upload, Download, Loader2, CheckCircle, AlertCircle, Mail, AlertTriangle } from "lucide-react"
+import { Upload, Download, Loader2, CheckCircle, AlertCircle, Mail, AlertTriangle, Info } from "lucide-react"
 import JSZip from "jszip"
 import FileSaver from "file-saver"
 import type { CertificateField } from "@/types/certificate"
@@ -69,6 +69,8 @@ export default function CertificateGeneration({
   const [isGenerating, setIsGenerating] = useState(false)
   const [outputFormat, setOutputFormat] = useState<"png" | "pdf">("png")
   const [quality, setQuality] = useState<"standard" | "high">("standard")
+  const [zipOutputMode, setZipOutputMode] = useState<"verification" | "certificates-only" | "">("")
+  const [showZipModeInfo, setShowZipModeInfo] = useState(false)
   const [generationStatus, setGenerationStatus] = useState<"idle" | "success" | "error">("idle")
   const [generatedCount, setGeneratedCount] = useState(0)
   const [currentPhase, setCurrentPhase] = useState<
@@ -108,6 +110,7 @@ export default function CertificateGeneration({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const previewCanvasRef = useRef<HTMLCanvasElement>(null)
   const emailStatusCardRef = useRef<HTMLDivElement>(null)
+  const zipModeSectionRef = useRef<HTMLDivElement>(null)
   
   // Use credentials hook
   const credentialsData = useCredentials()
@@ -382,6 +385,10 @@ export default function CertificateGeneration({
     return idPart ? `${namePart}_${idPart}` : namePart
   }
 
+  const focusZipModeSection = () => {
+    zipModeSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+  }
+
   const sendEmailsOnly = async () => {
     console.log(`[sendEmailsOnly] Starting - isAuthenticated: ${isAuthenticated}, emailProvider: ${emailProvider}`)
     
@@ -571,6 +578,12 @@ export default function CertificateGeneration({
   const generateCertificates = async () => {
     if (csvData.length === 0) {
       toast.error("Please upload a CSV file first")
+      return
+    }
+
+    if (!zipOutputMode) {
+      toast.error("Please choose a ZIP output mode before generating")
+      focusZipModeSection()
       return
     }
 
@@ -870,11 +883,40 @@ export default function CertificateGeneration({
         setGeneratedCertificates(emailRecipients)
       }
 
-      // NOW create organized folder structure with verification data
+      // Build ZIP structure based on selected output mode
       setCurrentPhase("zipping")
       const certificatesRootFolder = zip.folder("certificates")
 
-      if (certificatesRootFolder && registeredVerificationData.length > 0) {
+      if (certificatesRootFolder && zipOutputMode === "certificates-only") {
+        console.log("[ZIP Creation] Creating flat certificates-only structure...")
+
+        for (let i = 0; i < emailRecipients.length; i++) {
+          const recipient = emailRecipients[i]
+          if (!recipient.certificateBlob) continue
+
+          try {
+            const verificationInfo = registeredVerificationData.find(
+              (v) => v.recipientEmail === recipient.email,
+            )
+
+            const baseName = verificationInfo
+              ? createFolderNameFromRecipient(verificationInfo.recipientName, verificationInfo.verificationId)
+              : sanitizeFolderPart((recipient.fileName || `certificate_${String(i + 1).padStart(4, "0")}`).replace(/\.\w+$/, "")) || `certificate_${String(i + 1).padStart(4, "0")}`
+
+            const certArrayBuffer = await recipient.certificateBlob.arrayBuffer()
+            const certFileName = `${baseName}.${outputFormat}`
+            certificatesRootFolder.file(certFileName, certArrayBuffer)
+          } catch (err) {
+            console.error("[ZIP Creation] Error adding certificate to flat ZIP:", {
+              index: i,
+              email: recipient.email,
+              error: err instanceof Error ? err.message : err,
+            })
+          }
+        }
+
+        console.log("[ZIP Creation] Flat certificates-only ZIP ready")
+      } else if (certificatesRootFolder && registeredVerificationData.length > 0) {
         console.log("[ZIP Creation] Creating organized folder structure...")
         // Add each certificate in its own folder with verification file
         for (let i = 0; i < emailRecipients.length; i++) {
@@ -1421,6 +1463,49 @@ Generated: ${new Date().toLocaleString()}
                     </Select>
                   </div>
 
+                  <div ref={zipModeSectionRef}>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-sm font-medium text-gray-700 block">ZIP Output Mode</label>
+                      <button
+                        type="button"
+                        onClick={() => setShowZipModeInfo(true)}
+                        className="text-[#21808D] hover:text-[#1a6570] transition-colors"
+                        aria-label="Show ZIP output mode details"
+                        title="Show ZIP folder structure details"
+                      >
+                        <Info className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <Select
+                      value={zipOutputMode}
+                      onValueChange={(value) => setZipOutputMode(value as "verification" | "certificates-only" | "")}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select ZIP mode (required)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="verification">Verification Package</SelectItem>
+                        <SelectItem value="certificates-only">Certificates Only (Flat)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-gray-500 mt-2">
+                      {!zipOutputMode
+                        ? "Required: choose one mode before generation."
+                        : zipOutputMode === "verification"
+                        ? "Creates one folder per participant with certificate + verification.txt, plus master verification files."
+                        : "Saves all certificates directly inside /certificates as flat files with no participant subfolders or verification sidecar files."}
+                    </p>
+                    {!zipOutputMode && (
+                      <Alert className="mt-3 border-amber-300 bg-amber-50">
+                        <AlertTriangle className="h-4 w-4 text-amber-600" />
+                        <AlertTitle className="text-amber-900">Selection required before generation</AlertTitle>
+                        <AlertDescription className="text-amber-800">
+                          Choose ZIP Output Mode in this section, then click Generate & Download.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+
                   <div className="pt-4 border-t border-[#21808D]/20">
                     <label className="text-sm font-medium text-gray-700 mb-2 block">Email Provider</label>
                     <Select value={emailProvider} onValueChange={(value) => setEmailProvider(value as "resend" | "gmail" | "senement")} disabled>
@@ -1700,6 +1785,26 @@ Generated: ${new Date().toLocaleString()}
         </div>
       </div>
 
+      {!zipOutputMode && csvData.length > 0 && (
+        <Alert className="mt-8 border-amber-300 bg-amber-50">
+          <AlertTriangle className="h-4 w-4 text-amber-600" />
+          <AlertTitle className="text-amber-900">Generation is paused until ZIP mode is selected</AlertTitle>
+          <AlertDescription className="flex items-center justify-between gap-4 text-amber-800">
+            <span>
+              Look for the Processing Options card and choose ZIP Output Mode.
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={focusZipModeSection}
+              className="border-amber-400 text-amber-900 hover:bg-amber-100"
+            >
+              Go to ZIP Output Mode
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="flex gap-4 mt-8">
         <Button onClick={onBack} variant="outline" className="flex-1 bg-transparent">
           Back
@@ -1728,7 +1833,7 @@ Generated: ${new Date().toLocaleString()}
         )}
         <Button
           onClick={generateCertificates}
-          disabled={csvData.length === 0 || isGenerating || quotaExceeded}
+          disabled={csvData.length === 0 || isGenerating || quotaExceeded || !zipOutputMode}
           className="flex-1 bg-[#21808D] hover:bg-[#1a6570] text-white disabled:opacity-50"
         >
           {isGenerating ? (
@@ -1782,6 +1887,55 @@ Generated: ${new Date().toLocaleString()}
           })
         }}
       />
+
+      <AlertDialog open={showZipModeInfo} onOpenChange={setShowZipModeInfo}>
+        <AlertDialogContent className="sm:max-w-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>ZIP Output Modes</AlertDialogTitle>
+            <AlertDialogDescription>
+              Choose this mode before clicking Generate & Download.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-4 text-sm text-gray-700 max-h-[60vh] overflow-y-auto">
+            <div>
+              <p className="font-semibold text-[#1a1a1a]">1) Verification Package (Current Flow)</p>
+              <pre className="mt-2 p-3 bg-gray-50 rounded text-xs overflow-x-auto">
+{`certificates_YYYY-MM-DD.zip
+├── certificates/
+│   ├── recipient_name_verificationid/
+│   │   ├── recipient_name_verificationid.${outputFormat}
+│   │   └── verification.txt
+│   └── ...
+├── MASTER_VERIFICATION_INFO.txt
+├── verification_manifest.json
+└── README.txt`}
+              </pre>
+            </div>
+
+            <div>
+              <p className="font-semibold text-[#1a1a1a]">2) Certificates Only (Flat)</p>
+              <pre className="mt-2 p-3 bg-gray-50 rounded text-xs overflow-x-auto">
+{`certificates_YYYY-MM-DD.zip
+└── certificates/
+    ├── recipient_name_verificationid.${outputFormat}
+    ├── recipient_name_verificationid.${outputFormat}
+    └── ...`}
+              </pre>
+            </div>
+
+            <p className="text-xs text-gray-500">
+              Certificate registration still runs in both modes, so verification IDs remain available for email/link workflows.
+            </p>
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowZipModeInfo(false)}>
+              Got it
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Quota Exceeded AlertDialog */}
       <AlertDialog open={quotaExceeded} onOpenChange={setQuotaExceeded}>
