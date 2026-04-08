@@ -365,6 +365,23 @@ export default function CertificateGeneration({
     })
   }
 
+  const sanitizeFolderPart = (value: string) => {
+    const normalized = value
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+
+    return normalized
+  }
+
+  const createFolderNameFromRecipient = (recipientName: string, verificationId?: string) => {
+    const namePart = sanitizeFolderPart(recipientName) || 'recipient'
+    const idPart = sanitizeFolderPart(verificationId || '')
+
+    return idPart ? `${namePart}_${idPart}` : namePart
+  }
+
   const sendEmailsOnly = async () => {
     console.log(`[sendEmailsOnly] Starting - isAuthenticated: ${isAuthenticated}, emailProvider: ${emailProvider}`)
     
@@ -867,10 +884,11 @@ export default function CertificateGeneration({
           )
           
           if (recipient.certificateBlob && verificationInfo) {
-            // Create folder name: email_prefix_Name (e.g., 2320030111_Venkat_manoj)
-            const emailPrefix = verificationInfo.recipientEmail.split('@')[0]
-            const namePart = verificationInfo.recipientName.toLowerCase().replace(/\s+/g, '_')
-            const folderName = `${emailPrefix}_${namePart}`
+            // Create folder name from the recipient name only
+            const folderName = createFolderNameFromRecipient(
+              verificationInfo.recipientName,
+              verificationInfo.verificationId,
+            )
             
             // Create individual folder for this recipient
             const recipientFolder = certificatesRootFolder.folder(folderName)
@@ -999,9 +1017,7 @@ ALL VERIFICATION IDs
 ${'='.repeat(80)}
 
 ${registeredVerificationData.map((cert, idx) => {
-  const emailPrefix = cert.recipientEmail.split('@')[0]
-  const namePart = cert.recipientName.toLowerCase().replace(/\s+/g, '_')
-  const folderName = `${emailPrefix}_${namePart}`
+  const folderName = createFolderNameFromRecipient(cert.recipientName, cert.verificationId)
   return `
 ${idx + 1}. ${cert.recipientName}
    Email: ${cert.recipientEmail}
@@ -1035,9 +1051,7 @@ ${'='.repeat(80)}
           clubName: selectedEvent?.club || 'Unknown Club',
           totalCertificates: registeredVerificationData.length,
           certificates: registeredVerificationData.map(cert => {
-            const emailPrefix = cert.recipientEmail.split('@')[0]
-            const namePart = cert.recipientName.toLowerCase().replace(/\s+/g, '_')
-            const folderName = `${emailPrefix}_${namePart}`
+            const folderName = createFolderNameFromRecipient(cert.recipientName, cert.verificationId)
             return {
               recipientName: cert.recipientName,
               recipientEmail: cert.recipientEmail,
@@ -1066,12 +1080,12 @@ ${'='.repeat(80)}
 
 certificates_${new Date().toISOString().split('T')[0]}.zip
 ├── certificates/
-│   ├── 2320030111_venkat_manoj/
-│   │   ├── 2320030111_venkat_manoj.${outputFormat}
+│   ├── venkat_manoj_verificationid123/
+│   │   ├── venkat_manoj_verificationid123.${outputFormat}
 │   │   └── verification.txt
 │   │
-│   ├── 2320030222_john_doe/
-│   │   ├── 2320030222_john_doe.${outputFormat}
+│   ├── john_doe_verificationid456/
+│   │   ├── john_doe_verificationid456.${outputFormat}
 │   │   └── verification.txt
 │   │
 │   └── ... (one folder per recipient)
@@ -1112,8 +1126,8 @@ ${'='.repeat(80)}
 FOLDER NAMING CONVENTION
 ${'='.repeat(80)}
 
-Folders are named: {email_prefix}_{recipient_name}
-Example: 2320030111_venkat_manoj
+Folders are named as: {recipient_name}_{verification_id}
+Example: venkat_manoj_7f3a9c12d8
 
 This makes it easy to:
 • Identify recipients by email or name
