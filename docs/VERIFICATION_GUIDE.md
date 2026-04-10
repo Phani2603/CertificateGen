@@ -117,8 +117,8 @@ When you verify a certificate, the system checks:
 ### To Check Your Database:
 
 **Using MongoDB Compass:**
-1. Connect to: `mongodb+srv://Hashing:Hashing1@cluster0.bsjufwe.mongodb.net/certificates`
-2. Navigate to `certificates` database → `certificates` collection
+1. Connect to: `mongodb+srv://[Your-connection]@cluster0.[nullnullnull].mongodb.net/certificates`
+2. Navigate to `certificates` database → `certificates` collectiongit 
 3. View all registered certificates
 
 **Using MongoDB Shell:**
