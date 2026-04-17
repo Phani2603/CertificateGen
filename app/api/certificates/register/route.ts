@@ -152,6 +152,7 @@ export async function POST(request: NextRequest) {
           isValid: true,
           templateS3Key: cert.templateS3Key || null, // NEW: Store S3 key for template
           fieldConfiguration: cert.fieldConfiguration || null, // NEW: Store field configuration
+          resolvedFieldValues: cert.resolvedFieldValues || null,
           watermarkEnabledAtIssue: cert.watermarkEnabledAtIssue !== false,
           metadata: {
             batchId,

@@ -93,6 +93,7 @@ export async function GET(
         eventId: certificate.eventId, // Return eventId for fetching template as fallback
         templateS3Key: certificate.templateS3Key, // Template stored on certificate
         fieldConfiguration: certificate.fieldConfiguration, // Field config stored on certificate
+        resolvedFieldValues: certificate.resolvedFieldValues,
         watermarkEnabledAtIssue: certificate.watermarkEnabledAtIssue !== false,
       },
     })
