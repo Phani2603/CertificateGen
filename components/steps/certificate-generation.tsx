@@ -385,6 +385,47 @@ export default function CertificateGeneration({
     return idPart ? `${namePart}_${idPart}` : namePart
   }
 
+  const resolveFieldValuesForRow = (row: Record<string, string>) => {
+    const resolved: Record<string, string> = {}
+
+    fields.forEach((field) => {
+      const csvColumn = fieldMapping[field.id]
+      let text = ""
+
+      if (csvColumn) {
+        if (csvColumn.includes("|")) {
+          const [firstCol, lastCol] = csvColumn.split("|")
+          const firstValue = row[firstCol] || ""
+          const lastValue = row[lastCol] || ""
+          text = `${firstValue} ${lastValue}`.trim()
+
+          if (firstValue) {
+            resolved[firstCol] = firstValue
+            resolved[firstCol.toLowerCase()] = firstValue
+          }
+          if (lastValue) {
+            resolved[lastCol] = lastValue
+            resolved[lastCol.toLowerCase()] = lastValue
+          }
+        } else {
+          text = row[csvColumn] || ""
+          if (text) {
+            resolved[csvColumn] = text
+            resolved[csvColumn.toLowerCase()] = text
+          }
+        }
+      }
+
+      if (text) {
+        resolved[field.id] = text
+        resolved[field.name] = text
+        resolved[field.name.toLowerCase()] = text
+      }
+    })
+
+    return resolved
+  }
+
   const focusZipModeSection = () => {
     zipModeSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
   }
@@ -659,6 +700,7 @@ export default function CertificateGeneration({
         name: string
         certificateBlob: Blob
         fileName: string
+        resolvedFieldValues: Record<string, string>
       }> = []
 
       // Progressive generation with batching to prevent browser freeze
@@ -718,12 +760,21 @@ export default function CertificateGeneration({
             const firstName = firstNameField ? row[firstNameField] : ""
             const lastName = lastNameField ? row[lastNameField] : ""
             const recipientName = `${firstName} ${lastName}`.trim() || "Recipient"
+            const resolvedFieldValues = resolveFieldValuesForRow(row)
+
+            resolvedFieldValues.recipientName = recipientName
+            resolvedFieldValues.name = recipientName
+            resolvedFieldValues.Name = recipientName
+            resolvedFieldValues.eventName = selectedEvent?.eventName || ""
+            resolvedFieldValues.event = selectedEvent?.eventName || ""
+            resolvedFieldValues.Event = selectedEvent?.eventName || ""
 
             emailRecipients.push({
               email: emailAddress.trim(),
               name: recipientName,
               certificateBlob: blob,
               fileName: filename,
+              resolvedFieldValues,
             })
           }
 
@@ -780,6 +831,7 @@ export default function CertificateGeneration({
             clubName: clubName,
             templateS3Key: templateS3Key || null,
             fieldConfiguration: fields || null,
+            resolvedFieldValues: recipient.resolvedFieldValues || null,
           }))
 
           console.log("[Certificate Registration] Templates to register:", {

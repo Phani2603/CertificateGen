@@ -142,7 +142,8 @@ export function CertificatePreview({ certificate }: CertificatePreviewProps) {
 
                     if (fieldConfig && fieldConfig.length > 0) {
                         fieldConfig.forEach((field) => {
-                            let value = recipientData[field.name]
+                            // Prefer field id first so duplicate display names map correctly.
+                            let value = recipientData[field.id] || recipientData[field.name]
                             if (!value) {
                                 const matchingKey = Object.keys(recipientData).find(
                                     key => key.toLowerCase() === field.name.toLowerCase()

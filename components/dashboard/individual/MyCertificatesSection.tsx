@@ -41,6 +41,7 @@ interface Certificate {
   issuedDate: string
   templateS3Key?: string
   fieldConfiguration?: any[]
+  resolvedFieldValues?: Record<string, string>
   eventId?: string
   organizationName?: string
   privateOrgName?: string
@@ -265,12 +266,33 @@ export function MyCertificatesSection({ userId }: MyCertificatesSectionProps) {
             return
           }
 
-          // Draw demo text for each field
+          const resolvedValues = cert.resolvedFieldValues || {};
+
+          // Draw issued values for each field (fallback only for legacy certificates)
           (fieldConfig || []).forEach((field: any) => {
-            let demoText = 'Demo Text'
-            if (field.name === 'Name') demoText = cert.recipientName
-            else if (field.name === 'Date') demoText = new Date(cert.issuedDate).toLocaleDateString()
-            else if (field.name === 'Course') demoText = cert.eventName
+            let fieldValue =
+              resolvedValues[field.id] ||
+              resolvedValues[field.name] ||
+              resolvedValues[field.name?.toLowerCase?.() || ""]
+
+            if (!fieldValue) {
+              const matchingKey = Object.keys(resolvedValues).find(
+                (key) => key.toLowerCase() === String(field.name || '').toLowerCase()
+              )
+              fieldValue = matchingKey ? resolvedValues[matchingKey] : ''
+            }
+
+            if (!fieldValue) {
+              const lowerName = String(field.name || '').toLowerCase()
+              if (lowerName === 'name') fieldValue = cert.recipientName
+              else if (lowerName === 'date') fieldValue = new Date(cert.issuedDate).toLocaleDateString()
+              else if (lowerName === 'course' || lowerName === 'event') fieldValue = cert.eventName
+              else fieldValue = ''
+            }
+
+            if (!fieldValue) {
+              return
+            }
 
             const fontWeight = field.fontWeight === 400 ? '' : field.fontWeight
             const fontString = fontWeight
@@ -284,7 +306,7 @@ export function MyCertificatesSection({ userId }: MyCertificatesSectionProps) {
 
               const x =
                 field.alignment === 'center' ? field.x : field.alignment === 'right' ? field.x + (field.maxWidth || 0) : field.x
-              ctx.fillText(demoText, x, field.y, field.maxWidth)
+              ctx.fillText(fieldValue, x, field.y, field.maxWidth)
             } catch (textError) {
               console.error('[MyCertificates] Error drawing text for field:', field.name, textError)
             }

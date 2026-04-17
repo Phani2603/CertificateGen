@@ -17,6 +17,7 @@ export interface ICertificate extends Document {
   isValid: boolean
   templateS3Key?: string // NEW: S3 key for certificate template
   fieldConfiguration?: any[] // NEW: Field configuration for rendering certificate
+  resolvedFieldValues?: Record<string, string> // NEW: Snapshot of resolved CSV values at issuance time
   watermarkEnabledAtIssue?: boolean
   metadata?: {
     templateUsed?: string
@@ -106,6 +107,10 @@ const CertificateSchema = new Schema<ICertificate>(
       default: null,
     },
     fieldConfiguration: {
+      type: Schema.Types.Mixed,
+      default: null,
+    },
+    resolvedFieldValues: {
       type: Schema.Types.Mixed,
       default: null,
     },

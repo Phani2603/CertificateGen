@@ -44,6 +44,7 @@ interface CertificateData {
   eventId?: string // MongoDB ObjectId reference
   templateS3Key?: string
   fieldConfiguration?: FieldConfig[]
+  resolvedFieldValues?: Record<string, string>
   watermarkEnabledAtIssue?: boolean
 }
 
@@ -262,6 +263,7 @@ export default function VerificationPage() {
 
         // Create mapping of recipient data with multiple aliases
         const recipientData: Record<string, string> = {
+          ...(certificate.resolvedFieldValues || {}),
           // Direct mappings
           recipientName: certificate.recipientName,
           recipientEmail: certificate.recipientEmail,
@@ -291,8 +293,11 @@ export default function VerificationPage() {
         // Render each field with recipient data (if field config exists)
         if (fieldConfig && fieldConfig.length > 0) {
           fieldConfig.forEach((field) => {
-            // Try exact match first, then case-insensitive search
-            let value = recipientData[field.name]
+            // Prefer field id first so duplicate field names (e.g. two "Custom" fields)
+            // still resolve to distinct values captured at issuance.
+            let value =
+              recipientData[field.id] ||
+              recipientData[field.name]
 
             if (!value) {
               // Try to find case-insensitive match
@@ -300,6 +305,19 @@ export default function VerificationPage() {
                 key => key.toLowerCase() === field.name.toLowerCase()
               )
               value = matchingKey ? recipientData[matchingKey] : field.name
+            }
+
+            // Legacy fallback for old certificates with no stored field snapshots
+            if (!value || value === field.name) {
+              const lowerName = field.name.toLowerCase()
+              if (lowerName === 'name') value = certificate.recipientName
+              else if (lowerName === 'date') value = certificate.eventDate || new Date(certificate.issueDate).toLocaleDateString()
+              else if (lowerName === 'course' || lowerName === 'event') value = certificate.eventName
+              else value = ''
+            }
+
+            if (!value) {
+              return
             }
 
             console.log('[Verification] Rendering field:', {
