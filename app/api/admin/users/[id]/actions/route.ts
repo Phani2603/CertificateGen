@@ -5,11 +5,12 @@ import connectDB from '@/lib/mongodb'
 import User from '@/models/User'
 import AdminLog from '@/models/AdminLog'
 import UserActivity from '@/models/UserActivity'
+import { verifyAdminSessionValue } from '@/lib/admin-auth'
 
 async function checkAdminAuth() {
   const cookieStore = await cookies()
   const adminSession = cookieStore.get('admin-session')
-  return !!adminSession?.value
+  return verifyAdminSessionValue(adminSession?.value)
 }
 
 async function logAdminAction({

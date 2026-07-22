@@ -56,10 +56,6 @@ export async function POST(request: NextRequest) {
         user,
         pass: password,
       },
-      tls: {
-        // Do not fail on invalid certs (useful for some self-signed certs)
-        rejectUnauthorized: false,
-      },
       connectionTimeout: 10000, // 10 seconds
       greetingTimeout: 10000,
       socketTimeout: 10000,

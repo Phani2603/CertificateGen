@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import dbConnect from '@/lib/mongodb'
 import ContactForm from '@/models/ContactForm'
 import { cookies } from 'next/headers'
+import { verifyAdminSessionValue } from '@/lib/admin-auth'
 
 /**
  * PATCH /api/contact/[id]
@@ -17,7 +18,7 @@ export async function PATCH(
     const cookieStore = await cookies()
     const adminSession = cookieStore.get('admin-session')
 
-    if (!adminSession || adminSession.value !== 'true') {
+    if (!verifyAdminSessionValue(adminSession?.value)) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
@@ -115,7 +116,7 @@ export async function GET(
     const cookieStore = await cookies()
     const adminSession = cookieStore.get('admin-session')
 
-    if (!adminSession || adminSession.value !== 'true') {
+    if (!verifyAdminSessionValue(adminSession?.value)) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
@@ -180,7 +181,7 @@ export async function DELETE(
     const cookieStore = await cookies()
     const adminSession = cookieStore.get('admin-session')
 
-    if (!adminSession || adminSession.value !== 'true') {
+    if (!verifyAdminSessionValue(adminSession?.value)) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }

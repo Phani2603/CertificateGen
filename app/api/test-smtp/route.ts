@@ -6,14 +6,20 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { email, appPassword } = body
     
+    if (!email || !appPassword) {
+      return NextResponse.json({ success: false, error: 'Email and app password are required' }, { status: 400 })
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase()
+    const cleanPassword = String(appPassword).replace(/\s/g, '')
+
+    if (!cleanEmail || !cleanPassword) {
+      return NextResponse.json({ success: false, error: 'Email and app password are required' }, { status: 400 })
+    }
+
     console.log('🔍 Web Test - Testing credentials...')
-    console.log(`Email: ${email}`)
-    console.log(`Password: ${appPassword.substring(0, 4)}****`)
-    console.log(`Password length: ${appPassword.replace(/\s/g, '').length}`)
-    
-    // Clean inputs (no spaces in password)
-    const cleanEmail = email.trim().toLowerCase()
-    const cleanPassword = appPassword.replace(/\s/g, '')
+    console.log(`Email: ${cleanEmail}`)
+    console.log(`Password length: ${cleanPassword.length}`)
     
     // Always use Gmail SMTP for both gmail.com and .edu.in
     const transporter = nodemailer.createTransport({

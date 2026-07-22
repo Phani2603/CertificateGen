@@ -20,7 +20,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Mail,
-  Award
+  Award,
+  HardDrive
 } from "lucide-react"
 import { TbBuildingBank } from "react-icons/tb";
 import { Button } from "@/components/ui/button"
@@ -106,6 +107,11 @@ export default function AdminLayout({
       title: "Audit Logs",
       href: "/admin/logs",
       icon: FileText,
+    },
+    {
+      title: "S3 Storage",
+      href: "/admin/storage",
+      icon: HardDrive,
     },
   ]
 

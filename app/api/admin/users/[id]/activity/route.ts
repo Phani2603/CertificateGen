@@ -8,11 +8,12 @@ import Organization from '@/models/Organization'
 import PrivateOrg from '@/models/PrivateOrg'
 import Event from '@/models/Event'
 import CertificateHistory from '@/models/CertificateHistory'
+import { verifyAdminSessionValue } from '@/lib/admin-auth'
 
 async function checkAdminAuth() {
   const cookieStore = await cookies()
   const adminSession = cookieStore.get('admin-session')
-  return !!adminSession?.value
+  return verifyAdminSessionValue(adminSession?.value)
 }
 
 export async function GET(

@@ -3,11 +3,12 @@ import { cookies } from 'next/headers'
 import mongoose from 'mongoose'
 import connectDB from '@/lib/mongodb'
 import UserActivity from '@/models/UserActivity'
+import { verifyAdminSessionValue } from '@/lib/admin-auth'
 
 async function checkAdminAuth() {
   const cookieStore = await cookies()
   const adminSession = cookieStore.get('admin-session')
-  return !!adminSession?.value
+  return verifyAdminSessionValue(adminSession?.value)
 }
 
 export async function GET(

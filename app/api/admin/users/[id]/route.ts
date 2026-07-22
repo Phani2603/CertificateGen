@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import connectDB from '@/lib/mongodb'
 import User from '@/models/User'
+import { verifyAdminSessionValue } from '@/lib/admin-auth'
 
 // Helper to verify admin session cookie
 async function checkAdminAuth() {
   const cookieStore = await cookies()
   const adminSession = cookieStore.get('admin-session')
-  return !!adminSession?.value
+  return verifyAdminSessionValue(adminSession?.value)
 }
 
 // GET - Fetch single user details with comprehensive data

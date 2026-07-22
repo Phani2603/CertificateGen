@@ -3,12 +3,13 @@ import { cookies } from 'next/headers'
 import connectDB from '@/lib/mongodb'
 import User from '@/models/User'
 import AdminLog from '@/models/AdminLog'
+import { verifyAdminSessionValue } from '@/lib/admin-auth'
 
 // Helper to check admin auth
 async function checkAdminAuth() {
   const cookieStore = await cookies()
   const adminSession = cookieStore.get('admin-session')
-  return !!adminSession?.value
+  return verifyAdminSessionValue(adminSession?.value)
 }
 
 export async function GET(request: NextRequest) {

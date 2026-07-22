@@ -49,9 +49,6 @@ export async function POST(req: NextRequest) {
           user: process.env.CORPORATE_EMAIL_USER,
           pass: process.env.CORPORATE_EMAIL_PASSWORD,
         },
-        tls: {
-          rejectUnauthorized: false
-        },
         connectionTimeout: 10000,
         greetingTimeout: 10000,
         socketTimeout: 10000,

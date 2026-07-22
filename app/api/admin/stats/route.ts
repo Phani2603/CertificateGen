@@ -9,17 +9,14 @@ import Event from '@/models/Event'
 import CertificateHistory from '@/models/CertificateHistory'
 import AdminLog from '@/models/AdminLog'
 import mongoose from 'mongoose'
+import { verifyAdminSessionValue } from '@/lib/admin-auth'
 
 // Middleware to check admin authentication
 async function checkAdminAuth() {
   const cookieStore = await cookies()
   const adminSession = cookieStore.get('admin-session')
 
-  if (!adminSession || adminSession.value !== 'true') {
-    return false
-  }
-
-  return true
+  return verifyAdminSessionValue(adminSession?.value)
 }
 
 export async function GET(request: NextRequest) {

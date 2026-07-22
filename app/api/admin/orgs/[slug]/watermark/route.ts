@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import connectDB from '@/lib/mongodb'
 import PrivateOrg from '@/models/PrivateOrg'
+import { verifyAdminSessionValue } from '@/lib/admin-auth'
 
 async function checkAdminAuth() {
   const cookieStore = await cookies()
   const adminSession = cookieStore.get('admin-session')
-  return !!adminSession?.value
+  return verifyAdminSessionValue(adminSession?.value)
 }
 
 export async function GET(

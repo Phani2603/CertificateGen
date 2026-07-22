@@ -13,6 +13,8 @@ export default function AdminLoginPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const [geoError, setGeoError] = useState("")
+  const [hasDeniedGeo, setHasDeniedGeo] = useState(false)
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -22,23 +24,48 @@ export default function AdminLoginPage() {
     e.preventDefault()
     setIsLoading(true)
     setError("")
+    setGeoError("")
+
+    // Check if browser supports geolocation
+    if (!navigator.geolocation) {
+      setGeoError("Geolocation is not supported by this browser. Admin access is restricted.")
+      setIsLoading(false)
+      return
+    }
 
     try {
-      // Get geolocation if available
+      // Get geolocation (mandatory)
       let geoLocation: { latitude: number; longitude: number } | null = null
-      
-      if (navigator.geolocation) {
-        try {
-          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 })
+
+      try {
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, { 
+            timeout: 6000, 
+            enableHighAccuracy: true 
           })
-          geoLocation = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          }
-        } catch (geoErr) {
-          console.warn('[Admin Login] Geolocation denied or unavailable:', geoErr)
+        })
+        geoLocation = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
         }
+      } catch (geoErr) {
+        console.warn('[Admin Login] Geolocation denied or unavailable:', geoErr)
+        setHasDeniedGeo(true)
+        
+        let errMsg = "Geolocation permission is required for secure login monitoring."
+        if (geoErr instanceof GeolocationPositionError) {
+          if (geoErr.code === geoErr.PERMISSION_DENIED) {
+            errMsg = "Location access was denied. You must grant location permission in your browser to access the Admin Portal."
+          } else if (geoErr.code === geoErr.POSITION_UNAVAILABLE) {
+            errMsg = "Location information is unavailable. Please check your system/browser location settings."
+          } else if (geoErr.code === geoErr.TIMEOUT) {
+            errMsg = "Location request timed out. Please try again."
+          }
+        }
+        
+        setGeoError(errMsg)
+        setIsLoading(false)
+        return
       }
 
       const response = await fetch('/api/admin/login', {
@@ -84,9 +111,9 @@ export default function AdminLoginPage() {
 
             <div className="mb-4 flex items-center justify-center">
               <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-  <path fill="#111" d="M12 3C9.66 3 7.714 4.502 6.725 6.572c-1.475.346-2.775.843-3.756 1.473C1.908 8.725 1 9.712 1 11c0 .916.468 1.687 1.099 2.284.628.594 1.484 1.083 2.459 1.473C6.512 15.539 9.144 16 12 16s5.488-.461 7.442-1.243c.975-.39 1.83-.88 2.46-1.473C22.531 12.687 23 11.915 23 11c0-1.288-.908-2.275-1.969-2.955-.982-.63-2.28-1.127-3.756-1.473C16.286 4.502 14.341 3 12 3ZM8.372 7.8C9.039 6.072 10.468 5 12 5s2.96 1.072 3.628 2.8c.232.6.356 1.246.37 1.897C14.79 9.89 13.436 10 12 10s-2.79-.11-3.999-.303A5.638 5.638 0 0 1 8.372 7.8Zm-3.478 9.647a1 1 0 1 0-1.788-.894l-1 2a1 1 0 1 0 1.788.894l1-2Zm16-.894a1 1 0 1 0-1.788.894l1 2a1 1 0 1 0 1.788-.894l-1-2ZM13 18a1 1 0 1 0-2 0v3a1 1 0 1 0 2 0v-3Z"/>
-</svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                  <path fill="#111" d="M12 3C9.66 3 7.714 4.502 6.725 6.572c-1.475.346-2.775.843-3.756 1.473C1.908 8.725 1 9.712 1 11c0 .916.468 1.687 1.099 2.284.628.594 1.484 1.083 2.459 1.473C6.512 15.539 9.144 16 12 16s5.488-.461 7.442-1.243c.975-.39 1.83-.88 2.46-1.473C22.531 12.687 23 11.915 23 11c0-1.288-.908-2.275-1.969-2.955-.982-.63-2.28-1.127-3.756-1.473C16.286 4.502 14.341 3 12 3ZM8.372 7.8C9.039 6.072 10.468 5 12 5s2.96 1.072 3.628 2.8c.232.6.356 1.246.37 1.897C14.79 9.89 13.436 10 12 10s-2.79-.11-3.999-.303A5.638 5.638 0 0 1 8.372 7.8Zm-3.478 9.647a1 1 0 1 0-1.788-.894l-1 2a1 1 0 1 0 1.788.894l1-2Zm16-.894a1 1 0 1 0-1.788.894l1 2a1 1 0 1 0 1.788-.894l-1-2ZM13 18a1 1 0 1 0-2 0v3a1 1 0 1 0 2 0v-3Z" />
+                </svg>
 
               </div>
             </div>
@@ -126,6 +153,28 @@ export default function AdminLoginPage() {
               {error && (
                 <div className="rounded-lg border border-neutral-500 bg-neutral-100 px-3 py-2 text-xs text-neutral-700">
                   {error}
+                </div>
+              )}
+
+              {geoError && (
+                <div className="rounded-lg border border-neutral-500 bg-neutral-100 px-3 py-2.5 text-xs text-neutral-700 space-y-2">
+                  <div className="font-semibold text-neutral-900 flex items-center gap-1">
+                    ⚠️ Geolocation Access Required
+                  </div>
+                  <p className="text-neutral-700">
+                    {geoError}
+                  </p>
+                  {hasDeniedGeo && (
+                    <div className="mt-1.5 rounded-md border border-neutral-300 bg-white p-2 text-[10px] text-neutral-800 leading-normal">
+                      <p className="font-semibold mb-1">To grant browser location permission:</p>
+                      <ol className="list-decimal pl-4 space-y-1">
+                        <li>Click the <strong>Lock / Info / Settings icon</strong> next to the URL in your browser's address bar.</li>
+                        <li>Find the <strong>Location</strong> setting.</li>
+                        <li>Change it to <strong>"Allow"</strong>.</li>
+                        <li><strong>Reload the page</strong> (or click Access Admin Portal again) to submit your location.</li>
+                      </ol>
+                    </div>
+                  )}
                 </div>
               )}
 

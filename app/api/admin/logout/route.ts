@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
+import { clearAdminSessionCookie } from '@/lib/admin-auth'
 
 export async function POST(request: NextRequest) {
   try {
     const cookieStore = await cookies()
-    cookieStore.delete('admin-session')
+    await clearAdminSessionCookie(cookieStore)
 
     return NextResponse.json({
       success: true,

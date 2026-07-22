@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import bcrypt from 'bcryptjs'
 import mongoose from 'mongoose'
 import connectDB from '@/lib/mongodb'
 import AdminLog from '@/models/AdminLog'
+import { setAdminSessionCookie } from '@/lib/admin-auth'
 
 // Test GET endpoint to verify logging works
 export async function GET(request: NextRequest) {
@@ -67,13 +67,7 @@ export async function POST(request: NextRequest) {
 
     // Set admin session cookie
     const cookieStore = await cookies()
-    cookieStore.set('admin-session', 'true', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 8, // 8 hours
-      path: '/',
-    })
+    await setAdminSessionCookie(cookieStore)
 
     // Record admin login event with context
     try {
