@@ -41,10 +41,10 @@ export const EMAIL_PROVIDERS: EmailProvider[] = [
     name: 'Senement Forge',
     email: 'forge@senement.com',
     displayName: 'Forge (Senement)',
-    host: process.env.NEXT_PUBLIC_CORPORATE_EMAIL_HOST || 'smtpout.secureserver.net', // FIXED: GoDaddy SMTP
-    port: parseInt(process.env.NEXT_PUBLIC_CORPORATE_EMAIL_PORT || '465'),
-    secure: process.env.NEXT_PUBLIC_CORPORATE_EMAIL_SECURE !== 'false', // true for SSL on port 465
-    description: 'Corporate email provider (GoDaddy)',
+    host: process.env.NEXT_PUBLIC_CORPORATE_EMAIL_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.NEXT_PUBLIC_CORPORATE_EMAIL_PORT || '587'),
+    secure: process.env.NEXT_PUBLIC_CORPORATE_EMAIL_SECURE === 'true', // false for port 587 (STARTTLS), true for port 465 (SSL)
+    description: 'Corporate email provider (Google Workspace)',
     envPrefix: 'CORPORATE_EMAIL',
     icon: '',
     color: '',

@@ -50,12 +50,11 @@ const createPooledEmailTransporter = async (credentials: { email: string; appPas
     // Determine SMTP settings based on email domain
     const isGmail = credentials.email.endsWith('@gmail.com')
     const isEducational = credentials.email.includes('.edu.in')
-    const isGoDaddy = credentials.email.includes('senement.com') || 
-                      credentials.email.includes('secureserver.net')
+    const isGoogleWorkspace = credentials.email.includes('senement.com')
     
     let smtpConfig
     
-    if (isGmail) {
+    if (isGmail || isGoogleWorkspace) {
       smtpConfig = {
         host: "smtp.gmail.com",
         port: 587,
@@ -67,13 +66,6 @@ const createPooledEmailTransporter = async (credentials: { email: string; appPas
         host: "smtp.gmail.com",
         port: 587,
         secure: false,
-      }
-    } else if (isGoDaddy) {
-      // GoDaddy/Workspace Email SMTP settings
-      smtpConfig = {
-        host: "smtpout.secureserver.net",
-        port: 465,
-        secure: true,
       }
     } else {
       throw new Error("Unsupported email domain")
@@ -117,12 +109,11 @@ const createEmailTransporter = async (credentials: { email: string; appPassword:
   // Determine SMTP settings based on email domain
   const isGmail = credentials.email.endsWith('@gmail.com')
   const isEducational = credentials.email.includes('.edu.in')
-  const isGoDaddy = credentials.email.includes('senement.com') || 
-                    credentials.email.includes('secureserver.net')
+  const isGoogleWorkspace = credentials.email.includes('senement.com')
   
   let smtpConfig
   
-  if (isGmail) {
+  if (isGmail || isGoogleWorkspace) {
     smtpConfig = {
       service: "gmail",
     }
@@ -133,13 +124,6 @@ const createEmailTransporter = async (credentials: { email: string; appPassword:
       host: "smtp.gmail.com",
       port: 587,
       secure: false,
-    }
-  } else if (isGoDaddy) {
-    // GoDaddy/Workspace Email SMTP settings
-    smtpConfig = {
-      host: "smtpout.secureserver.net",
-      port: 465,
-      secure: true,
     }
   } else {
     throw new Error("Unsupported email domain")
@@ -398,21 +382,18 @@ export async function sendCertificateEmail(
       console.log("[Email Service] Gmail Success! Message ID:", info.messageId)
       return { success: true, messageId: info.messageId, provider: "gmail" }
     } else if (provider === "senement") {
-      // Send via Corporate Email (GoDaddy SMTP)
+      // Send via Corporate Email (Google Workspace SMTP)
       if (!process.env.CORPORATE_EMAIL_USER || !process.env.CORPORATE_EMAIL_PASSWORD) {
         throw new Error("Corporate email configuration not found in environment variables")
       }
 
       const transporter = nodemailer.createTransport({
-        host: "smtpout.secureserver.net",
-        port: 465,
-        secure: true,
+        host: process.env.CORPORATE_EMAIL_HOST || "smtp.gmail.com",
+        port: parseInt(process.env.CORPORATE_EMAIL_PORT || "587"),
+        secure: process.env.CORPORATE_EMAIL_SECURE === "true", // false for port 587 (STARTTLS), true for port 465 (SSL)
         auth: {
           user: process.env.CORPORATE_EMAIL_USER,
-          pass: process.env.CORPORATE_EMAIL_PASSWORD,
-        },
-        tls: {
-          rejectUnauthorized: false
+          pass: process.env.CORPORATE_EMAIL_PASSWORD.replace(/\s/g, ''), // Strip whitespace from App Passwords
         },
       })
 

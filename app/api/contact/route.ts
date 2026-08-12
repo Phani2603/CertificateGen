@@ -42,12 +42,12 @@ export async function POST(req: NextRequest) {
     
     try {
       const transporter = nodemailer.createTransport({
-        host: process.env.CORPORATE_EMAIL_HOST || 'smtpout.secureserver.net', // FIXED: GoDaddy uses smtpout not smtp
-        port: parseInt(process.env.CORPORATE_EMAIL_PORT || '465'),
-        secure: process.env.CORPORATE_EMAIL_SECURE !== 'false', // true for SSL on port 465
+        host: process.env.CORPORATE_EMAIL_HOST || 'smtp.gmail.com',
+        port: parseInt(process.env.CORPORATE_EMAIL_PORT || '587'),
+        secure: process.env.CORPORATE_EMAIL_SECURE === 'true',
         auth: {
           user: process.env.CORPORATE_EMAIL_USER,
-          pass: process.env.CORPORATE_EMAIL_PASSWORD,
+          pass: process.env.CORPORATE_EMAIL_PASSWORD ? process.env.CORPORATE_EMAIL_PASSWORD.replace(/\s/g, '') : '',
         },
         connectionTimeout: 10000,
         greetingTimeout: 10000,

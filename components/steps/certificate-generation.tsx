@@ -1577,7 +1577,7 @@ Generated: ${new Date().toLocaleString()}
                           </span>
                         </div>
                         <p className="text-xs text-gray-500">
-                          Professional corporate email • GoDaddy SMTP • Automatic configuration
+                          Professional corporate email • Google Workspace SMTP • Automatic configuration
                         </p>
                       </div>
                     </div>
