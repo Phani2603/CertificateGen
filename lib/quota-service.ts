@@ -130,7 +130,7 @@ export async function consumeOrgQuota(
     newUsed: result.certificatesUsed,
     certificateCount: count,
     batchId,
-    generatedBy: userId,
+    ...(mongoose.Types.ObjectId.isValid(userId) && { generatedBy: new mongoose.Types.ObjectId(userId) }),
     performedBy: userId,
     reason: `Generated ${count} certificate(s)`,
     metadata: {

@@ -15,6 +15,9 @@ export async function GET(request: NextRequest) {
     }
 
     await connectDB()
+    // Force model registration to avoid MissingSchemaError during populate
+    const _forceEvent = Event;
+    const _forceClub = Club;
 
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')

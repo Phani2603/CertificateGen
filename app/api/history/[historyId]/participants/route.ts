@@ -6,6 +6,7 @@ import User from '@/models/User'
 import PrivateOrg from '@/models/PrivateOrg'
 import CertificateHistory from '@/models/CertificateHistory'
 import Certificate from '@/models/Certificate'
+import EmailJob from '@/models/EmailJob'
 
 function escapeRegex(input: string): string {
   return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -135,20 +136,61 @@ export async function GET(
         .lean()
     }
 
+    // Fetch email job status for these participants
+    const participantIds = participants.map((p: any) => p._id)
+    const emailJobs = await EmailJob.find({
+      certificateId: { $in: participantIds },
+      type: 'certificate_notification'
+    }).select('certificateId status lastError').lean()
+
+    const emailJobMap = new Map()
+    emailJobs.forEach((job: any) => {
+      emailJobMap.set(job.certificateId.toString(), {
+        status: job.status,
+        lastError: job.lastError
+      })
+    })
+
+    // Calculate global email status counts for the entire batch
+    const emailStatusCounts = {
+      sent: 0,
+      pending: 0,
+      failed: 0,
+      total: total // from the total participants query
+    }
+    
+    // We can query EmailJob by batchId since bulk-send assigns the chunk batchId
+    const allBatchJobs = await EmailJob.find({
+      batchId: { $in: registrationBatchIds },
+      type: 'certificate_notification'
+    }).select('status').lean()
+
+    allBatchJobs.forEach((job: any) => {
+      if (job.status === 'sent') emailStatusCounts.sent++
+      else if (job.status === 'failed') emailStatusCounts.failed++
+      else emailStatusCounts.pending++ // 'pending' or 'sending'
+    })
+
     return NextResponse.json({
       success: true,
       history: {
         id: historyId,
         eventName: history.eventName,
       },
-      participants: participants.map((item: any) => ({
-        id: item._id.toString(),
-        recipientName: item.recipientName,
-        recipientEmail: item.recipientEmail,
-        verificationId: item.verificationId,
-        issuedAt: item.issueDate,
-        batchId: item.metadata?.batchId || null,
-      })),
+      emailStatusCounts,
+      participants: participants.map((item: any) => {
+        const emailJob = emailJobMap.get(item._id.toString())
+        return {
+          id: item._id.toString(),
+          recipientName: item.recipientName,
+          recipientEmail: item.recipientEmail,
+          verificationId: item.verificationId,
+          issuedAt: item.issueDate,
+          batchId: item.metadata?.batchId || null,
+          emailStatus: emailJob?.status || 'none',
+          emailError: emailJob?.lastError || null,
+        }
+      }),
       pagination: {
         currentPage: page,
         totalPages: Math.ceil(total / limit),

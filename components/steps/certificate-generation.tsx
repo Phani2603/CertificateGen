@@ -18,14 +18,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { EmailStatusCard } from "@/components/dashboard/EmailStatusCard"
-import { Upload, Download, Loader2, CheckCircle, AlertCircle, Mail, AlertTriangle, Info } from "lucide-react"
+
+import { Upload, Download, Loader2, CheckCircle, AlertCircle, AlertTriangle, Info } from "lucide-react"
 import JSZip from "jszip"
 import FileSaver from "file-saver"
 import type { CertificateField } from "@/types/certificate"
 import { saveSession, loadSession, clearSession, base64ToBlob } from "@/utils/storage"
-import { useCredentials } from "@/hooks/useCredentials"
-import DevNav from "@/components/DevNav"
+
 import { toast } from "sonner"
 import { renderWatermark } from "@/lib/watermark-utils"
 import { useWatermarkConfig } from "@/hooks/useWatermarkConfig"
@@ -95,31 +94,18 @@ export default function CertificateGeneration({
     verificationId: string
     verificationUrl: string
   }>>([])
-  const [emailStatus, setEmailStatus] = useState<"idle" | "sending" | "success" | "error">("idle")
-  const [emailsSent, setEmailsSent] = useState(0)
-  const [emailErrors, setEmailErrors] = useState<Array<{ email: string; error: string }>>([])
-  const [isSendingMail, setIsSendingMail] = useState(false)
-  const [emailProvider, setEmailProvider] = useState<"resend" | "gmail" | "senement">("senement")
-  const [sendingMode, setSendingMode] = useState<"auto" | "sequential" | "pooled">("auto")
   
   // Quota validation state
   const [quotaExceeded, setQuotaExceeded] = useState(false)
   const [quotaAvailable, setQuotaAvailable] = useState<number | null>(null)
-  const [deliveryMode, setDeliveryMode] = useState<"link-only" | "attachment">("link-only")
-  const [showDevNav, setShowDevNav] = useState(false)
+
+
   const fileInputRef = useRef<HTMLInputElement>(null)
   const previewCanvasRef = useRef<HTMLCanvasElement>(null)
-  const emailStatusCardRef = useRef<HTMLDivElement>(null)
+
   const zipModeSectionRef = useRef<HTMLDivElement>(null)
   
-  // Use credentials hook
-  const credentialsData = useCredentials()
-  const { isAuthenticated, email: authenticatedEmail, checkCredentials } = credentialsData
-  
-  // Debug logging
-  useEffect(() => {
-    console.log('[CertGen] useCredentials state changed:', credentialsData)
-  }, [credentialsData])
+
 
   // Helper function to get template URL (S3 or base64) with CORS proxy
   const getTemplateUrl = async (): Promise<string> => {
@@ -430,191 +416,7 @@ export default function CertificateGeneration({
     zipModeSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
   }
 
-  const sendEmailsOnly = async () => {
-    console.log(`[sendEmailsOnly] Starting - isAuthenticated: ${isAuthenticated}, emailProvider: ${emailProvider}`)
-    
-    if (generatedCertificates.length === 0) {
-      toast.error("Please generate certificates first")
-      return
-    }
 
-    // Check if Gmail is selected and credentials are required
-    // Also check if credentials exist in storage as a fallback
-    const hasStoredCredentials = await (async () => {
-      try {
-        const { hasValidCredentials } = await import('@/utils/secure-storage')
-        return await hasValidCredentials()
-      } catch {
-        return false
-      }
-    })()
-    
-    console.log(`[sendEmailsOnly] hasStoredCredentials: ${hasStoredCredentials}`)
-    
-    if (emailProvider === "gmail" && !isAuthenticated && !hasStoredCredentials) {
-      console.log('[sendEmailsOnly] Not authenticated, showing DevNav again')
-      setShowDevNav(true)
-      return
-    }
-    
-    // For Senement, no credentials needed (uses env vars on server)
-    if (emailProvider === "senement") {
-      console.log('[sendEmailsOnly] Using Senement corporate email')
-    }
-    
-    console.log('[sendEmailsOnly] Proceeding with email sending...')
-
-    setIsSendingMail(true)
-    setEmailStatus("sending")
-    setEmailsSent(0)
-    setEmailErrors([])
-
-    // Scroll to email status card
-    setTimeout(() => {
-      const emailStatusCard = document.getElementById('email-status-card')
-      if (emailStatusCard) {
-        emailStatusCard.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      }
-    }, 100)
-
-    try {
-      // Get credentials from secure storage (client-side only)
-      let credentials = null
-      if (emailProvider === "gmail") {
-        const { decryptCredentials } = await import('@/utils/secure-storage')
-        credentials = await decryptCredentials()
-        
-        if (!credentials) {
-          console.log('[sendEmailsOnly] No credentials found after checking storage')
-          setShowDevNav(true)
-          return
-        }
-        
-        console.log('[sendEmailsOnly] Credentials found, proceeding with email sending')
-      }
-
-      // Convert blobs to base64 before sending (only for attachment mode)
-      let recipientsData
-      
-      if (deliveryMode === "link-only") {
-        // Link-only mode - no base64 conversion needed, just send verification data
-        console.log('[sendEmailsOnly] Using link-only mode - skipping base64 conversion')
-        recipientsData = generatedCertificates.map((recipient) => ({
-          email: recipient.email,
-          name: recipient.name,
-          fileName: recipient.fileName,
-          verificationId: recipient.verificationId,
-          verificationUrl: recipient.verificationUrl,
-          organizationName: organization?.name || 'Certiflo',
-        }))
-      } else {
-        // Attachment mode - convert certificates to base64
-        console.log('[sendEmailsOnly] Using attachment mode - converting to base64')
-        recipientsData = await Promise.all(
-          generatedCertificates.map(async (recipient) => ({
-            email: recipient.email,
-            name: recipient.name,
-            certificateBase64: await blobToBase64(recipient.certificateBlob),
-            fileName: recipient.fileName,
-            verificationId: recipient.verificationId,
-            verificationUrl: recipient.verificationUrl,
-            organizationName: organization?.name || 'Certiflo',
-          }))
-        )
-      }
-      
-      // Dynamic batch size based on delivery mode
-      // Link-only: Can send many more per batch (no payload size issues)
-      // Attachment: Need smaller batches due to large base64 payloads
-      const BATCH_SIZE = deliveryMode === "link-only" ? 50 : 3
-      const batches = []
-      for (let i = 0; i < recipientsData.length; i += BATCH_SIZE) {
-        batches.push(recipientsData.slice(i, i + BATCH_SIZE))
-      }
-      
-      console.log(`[sendEmailsOnly] Sending ${recipientsData.length} emails in ${batches.length} batches (${BATCH_SIZE} per batch, ${deliveryMode} mode)`)
-      
-      let totalSent = 0
-      const allErrors: Array<{ email: string; error: string }> = []
-      
-      for (let i = 0; i < batches.length; i++) {
-        const batch = batches[i]
-        console.log(`[sendEmailsOnly] Processing batch ${i + 1}/${batches.length} (${batch.length} recipients)`)
-        
-        try {
-          const response = await fetch("/api/send-certificates", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-              recipients: batch, 
-              provider: emailProvider,
-              sendingMode: sendingMode === "auto" ? undefined : sendingMode,
-              deliveryMode: deliveryMode,
-              // Pass credentials to server for Gmail
-              credentials: credentials ? {
-                email: credentials.email,
-                appPassword: credentials.appPassword
-              } : null
-            }),
-          })
-
-          // Handle non-JSON responses (like 413 errors)
-          if (!response.ok) {
-            let errorMessage = `Server error: ${response.status} ${response.statusText}`
-            try {
-              const errorData = await response.json()
-              errorMessage = errorData.error || errorMessage
-            } catch {
-              // Response is not JSON (e.g., 413 returns HTML)
-              if (response.status === 413) {
-                errorMessage = "Payload too large. Try reducing batch size or certificate file sizes."
-              }
-            }
-            throw new Error(errorMessage)
-          }
-
-          const result = await response.json()
-          console.log(`[Client] Batch ${i + 1} API response:`, result)
-
-          if (result.success) {
-            totalSent += result.sentCount
-            if (result.errors && result.errors.length > 0) {
-              allErrors.push(...result.errors)
-            }
-          } else {
-            throw new Error(result.error || "Unknown error")
-          }
-        } catch (batchError) {
-          console.error(`[Client] Error in batch ${i + 1}:`, batchError)
-          // Mark all emails in this batch as failed
-          batch.forEach(recipient => {
-            allErrors.push({
-              email: recipient.email,
-              error: batchError instanceof Error ? batchError.message : "Failed to send"
-            })
-          })
-        }
-        
-        // Update progress
-        setEmailsSent(totalSent)
-        setEmailErrors(allErrors)
-      }
-      
-      // Set final status
-      if (totalSent > 0) {
-        setEmailStatus("success")
-        console.log(`[Client] All batches complete: ${totalSent} sent, ${allErrors.length} failed`)
-      } else {
-        setEmailStatus("error")
-      }
-    } catch (error) {
-      console.error("[Client] Error sending emails:", error)
-      setEmailStatus("error")
-      setEmailErrors([{ email: "all", error: "Failed to send emails. Please try again." }])
-    } finally {
-      setIsSendingMail(false)
-    }
-  }
 
   const generateCertificates = async () => {
     if (csvData.length === 0) {
@@ -687,9 +489,7 @@ export default function CertificateGeneration({
     setRenderBatchInfo(null)
     setRegisterBatchInfo(null)
     setRegisteredCount(0)
-    setEmailStatus("idle")
-    setEmailsSent(0)
-    setEmailErrors([])
+
 
     try {
       const zip = new JSZip()
@@ -1558,80 +1358,6 @@ Generated: ${new Date().toLocaleString()}
                     )}
                   </div>
 
-                  <div className="pt-4 border-t border-[#21808D]/20">
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">Email Provider</label>
-                    <Select value={emailProvider} onValueChange={(value) => setEmailProvider(value as "resend" | "gmail" | "senement")} disabled>
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="senement">Senement Corporate (forge@senement.com)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <div className="mt-2 space-y-2">
-                      <div className="space-y-1">
-                        <div className="flex items-center space-x-2 text-xs">
-                          <CheckCircle className="w-3 h-3 text-green-500" />
-                          <span className="text-green-700">
-                            Sends from: forge@senement.com (Senement)
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-500">
-                          Professional corporate email • Google Workspace SMTP • Automatic configuration
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-[#21808D]/20">
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">Delivery Mode</label>
-                    <Select value={deliveryMode} onValueChange={(value) => setDeliveryMode(value as "link-only" | "attachment")}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="link-only">Link Only (Recommended)</SelectItem>
-                        <SelectItem value="attachment">Certificate Attachment</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    
-                    {deliveryMode === "link-only" ? (
-                      <p className="text-xs text-gray-500 mt-2">
-                        Recipients receive a verification link to download their certificate. Faster and more reliable for large batches (50 per batch).
-                      </p>
-                    ) : (
-                      <Alert variant="destructive" className="mt-2">
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertTitle>Large Payload Warning</AlertTitle>
-                        <AlertDescription>
-                          Certificate attachments create large email payloads (~4MB per certificate). Limited to 3 per batch due to email provider size constraints. May cause delivery failures with some providers.
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  </div>
-
-                  {emailProvider === "gmail" && (
-                    <div className="pt-4 border-t border-[#21808D]/20">
-                      <label className="text-sm font-medium text-gray-700 mb-2 block">Sending Mode</label>
-                      <Select value={sendingMode} onValueChange={(value) => setSendingMode(value as "auto" | "sequential" | "pooled")}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="auto">Auto ({generatedCertificates.length >= 50 ? "Pooled" : "Sequential"})</SelectItem>
-                          <SelectItem value="sequential">Sequential (Safer, Slower)</SelectItem>
-                          <SelectItem value="pooled">Pooled (Faster, For Bulk)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <p className="text-xs text-gray-500 mt-2">
-                        {sendingMode === "sequential" 
-                          ? "Sends emails one by one with 500ms delay (recommended for <50 recipients)"
-                          : sendingMode === "pooled"
-                          ? "Uses connection pooling to send emails in parallel (recommended for 50+ recipients)"
-                          : `Auto-selects mode based on recipient count (currently ${generatedCertificates.length} recipients)`}
-                      </p>
-                    </div>
-                  )}
                 </div>
               </Card>
 
@@ -1708,33 +1434,7 @@ Generated: ${new Date().toLocaleString()}
                 </Card>
               )}
 
-              {emailStatus === "error" && (
-                <Card className="p-4 bg-red-50 border-red-200">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
-                    <div className="flex-1">
-                      <p className="font-semibold text-red-900">Email Sending Failed</p>
-                      <p className="text-sm text-red-700 mt-1">
-                        {emailErrors[0]?.error || "Failed to send emails. Please try again."}
-                      </p>
-                      {emailErrors.length > 1 && (
-                        <details className="mt-2">
-                          <summary className="text-xs text-red-600 cursor-pointer">
-                            Show all errors ({emailErrors.length})
-                          </summary>
-                          <ul className="mt-2 text-xs text-red-600 space-y-1 list-disc list-inside">
-                            {emailErrors.map((err, idx) => (
-                              <li key={idx}>
-                                <strong>{err.email}:</strong> {err.error}
-                              </li>
-                            ))}
-                          </ul>
-                        </details>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              )}
+
 
               {generationStatus === "error" && (
                 <Card className="p-4 bg-red-50 border-red-200">
@@ -1824,16 +1524,6 @@ Generated: ${new Date().toLocaleString()}
             </div>
           </Card>
 
-          {/* Email Status Card */}
-          {generatedCertificates.length > 0 && (
-            <EmailStatusCard
-              status={emailStatus}
-              emailsSent={emailsSent}
-              totalEmails={generatedCertificates.length}
-              errors={emailErrors}
-              deliveryMode={deliveryMode}
-            />
-          )}
         </div>
       </div>
 
@@ -1905,40 +1595,7 @@ Generated: ${new Date().toLocaleString()}
             </>
           )}
         </Button>
-        <Button
-          onClick={sendEmailsOnly}
-          disabled={generatedCertificates.length === 0 || isSendingMail || emailStatus === "sending"}
-          title={generatedCertificates.length === 0 ? "No certificates with email addresses found. Make sure your CSV has an 'Email' column." : ""}
-          className="flex-1 bg-[#FF6B35] hover:bg-[#E55A2B] text-white disabled:opacity-50"
-        >
-          {isSendingMail ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Sending... ({emailsSent}/{generatedCertificates.length})
-            </>
-          ) : (
-            <>
-              <Mail className="w-4 h-4 mr-2" />
-              Send Emails {generatedCertificates.length > 0 ? `(${generatedCertificates.length})` : ""}
-            </>
-          )}
-        </Button>
-      </div>
-
-      {/* DevNav for secure credential input */}
-      <DevNav
-        isOpen={showDevNav}
-        onClose={() => setShowDevNav(false)}
-        onSuccess={() => {
-          console.log('[DevNav] Credentials authenticated successfully')
-          // Force re-check credentials to update state
-          checkCredentials().then(() => {
-            console.log(`[DevNav] After checkCredentials - isAuthenticated: ${isAuthenticated}`)
-            // Auto-proceed with email sending after successful authentication
-            sendEmailsOnly()
-          })
-        }}
-      />
+    </div>
 
       <AlertDialog open={showZipModeInfo} onOpenChange={setShowZipModeInfo}>
         <AlertDialogContent className="sm:max-w-2xl">

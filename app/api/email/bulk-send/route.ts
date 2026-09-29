@@ -4,6 +4,7 @@ import { auth } from '@/auth';
 import connectDB from '@/lib/mongodb';
 import Certificate from '@/models/Certificate';
 import EmailJob from '@/models/EmailJob';
+import CertificateHistory from '@/models/CertificateHistory';
 
 export const maxDuration = 60; // Max execution time for Vercel Hobby
 
@@ -27,7 +28,10 @@ export async function POST(request: NextRequest) {
 
     await connectDB();
 
-    const baseUrl = process.env.APP_URL_PRODUCTION || process.env.NEXT_PUBLIC_BASE_URL;
+    const baseUrl = process.env.NODE_ENV === 'development' 
+      ? 'http://localhost:3000' 
+      : (process.env.APP_URL_PRODUCTION || process.env.NEXT_PUBLIC_BASE_URL);
+      
     if (!baseUrl) {
       return NextResponse.json({ success: false, error: 'Server configuration error (missing APP_URL)' }, { status: 500 });
     }
@@ -46,7 +50,25 @@ export async function POST(request: NextRequest) {
     // ==========================================
     if (batchId && (!certificateIds || certificateIds.length === 0)) {
       // 1. Get all certificates in the generation batch
-      const certs = await Certificate.find({ "metadata.batchId": batchId }).lean();
+      let certs: any[] = [];
+      
+      // Try treating batchId as a CertificateHistory ID first
+      if (mongoose.Types.ObjectId.isValid(batchId)) {
+        const history = await CertificateHistory.findById(batchId).lean();
+        if (history && history.certificateIds && history.certificateIds.length > 0) {
+          certs = await Certificate.find({ _id: { $in: history.certificateIds } }).lean();
+        }
+      }
+
+      // Fallback: Try matching metadata.batchId exactly, or as a prefix (since batches are chunked e.g. batch-123-1)
+      if (certs.length === 0) {
+        certs = await Certificate.find({
+          $or: [
+            { "metadata.batchId": batchId },
+            { "metadata.batchId": { $regex: `^${batchId}` } }
+          ]
+        }).lean();
+      }
       
       if (certs.length === 0) {
         return NextResponse.json({ success: false, error: 'No certificates found for this batch' }, { status: 404 });
@@ -142,33 +164,52 @@ export async function POST(request: NextRequest) {
     }
 
     // ==========================================
-    // QSTASH BATCH PUBLISHING
+    // QSTASH BATCH PUBLISHING (or Local Bypass)
     // ==========================================
-    const CHUNK_SIZE = 100;
     
-    for (let i = 0; i < jobsToPublish.length; i += CHUNK_SIZE) {
-      const chunk = jobsToPublish.slice(i, i + CHUNK_SIZE);
+    // If we're running locally, QStash can't reach our localhost webhook. 
+    // We bypass QStash and hit the worker directly.
+    if (webhookUrl.includes('localhost')) {
+      console.log(`[Bulk Send API] Local dev detected. Bypassing QStash and triggering worker directly for ${jobsToPublish.length} jobs...`);
       
-      const qstashPayload = chunk.map((job: any) => ({
-        url: webhookUrl,
-        queue: 'email-queue',
-        body: JSON.stringify({ jobId: job._id.toString() }),
-        retries: 3 // QStash will retry up to 3 times on 5xx errors
-      }));
-
-      const qstashRes = await fetch('https://qstash.upstash.io/v2/batch', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${qstashToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(qstashPayload)
+      // Fire and forget requests to our own webhook
+      jobsToPublish.forEach((job: any) => {
+        fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jobId: job._id.toString() })
+        }).catch(err => console.error(`[Local Worker Trigger Failed] Job ${job._id}:`, err));
       });
+      
+    } else {
+      // Production QStash Flow
+      const CHUNK_SIZE = 100;
+      
+      for (let i = 0; i < jobsToPublish.length; i += CHUNK_SIZE) {
+        const chunk = jobsToPublish.slice(i, i + CHUNK_SIZE);
+        
+        const qstashPayload = chunk.map((job: any) => ({
+          destination: webhookUrl,
+          body: JSON.stringify({ jobId: job._id.toString() }),
+          headers: {
+            "Upstash-Retries": "3"
+          }
+        }));
 
-      if (!qstashRes.ok) {
-        const errText = await qstashRes.text();
-        console.error(`[Producer] QStash batch publish failed: ${errText}`);
-        return NextResponse.json({ success: false, error: 'Failed to publish to QStash queue' }, { status: 500 });
+        const qstashRes = await fetch('https://qstash.upstash.io/v2/batch', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${qstashToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(qstashPayload)
+        });
+
+        if (!qstashRes.ok) {
+          const errText = await qstashRes.text();
+          console.error(`[Producer] QStash batch publish failed: ${errText}`);
+          return NextResponse.json({ success: false, error: 'Failed to publish to QStash queue' }, { status: 500 });
+        }
       }
     }
 

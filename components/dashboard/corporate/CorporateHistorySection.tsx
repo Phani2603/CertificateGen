@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { History, Download, ChevronLeft, ChevronRight, X, Users, Search } from "lucide-react"
+import { History, Download, ChevronLeft, ChevronRight, X, Users, Search, Mail, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import Image from "next/image"
 
@@ -26,6 +26,8 @@ interface ParticipantItem {
   recipientEmail: string
   verificationId: string
   issuedAt: string
+  emailStatus?: string
+  emailError?: string
 }
 
 interface ParticipantsPagination {
@@ -47,6 +49,56 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
   const [isLoading, setIsLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [showDetailModal, setShowDetailModal] = useState(false)
+  const [isSendingEmails, setIsSendingEmails] = useState(false)
+
+  const handleSendAllEmails = async () => {
+    if (!selectedHistoryItem?.id) return;
+    setIsSendingEmails(true);
+    try {
+      const res = await fetch('/api/email/bulk-send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ batchId: selectedHistoryItem.id })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to queue emails');
+      toast.success(data.message || 'Emails queued successfully!');
+      
+      // Refresh participants if modal is open
+      if (showParticipantsModal) {
+        setParticipantsPage(1); // will trigger a reload
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to send emails');
+    } finally {
+      setIsSendingEmails(false);
+    }
+  }
+
+  const [resendingParticipantId, setResendingParticipantId] = useState<string | null>(null);
+
+  const handleResendSingleEmail = async (participantId: string) => {
+    setResendingParticipantId(participantId);
+    try {
+      const res = await fetch('/api/email/bulk-send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ certificateIds: [participantId] })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to resend email');
+      toast.success(data.message || 'Email queued for resend!');
+      
+      // Optimistically update the participant status
+      setParticipants(prev => prev.map(p => 
+        p.id === participantId ? { ...p, emailStatus: 'pending' } : p
+      ));
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to resend email');
+    } finally {
+      setResendingParticipantId(null);
+    }
+  }
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<HistoryItem | null>(null)
   const [showParticipantsModal, setShowParticipantsModal] = useState(false)
   const [participants, setParticipants] = useState<ParticipantItem[]>([])
@@ -62,6 +114,7 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
     hasNextPage: false,
     hasPrevPage: false,
   })
+  const [emailStatusCounts, setEmailStatusCounts] = useState<{sent: number, pending: number, failed: number, total: number} | null>(null)
   const itemsPerPage = 5
 
   useEffect(() => {
@@ -116,9 +169,10 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
     historyId: string,
     page = 1,
     query = '',
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    silent = false
   ) => {
-    setParticipantsLoading(true)
+    if (!silent) setParticipantsLoading(true)
 
     try {
       const params = new URLSearchParams({
@@ -138,6 +192,8 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
       }
 
       setParticipants(data.participants || [])
+      if (data.emailStatusCounts) setEmailStatusCounts(data.emailStatusCounts)
+      
       setParticipantsPagination(
         data.pagination || {
           currentPage: 1,
@@ -151,10 +207,10 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
     } catch (error: any) {
       if (error?.name !== 'AbortError') {
         console.error('Error fetching participants:', error)
-        toast.error(error?.message || 'Failed to load participants')
+        if (!silent) toast.error(error?.message || 'Failed to load participants')
       }
     } finally {
-      setParticipantsLoading(false)
+      if (!silent) setParticipantsLoading(false)
     }
   }
 
@@ -166,7 +222,14 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
     const controller = new AbortController()
     fetchParticipants(selectedHistoryItem.id, participantsPage, participantsDebouncedSearch, controller.signal)
 
-    return () => controller.abort()
+    const intervalId = setInterval(() => {
+      fetchParticipants(selectedHistoryItem.id, participantsPage, participantsDebouncedSearch, undefined, true)
+    }, 5000)
+
+    return () => {
+      controller.abort()
+      clearInterval(intervalId)
+    }
   }, [showParticipantsModal, selectedHistoryItem?.id, participantsPage, participantsDebouncedSearch])
 
   const exportToCSV = () => {
@@ -408,7 +471,19 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
                 </Card>
               </div>
 
-              <div className="flex items-center justify-end">
+              <div className="flex items-center justify-end gap-2">
+                <Button
+                  variant="outline"
+                  className="border-[#FF6B35] text-[#FF6B35] hover:bg-[#FF6B35] hover:text-white"
+                  onClick={handleSendAllEmails}
+                  disabled={isSendingEmails}
+                >
+                  {isSendingEmails ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Queuing...</>
+                  ) : (
+                    <><Mail className="h-4 w-4 mr-2" /> Send All Emails</>
+                  )}
+                </Button>
                 <Button
                   variant="outline"
                   className="border-[#21808D] text-[#21808D] hover:bg-[#21808D] hover:text-white"
@@ -484,6 +559,27 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
               </Button>
             </div>
 
+            {emailStatusCounts && emailStatusCounts.total > 0 && (
+              <div className="flex flex-wrap items-center gap-3 mb-5 bg-gray-50 border border-gray-100 p-3 rounded-lg">
+                <div className="text-sm font-semibold text-gray-700 mr-2">Email Status:</div>
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                  <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                  {emailStatusCounts.sent} Sent
+                </div>
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">
+                  <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+                  {emailStatusCounts.pending} Pending
+                </div>
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">
+                  <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                  {emailStatusCounts.failed} Failed
+                </div>
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-gray-200 text-gray-800 rounded-full text-xs font-medium ml-auto">
+                  Total: {emailStatusCounts.total}
+                </div>
+              </div>
+            )}
+
             <div className="relative mb-4">
               <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <Input
@@ -516,6 +612,8 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
                       <th className="text-left px-4 py-3 font-semibold text-gray-700">Email</th>
                       <th className="text-left px-4 py-3 font-semibold text-gray-700">Verification ID</th>
                       <th className="text-left px-4 py-3 font-semibold text-gray-700">Issued</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Email Status</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -526,6 +624,32 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
                         <td className="px-4 py-3 text-gray-700 font-mono text-xs md:text-sm">{participant.verificationId}</td>
                         <td className="px-4 py-3 text-gray-600">
                           {participant.issuedAt ? new Date(participant.issuedAt).toLocaleString() : '-'}
+                        </td>
+                        <td className="px-4 py-3 text-gray-600">
+                          {participant.emailStatus === 'sent' && <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Sent</span>}
+                          {participant.emailStatus === 'pending' && <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">Pending</span>}
+                          {participant.emailStatus === 'failed' && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800" title={participant.emailError || ''}>
+                              Failed
+                            </span>
+                          )}
+                          {(!participant.emailStatus || participant.emailStatus === 'none') && <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">Not Sent</span>}
+                        </td>
+                        <td className="px-4 py-3 text-gray-600">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 px-2 text-xs"
+                            disabled={resendingParticipantId === participant.id}
+                            onClick={() => handleResendSingleEmail(participant.id)}
+                          >
+                            {resendingParticipantId === participant.id ? (
+                              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                            ) : (
+                              <Mail className="h-3 w-3 mr-1" />
+                            )}
+                            Resend
+                          </Button>
                         </td>
                       </tr>
                     ))}
