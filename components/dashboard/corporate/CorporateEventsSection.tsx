@@ -309,15 +309,15 @@ export function CorporateEventsSection({
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold flex items-center gap-2">
-                  <CalendarIcon className="w-6 h-6 text-[#21808D]" />
-                  Company Events
+                  <CalendarIcon className="w-6 h-6 text-black" />
+                  Events
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
                   Manage events and generate certificates for attendees
                 </p>
               </div>
               <Button 
-                className="bg-[#21808D] hover:bg-[#1a6370]"
+                className="bg-black hover:bg-black/80 text-white"
                 onClick={() => setShowCreateModal(true)}
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -345,7 +345,7 @@ export function CorporateEventsSection({
               <Card className="p-8">
                 <div className="flex items-center justify-center">
                   <div className="text-center">
-                    <div className="w-10 h-10 border-4 border-[#21808D] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <div className="w-10 h-10 border-4 border-black border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                     <p className="text-gray-600">Loading events...</p>
                   </div>
                 </div>
@@ -359,7 +359,7 @@ export function CorporateEventsSection({
                     Create your first company event to start generating certificates
                   </p>
                   <Button 
-                    className="bg-[#21808D] hover:bg-[#1a6370]"
+                    className="bg-black hover:bg-black/80 text-white"
                     onClick={() => setShowCreateModal(true)}
                   >
                     <Plus className="w-4 h-4 mr-2" />
@@ -369,14 +369,14 @@ export function CorporateEventsSection({
               </Card>
             ) : (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                   {currentEvents.map((event: Event, index: number) => (
                     <Card key={event._id} className="p-3 hover:shadow-md transition-all bg-white border-2 border-gray-100">
                       <div className="space-y-2">
                         {/* Event Icon */}
                         <div className="flex items-start justify-between">
-                          <div className={`w-10 h-10 bg-linear-to-br ${colors[(startIndex + index) % colors.length]} rounded-lg flex items-center justify-center shrink-0`}>
-                            <Image src="/13.svg" alt="Event" width={20} height={20} />
+                          <div className="flex items-center justify-center shrink-0">
+                            <Image src="/events-green.svg" alt="Event" width={32} height={32} />
                           </div>
                           <div className="flex items-center gap-1">
                             <Button
@@ -418,10 +418,9 @@ export function CorporateEventsSection({
                         {/* Generate Button */}
                         <Button
                           size="sm"
-                          className="w-full bg-[#21808D] hover:bg-[#1a6370] text-white text-xs h-8"
+                          className="w-full bg-black hover:bg-black/80 text-white text-xs h-8"
                           onClick={() => handleOpenGenerate(event)}
                         >
-                          <Award className="w-3 h-3 mr-1" />
                           Generate
                         </Button>
                       </div>
@@ -462,7 +461,7 @@ export function CorporateEventsSection({
                                 onClick={() => setCurrentPage(page)}
                                 className={`h-8 w-8 p-0 ${
                                   currentPage === page 
-                                    ? "bg-[#21808D] hover:bg-[#1a6370] text-white" 
+                                    ? "bg-black hover:bg-black/80 text-white" 
                                     : ""
                                 }`}
                               >
@@ -517,9 +516,9 @@ export function CorporateEventsSection({
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all ${
                       currentStep === step
-                        ? "bg-[#21808D] text-white"
+                        ? "bg-black text-white"
                         : index < (currentStep === "upload" ? 0 : currentStep === "configure" ? 1 : 2)
-                          ? "bg-[#21808D] text-white"
+                          ? "bg-black text-white"
                           : "bg-gray-200 text-gray-600"
                     }`}
                   >
@@ -654,7 +653,7 @@ export function CorporateEventsSection({
                   </Button>
                   <Button 
                     type="submit"
-                    className="flex-1 bg-[#21808D] hover:bg-[#1a6370] text-white"
+                    className="flex-1 bg-black hover:bg-black/80 text-white"
                     disabled={isCreating}
                   >
                     {isCreating ? 'Creating...' : 'Create Event'}
@@ -684,7 +683,7 @@ export function CorporateEventsSection({
                     <FamilyDrawerClose />
                     <FamilyDrawerHeader
                       icon={
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#21808D]/10 text-[#21808D]">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black/10 text-black">
                           <Info className="h-5 w-5" />
                         </div>
                       }
@@ -716,16 +715,16 @@ export function CorporateEventsSection({
                     <div className="grid grid-cols-2 gap-4 pt-4 border-t">
                       <div>
                         <label className="text-sm font-medium text-gray-600">Certificates Generated</label>
-                        <p className="text-2xl font-bold text-[#21808D] mt-1">{infoEvent.certificatesGenerated || 0}</p>
+                        <p className="text-2xl font-bold text-black mt-1">{infoEvent.certificatesGenerated || 0}</p>
                       </div>
                       <div>
                         <label className="text-sm font-medium text-gray-600">Recipients</label>
-                        <p className="text-2xl font-bold text-[#21808D] mt-1">{infoEvent.recipientCount || 0}</p>
+                        <p className="text-2xl font-bold text-black mt-1">{infoEvent.recipientCount || 0}</p>
                       </div>
                     </div>
 
                     <Button
-                      className="w-full mt-6 bg-[#21808D] hover:bg-[#1a6370]"
+                      className="w-full mt-6 bg-black hover:bg-black/80 text-white"
                       onClick={() => {
                         setShowInfoModal(false)
                         setInfoEvent(null)

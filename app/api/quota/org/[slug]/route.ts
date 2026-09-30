@@ -3,6 +3,8 @@ import connectDB from '@/lib/mongodb'
 import { getOrgQuotaInfo } from '@/lib/quota-service'
 import PrivateOrg from '@/models/PrivateOrg'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }

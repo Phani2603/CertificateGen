@@ -47,7 +47,7 @@ export function MembersSection({ organizationId, organizationSlug }: MembersSect
     <div className="space-y-4">
       <div>
         <h2 className="text-2xl font-bold flex items-center gap-2">
-          <Users className="w-6 h-6 text-[#21808D]" />
+          <Users className="w-6 h-6 text-black" />
           Team Members
         </h2>
         <p className="text-sm text-gray-600 mt-1">
@@ -59,7 +59,7 @@ export function MembersSection({ organizationId, organizationSlug }: MembersSect
         <Card className="p-8">
           <div className="flex items-center justify-center">
             <div className="text-center">
-              <div className="w-10 h-10 border-4 border-[#21808D] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <div className="w-10 h-10 border-4 border-black border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
               <p className="text-gray-600">Loading members...</p>
             </div>
           </div>

@@ -13,6 +13,7 @@ import { InvitationsSection } from "@/components/dashboard/corporate/Invitations
 import { CorporateSettings } from "@/components/dashboard/corporate/CorporateSettings"
 import { CorporateProfileContent } from "@/components/dashboard/corporate/CorporateProfileContent"
 import { QuotaDisplay } from "@/components/dashboard/corporate/QuotaDisplay"
+import { CreditsCounter } from "@/components/dashboard/corporate/CreditsCounter"
 import { UserTypeSelectionModal } from "@/components/UserTypeSelectionModal"
 import { CorporateSidebar, CorporatePage } from "@/components/dashboard/corporate/CorporateSidebar"
 import { Menu, AlertCircle, ArrowLeft } from "lucide-react"
@@ -220,7 +221,7 @@ export default function CorporateDashboard({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen w-full bg-white relative text-gray-800 flex">
+    <div className="min-h-screen w-full bg-white relative text-gray-800 flex font-inter">
       {/* Crosshatch Art - Light Pattern */}
       <div
         className="absolute inset-0 z-0 pointer-events-none"
@@ -286,46 +287,50 @@ export default function CorporateDashboard({ params }: PageProps) {
                 <DashboardToggle userData={userData} privateOrgSlug={resolvedParams?.orgSlug || orgData?.slug || null} />
               )}
 
-              {/* Right side: Profile */}
-              <button 
-                onClick={() => setCurrentPage("profile")}
-                className="focus:outline-none focus:ring-2 focus:ring-blue-600 rounded-full"
-              >
-                <Avatar className="w-10 h-10 md:w-12 md:h-12 cursor-pointer ring-2 ring-white shadow-lg" title="Open profile">
-                  {(userData?.image || session?.user?.image) && (
-                    <AvatarImage src={userData?.image || session?.user?.image} alt={userData?.name || session?.user?.name || "User"} />
-                  )}
-                  <AvatarFallback className="bg-blue-600 text-white text-sm md:text-base">
-                    {(userData?.name || session?.user?.name) ? (userData?.name || session?.user?.name || '').split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
-                  </AvatarFallback>
-                </Avatar>
-              </button>
+              {/* Right side: Profile & Credits */}
+              <div className="flex items-center gap-3 md:gap-4">
+                <CreditsCounter organizationSlug={resolvedParams.orgSlug} />
+                <button 
+                  onClick={() => setCurrentPage("profile")}
+                  className="focus:outline-none focus:ring-2 focus:ring-blue-600 rounded-full"
+                >
+                  <Avatar className="w-10 h-10 md:w-12 md:h-12 cursor-pointer ring-2 ring-white shadow-lg" title="Open profile">
+                    {(userData?.image || session?.user?.image) && (
+                      <AvatarImage src={userData?.image || session?.user?.image} alt={userData?.name || session?.user?.name || "User"} />
+                    )}
+                    <AvatarFallback className="bg-blue-600 text-white text-sm md:text-base">
+                      {(userData?.name || session?.user?.name) ? (userData?.name || session?.user?.name || '').split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
+              </div>
             </header>
 
             {/* Page Content */}
             <div className="flex-1 overflow-auto p-4 sm:p-6 md:p-8 lg:p-10 bg-white rounded-t-2xl md:rounded-t-3xl shadow-sm">
               <div className="max-w-7xl mx-auto w-full">
                 {currentPage === "overview" && (
-                  <div className="space-y-6 md:space-y-8">
-                    <CorporateOrgSection
-                      organization={orgData}
-                      isOwner={String(orgData.ownerId) === String(userData?.id || userData?._id)}
-                      onEditClick={() => setCurrentPage("settings")}
-                    />
-
-                    {/* Certificate Quota Display */}
-                    <QuotaDisplay organizationSlug={orgData.slug} showAlerts={true} />
-
-                    {/* Permission Requests - Show First for Visibility (Owner Only) */}
-                    <PermissionRequestsSection
-                      organizationId={orgData._id}
-                      isOwner={String(orgData.ownerId) === String(userData?.id || userData?._id)}
-                    />
-
+                  <div className="flex flex-col gap-4">
                     {/* Stats Overview */}
                     <OrgOverviewStats
                       organizationId={orgData._id}
                       memberCount={orgData.allowedUsers?.length || 0}
+                    />
+
+                    {/* Compact row for Org Details and Quota */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+                      <CorporateOrgSection
+                        organization={orgData}
+                        isOwner={String(orgData.ownerId) === String(userData?.id || userData?._id)}
+                        onEditClick={() => setCurrentPage("settings")}
+                      />
+                      <QuotaDisplay organizationSlug={orgData.slug} showAlerts={true} />
+                    </div>
+
+                    {/* Permission Requests */}
+                    <PermissionRequestsSection
+                      organizationId={orgData._id}
+                      isOwner={String(orgData.ownerId) === String(userData?.id || userData?._id)}
                     />
                   </div>
                 )}

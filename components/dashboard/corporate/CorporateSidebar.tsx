@@ -35,7 +35,6 @@ export function CorporateSidebar({
     { id: "events" as CorporatePage, label: "Events", imageSrc: "/13.svg" },
     { id: "history" as CorporatePage, label: "History", imageSrc: "/history.svg" },
     { id: "members" as CorporatePage, label: "Members", imageSrc: "/members.svg" },
-    { id: "profile" as CorporatePage, label: "Profile", imageSrc: "/overview.svg" },
     { id: "settings" as CorporatePage, label: "Settings", imageSrc: "/setting.svg" },
   ]
 

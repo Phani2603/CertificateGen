@@ -291,7 +291,7 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
             {history.length > 0 && (
               <Button 
                 variant="outline" 
-                className="border-[#21808D] text-[#21808D] hover:bg-[#21808D] hover:text-white text-sm md:text-base w-full sm:w-auto"
+                className="border-black text-black hover:bg-black hover:text-white text-sm md:text-base w-full sm:w-auto"
                 onClick={exportToCSV}
               >
                 <Download className="h-4 w-4 mr-2" />
@@ -303,12 +303,12 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
           {/* History Items */}
           {isLoading ? (
             <div className="text-center py-12">
-              <div className="w-10 h-10 border-4 border-[#21808D] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <div className="w-10 h-10 border-4 border-black border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
               <p className="text-gray-600">Loading history...</p>
             </div>
           ) : history.length === 0 ? (
             <div className="text-center py-12">
-              <Image src="/13.svg" alt="History" width={64} height={64} className="mx-auto mb-4 opacity-30" />
+              <Image src="/history-green.svg" alt="History" width={64} height={64} className="mx-auto mb-4 opacity-50" />
               <p className="text-gray-500 mb-2">No generation history yet</p>
               <p className="text-sm text-gray-400">Generate certificates for events to see them here</p>
             </div>
@@ -318,22 +318,29 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
                 {currentItems.map((item, i) => (
                   <div
                     key={item.id}
-                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 md:p-4 border-2 border-gray-100 rounded-lg hover:shadow-md transition-all bg-white gap-3"
+                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-2 md:p-3 border border-gray-100 rounded-lg transition-all bg-white gap-2 md:gap-3"
                   >
-                    <div className="flex items-center gap-3 md:gap-4 w-full sm:w-auto">
-                      <div className={`w-12 h-12 md:w-14 md:h-14 bg-linear-to-br ${colors[(startIndex + i) % 3]} rounded-lg flex items-center justify-center shrink-0`}>
-                        <Image src="/13.svg" alt="Event" width={32} height={32} />
+                    <div className="flex items-center gap-3 md:gap-4 w-full flex-1 min-w-0">
+                      <div className="flex items-center justify-center shrink-0">
+                        <Image src="/history-green.svg" alt="Event" width={32} height={32} />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-sm md:text-base truncate">{item.eventName}</h3>
-                        <p className="text-xs md:text-sm text-gray-500">{item.clubName}</p>
-                        <p className="text-xs text-gray-400 mt-1">{item.certificateCount} certificates • {item.date}</p>
+                      <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-4">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-sm md:text-base truncate">{item.eventName}</h3>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 sm:gap-4 text-xs md:text-sm text-gray-500">
+                          <span className="hidden sm:inline truncate max-w-[150px]">{item.clubName}</span>
+                          <span className="hidden sm:inline">•</span>
+                          <span className="whitespace-nowrap">{item.certificateCount} certificates</span>
+                          <span className="hidden sm:inline">•</span>
+                          <span className="text-gray-400 whitespace-nowrap">{item.date}</span>
+                        </div>
                       </div>
                     </div>
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="text-[#21808D] hover:bg-[#21808D]/10 w-full sm:w-auto text-sm md:text-base"
+                      className="text-black hover:bg-black/5 w-full sm:w-auto text-sm md:text-base shrink-0"
                       onClick={() => {
                         setSelectedHistoryItem(item)
                         setShowDetailModal(true)
@@ -378,7 +385,7 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
                               onClick={() => setCurrentPage(page)}
                               className={`h-8 w-8 p-0 ${
                                 currentPage === page 
-                                  ? "bg-[#21808D] hover:bg-[#1a6370] text-white" 
+                                  ? "bg-black hover:bg-black/80 text-white" 
                                   : ""
                               }`}
                             >
@@ -486,7 +493,7 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
                 </Button>
                 <Button
                   variant="outline"
-                  className="border-[#21808D] text-[#21808D] hover:bg-[#21808D] hover:text-white"
+                  className="border-black text-black hover:bg-black hover:text-white"
                   onClick={() => {
                     setParticipants([])
                     setParticipantsSearch('')
@@ -593,7 +600,7 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
             <div className="flex-1 overflow-auto border border-gray-200 rounded-lg">
               {participantsLoading ? (
                 <div className="py-12 text-center">
-                  <div className="w-8 h-8 border-4 border-[#21808D] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                  <div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
                   <p className="text-sm text-gray-600">Loading participants...</p>
                 </div>
               ) : participants.length === 0 ? (
