@@ -8,6 +8,7 @@ import gsap from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
 import { useGSAP } from "@gsap/react"
 import { cn } from "@/lib/utils"
+import { TrustBoxWidget } from "@/components/ui/trustpilot-widget"
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -124,6 +125,9 @@ export default function SiteFooterGlassmorphism() {
                                 <FooterLink href="#">Terms of Service</FooterLink>
                                 <FooterLink href="#">Cookie Policy</FooterLink>
                             </FooterList>
+                            <div className="mt-8">
+                                <TrustBoxWidget />
+                            </div>
                         </div>
                     </div>
 

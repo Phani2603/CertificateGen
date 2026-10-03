@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
               status: 'pending',
               attempts: 0,
               lastError: '',
-              batchId: batchId,
+              batchId: c.metadata?.batchId || batchId,
               data: {
                 to: c.recipientEmail,
                 toName: c.recipientName,

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mail Status</title>
+<style>
+  :root{color-scheme:light dark}
+  *{box-sizing:border-box}
+  body{
+    font-family:ui-sans-serif,-apple-system,"Inter",Segoe UI,sans-serif;
+    background:#f3f4f6;margin:0;padding:24px;padding-top:calc(24px + env(safe-area-inset-top,0px));
+    min-height:100vh
+  }
+  .stage{display:flex;max-width:900px;margin:0 auto 48px}
+  .dash-row{display:flex;justify-content:space-between;align-items:center;width:100%}
+  .avatar{width:36px;height:36px;border-radius:50%;background:#0a0a0a;color:#fff;
+    display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;flex-shrink:0}
+
+  .anchor{position:relative; width:172px; height:58px}
+
+  .surface{
+    position:absolute; top:0; left:0;
+    background:#0a0a0a; color:#fff; border-radius:16px; overflow:hidden;
+    width:172px; height:58px;
+    transition:width .4s cubic-bezier(.3,1.15,.4,1), height .4s cubic-bezier(.3,1.15,.4,1);
+    box-shadow:0 1px 0 rgba(255,255,255,.05) inset, 0 10px 28px -12px rgba(0,0,0,.45);
+    cursor:pointer; z-index:30;
+  }
+  .surface.expanded{width:320px; height:250px; cursor:default; z-index:50}
+
+  .head{height:58px; display:flex; flex-direction:column; justify-content:center; gap:5px;
+    padding:0 16px; flex-shrink:0; transition:height .3s ease, padding-top .3s ease}
+  .surface.expanded .head{height:68px; justify-content:flex-start; padding-top:18px}
+  .eyebrow{display:flex; align-items:center; gap:7px; font-size:12.5px; letter-spacing:.02em;
+    color:rgba(255,255,255,.5); transition:font-size .25s ease}
+  .led{width:8px;height:8px;border-radius:50%;background:#3a3a3a;flex-shrink:0;position:relative;
+    box-shadow:0 1px 1px rgba(0,0,0,.4) inset; transition:width .25s ease, height .25s ease}
+  .led.on{background:radial-gradient(circle at 35% 30%, #7fe896, #34c759 65%);
+    box-shadow:0 0 0 1px rgba(52,199,89,.3), 0 0 10px 2px rgba(52,199,89,.8), 0 0 22px 4px rgba(52,199,89,.35)}
+  .led.on::after{content:'';position:absolute;inset:-5px;border-radius:50%;
+    border:1px solid rgba(52,199,89,.5); animation:ring 1.7s ease-out infinite}
+  .led.done{background:radial-gradient(circle at 35% 30%, #7fe896, #34c759 65%);
+    box-shadow:0 0 0 1px rgba(52,199,89,.3), 0 0 8px 1px rgba(52,199,89,.7)}
+  .led.warn{background:radial-gradient(circle at 35% 30%, #ff8178, #ff3b30 65%);
+    box-shadow:0 0 0 1px rgba(255,59,48,.3), 0 0 10px 2px rgba(255,59,48,.75)}
+  @keyframes ring{0%{transform:scale(.6);opacity:.8}100%{transform:scale(2.5);opacity:0}}
+
+  .title{font-size:15px; font-weight:600; letter-spacing:-.01em; color:#fff; transition:font-size .25s ease}
+  .title b{font-variant-numeric:tabular-nums; font-weight:600}
+
+  .surface.expanded .eyebrow{font-size:13.5px}
+  .surface.expanded .led{width:10px; height:10px}
+  .surface.expanded .title{font-size:18px}
+
+  .body{padding:4px 18px 18px; opacity:0; transition:opacity .2s; transition-delay:0s}
+  .surface.expanded .body{opacity:1; transition-delay:.16s}
+
+  .evt{font-size:14px; letter-spacing:.01em; color:rgba(255,255,255,.5); margin-bottom:16px}
+  .evt b{color:rgba(255,255,255,.92); font-weight:500}
+
+  .bar{height:6px; background:rgba(255,255,255,.1); border-radius:999px; overflow:hidden; margin-bottom:22px}
+  .bar-fill{height:100%; background:#34c759; width:0%; transition:width .4s ease;
+    box-shadow:0 0 8px 0 rgba(52,199,89,.6)}
+  .bar-fill.warn{background:#ff3b30; box-shadow:0 0 8px 0 rgba(255,59,48,.6)}
+
+  .grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px}
+  .stat .n{font-size:36px; font-weight:700; letter-spacing:-.03em; color:#fff; line-height:1;
+    font-variant-numeric:tabular-nums}
+  .stat .l{font-size:13px; letter-spacing:.03em; color:rgba(255,255,255,.5); margin-top:8px}
+  .stat.warn .n{color:#ff3b30}
+
+  .note{max-width:900px;margin:0 auto;color:#6b7280;font-size:13px;line-height:1.6}
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="dash-row">
+    <div class="anchor">
+      <div class="surface" id="surface" onclick="expand()">
+        <div class="head">
+          <div class="eyebrow"><span class="led on" id="led"></span>Mail batch</div>
+          <div class="title" id="title">Sending mails…</div>
+        </div>
+        <div class="body" onclick="event.stopPropagation()">
+          <div class="evt">Internship <span style="opacity:.5">·</span> senement</div>
+          <div class="bar"><div class="bar-fill" id="bar"></div></div>
+          <div class="grid">
+            <div class="stat"><div class="n" id="s-sent">312</div><div class="l">SENT</div></div>
+            <div class="stat"><div class="n" id="s-pending">188</div><div class="l">IN FLIGHT</div></div>
+            <div class="stat warn"><div class="n" id="s-failed">0</div><div class="l">FAILED</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="avatar">P</div>
+  </div>
+</div>
+
+<p class="note">Tightened the resting width so it hugs the text instead of floating in empty space. The LED now
+has an inner shadow plus a soft outward glow (radial fill, not a flat circle), the progress bar is heavier,
+and the expanded body text sizes up a step across the board.</p>
+
+<script>
+let sent=312, failed=0, total=500, poll, expanded=false;
+const surface = document.getElementById('surface');
+
+function expand(){
+  if(expanded) return;
+  expanded = true;
+  surface.classList.add('expanded');
+}
+function collapse(){
+  if(!expanded) return;
+  expanded = false;
+  surface.classList.remove('expanded');
+}
+
+let startedOutside = false;
+document.addEventListener('pointerdown', (e)=>{
+  startedOutside = expanded && !surface.contains(e.target);
+});
+document.addEventListener('click', (e)=>{
+  if(startedOutside && expanded && !surface.contains(e.target)) collapse();
+  startedOutside = false;
+});
+
+poll = setInterval(()=>{
+  if(sent+failed < total){
+    sent += Math.ceil(Math.random()*12);
+    if(Math.random()<0.08) failed+=1;
+    sent = Math.min(sent, total-failed);
+  } else {
+    clearInterval(poll);
+    const led = document.getElementById('led');
+    led.classList.remove('on');
+    led.classList.add(failed>0 ? 'warn' : 'done');
+    document.getElementById('title').textContent = failed>0 ? 'Finished · issues' : 'All mails sent';
+    if(failed>0) document.getElementById('bar').classList.add('warn');
+  }
+  document.getElementById('s-sent').textContent = sent;
+  document.getElementById('s-pending').textContent = Math.max(total-sent-failed,0);
+  document.getElementById('s-failed').textContent = failed;
+  document.getElementById('bar').style.width = ((sent+failed)/total*100)+'%';
+}, 500);
+</script>
+</body>
+</html>

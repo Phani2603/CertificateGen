@@ -160,8 +160,9 @@ export async function GET(
     }
     
     // We can query EmailJob by batchId since bulk-send assigns the chunk batchId
+    // Also include historyId for backward compatibility with older email jobs
     const allBatchJobs = await EmailJob.find({
-      batchId: { $in: registrationBatchIds },
+      batchId: { $in: [...registrationBatchIds, historyId] },
       type: 'certificate_notification'
     }).select('status').lean()
 

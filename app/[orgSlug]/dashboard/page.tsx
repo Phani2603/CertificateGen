@@ -23,6 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { SuspensionChecker } from "@/components/SuspensionChecker"
 import { MinimalFooter } from "@/components/minimal-footer"
 import DashboardToggle from '@/components/DashboardToggle'
+import { MailStatusComponent } from "@/components/dashboard/corporate/MailStatusComponent"
 
 interface PageProps {
   params: Promise<{
@@ -280,6 +281,10 @@ export default function CorporateDashboard({ params }: PageProps) {
                 ) : (
                   <span className="font-semibold text-gray-900 truncate block max-w-[200px] md:max-w-xs">{orgData.name}</span>
                 )}
+                
+                <div className="hidden sm:block">
+                  <MailStatusComponent />
+                </div>
               </div>
 
               {/* Center: Dashboard toggle */}

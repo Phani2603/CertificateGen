@@ -3,12 +3,7 @@
 import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
 
-const CreditsIcon = () => (
-  <svg width="17" height="18" viewBox="0 0 17 18" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
-    <path d="M13 0C15.2091 0 17 1.79086 17 4V14C17 16.2091 15.2091 18 13 18H4C1.79086 18 1.61066e-08 16.2091 0 14V4C0 1.79086 1.79086 8.0532e-09 4 0H13ZM3.94434 1C2.28753 1.00006 0.944336 2.34318 0.944336 4V14C0.944336 15.6568 2.28753 16.9999 3.94434 17H13.0557C14.7124 16.9999 16.0557 15.6568 16.0557 14V4C16.0557 2.34322 14.7124 1.00012 13.0557 1H3.94434Z" fill="currentColor"/>
-    <path d="M13 4.49998C1 1.50005 1 16.5 13 13.5" stroke="currentColor" strokeWidth="2.5"/>
-  </svg>
-)
+import Image from "next/image"
 
 const AnimatedDigit = ({ digit }: { digit: string }) => {
   if (digit === ',' || digit === '.') {
@@ -116,7 +111,7 @@ export function CreditsCounter({ organizationSlug }: { organizationSlug: string 
             </>
           )}
         </div>
-        <CreditsIcon />
+        <Image src="/credits-new.svg" alt="Credits" width={24} height={24} className="shrink-0" />
       </div>
     </div>
   )

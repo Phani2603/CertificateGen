@@ -64,6 +64,9 @@ export function CorporateHistorySection({ organizationId, organizationName }: Co
       if (!res.ok) throw new Error(data.error || 'Failed to queue emails');
       toast.success(data.message || 'Emails queued successfully!');
       
+      // Notify the dashboard header MailStatus component
+      window.dispatchEvent(new CustomEvent('mail-batch-started', { detail: { batchId: selectedHistoryItem.id } }));
+      
       // Refresh participants if modal is open
       if (showParticipantsModal) {
         setParticipantsPage(1); // will trigger a reload

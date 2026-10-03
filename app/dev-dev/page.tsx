@@ -9,6 +9,7 @@ import WorldMap from '@/components/ui/world-map'
 import FloatingLines from '@/components/FloatingLines'
 import { motion } from 'motion/react'
 import EmailForm from '@/components/dev-dev/email-modal'
+import { TrustpilotVariants } from '@/components/dev-dev/trustpilot-variants'
 
 export default function DevDevPage() {
     const [sampleText, setSampleText] = useState('The quick brown fox jumps over the lazy dog')
@@ -67,6 +68,20 @@ export default function DevDevPage() {
                     </div>
 
                     <EmailForm />
+                </section>
+
+                {/* Trustpilot Widget Showcase */}
+                <section>
+                    <div className="text-center mb-16">
+                        <h2 className="text-4xl font-bold text-gray-900 mb-4">Trustpilot Widget Variants</h2>
+                        <p className="text-lg text-gray-500">Different UI containers for the TrustBox widget</p>
+                    </div>
+
+                    <div className="flex justify-center">
+                        <div className="w-full max-w-3xl">
+                            <TrustpilotVariants />
+                        </div>
+                    </div>
                 </section>
 
                 {/* NEW: Problem Card Showcase Section */}
