@@ -925,15 +925,9 @@ export default function VerificationPage() {
                     <span className="text-xs text-slate-500">Event</span>
                     <p className="font-medium text-slate-900 text-sm mt-0.5">{certificate.eventName}</p>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <span className="text-xs text-slate-500">Event Date</span>
-                      <p className="text-slate-700 text-sm mt-0.5">{formatDate(certificate.eventDate)}</p>
-                    </div>
-                    <div>
-                      <span className="text-xs text-slate-500">Issued On</span>
-                      <p className="text-slate-700 text-sm mt-0.5">{formatDate(certificate.issueDate)}</p>
-                    </div>
+                  <div>
+                    <span className="text-xs text-slate-500">Issued On</span>
+                    <p className="text-slate-700 text-sm mt-0.5">{formatDate(certificate.issueDate)}</p>
                   </div>
                 </div>
               </div>

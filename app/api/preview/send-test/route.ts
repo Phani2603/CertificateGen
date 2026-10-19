@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateParticipantCertificateEmailHtml } from '@/lib/email-templates/participant-certificate';
 import { sendZeptoMail } from '@/lib/zeptomail-client';
+import { uploadBannerToS3 } from '@/lib/email-banner-generator';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,13 +23,16 @@ export async function POST(request: NextRequest) {
 
     const verificationUrl = `${baseUrl.replace(/\/$/, '')}/verify/${id}`;
 
+    // Upload baked banner to public S3 so external inboxes (like Gmail) can load it immediately
+    const heroBannerUrl = await uploadBannerToS3(name);
+
     const html = generateParticipantCertificateEmailHtml({
       recipientName: name,
       eventName: event,
       issuerName: issuer,
       verificationUrl,
       baseUrl,
-      styling,
+      heroBannerUrl,
     });
 
     const result = await sendZeptoMail({

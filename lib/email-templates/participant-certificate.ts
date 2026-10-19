@@ -15,6 +15,7 @@ export interface ParticipantEmailData {
   issuerName?: string;
   verificationUrl: string;
   baseUrl?: string;
+  heroBannerUrl?: string;
   styling?: {
     fontSize?: number | string;
     top?: number | string;
@@ -29,26 +30,20 @@ export function generateParticipantCertificateEmailHtml(data: ParticipantEmailDa
     issuerName = 'Certiflo',
     verificationUrl,
     baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.APP_URL_PRODUCTION || 'https://www.gocertiflo.com',
-    styling
   } = data;
 
   const normalizedBaseUrl = baseUrl.replace(/\/$/, '');
-  const heroBannerUrl = `${normalizedBaseUrl}/email-assets/hero-banner.png`;
-  const detailsIllustrationUrl = `${normalizedBaseUrl}/email-assets/details-illustration.png`;
-
-  // First name extraction for casual salutation, or full recipient name
   const firstName = recipientName.trim().split(' ')[0] || recipientName;
 
-  // Exact custom or tuned typography and alignment (finalized user values)
-  const fontSize = styling?.fontSize 
-    ? (typeof styling.fontSize === 'number' ? `${styling.fontSize}px` : styling.fontSize) 
-    : '44px';
-  const topPos = styling?.top 
-    ? (typeof styling.top === 'number' ? `${styling.top}%` : styling.top) 
-    : '10.4%';
-  const leftPos = styling?.left 
-    ? (typeof styling.left === 'number' ? `${styling.left}%` : styling.left) 
-    : '27.6%';
+  // Build dynamic server-side image API url with optional tuning params
+  let bannerQuery = `name=${encodeURIComponent(firstName)}`;
+  if (data.styling?.fontSize) bannerQuery += `&fontSize=${encodeURIComponent(String(data.styling.fontSize))}`;
+  if (data.styling?.top) bannerQuery += `&top=${encodeURIComponent(String(data.styling.top))}`;
+  if (data.styling?.left) bannerQuery += `&left=${encodeURIComponent(String(data.styling.left))}`;
+
+  const heroBannerUrl = data.heroBannerUrl || `${normalizedBaseUrl}/api/email/banner?${bannerQuery}`;
+
+  const detailsIllustrationUrl = `${normalizedBaseUrl}/email-assets/details-illustration.png`;
 
   return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
@@ -71,11 +66,6 @@ export function generateParticipantCertificateEmailHtml(data: ParticipantEmailDa
       .details-stack { display: block !important; width: 100% !important; }
       .details-img { max-width: 180px !important; margin: 12px auto 0 !important; }
       .footer-col { display: block !important; width: 100% !important; text-align: left !important; margin-bottom: 16px; }
-      .hero-name-overlay { 
-        font-size: 6.8vw !important; 
-        left: ${leftPos} !important; 
-        top: ${topPos} !important; 
-      }
     }
   </style>
   <!--[if mso]>
@@ -97,17 +87,16 @@ export function generateParticipantCertificateEmailHtml(data: ParticipantEmailDa
         
         <table align="center" width="600" border="0" cellpadding="0" cellspacing="0" role="presentation" class="ecw" style="max-width: 600px; width: 600px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
           
-          <!-- HERO BANNER SECTION (Cleaned bottom, perfect text alignment) -->
+          <!-- HERO BANNER SECTION (Baked PNG - zero CSS position:absolute, 100% Gmail & Outlook compatible) -->
           <tr>
             <td style="padding: 0; background-color: #ffffff; font-size: 0; line-height: 0;">
-              <div style="position: relative; max-width: 600px; width: 100%; margin: 0 auto; background-color: #ffffff; border-top-left-radius: 12px; border-top-right-radius: 12px; overflow: hidden;">
-                <img src="${heroBannerUrl}" alt="Hey! Your certificate is ready." width="600" style="display: block; width: 100%; max-width: 600px; height: auto; border: 0; outline: none; margin: 0; padding: 0;" />
-                
-                <!-- Dynamic receiver name overlay on the hero banner -->
-                <div class="hero-name-overlay" style="position: absolute; top: ${topPos}; left: ${leftPos}; font-family: 'Outfit', 'Plus Jakarta Sans', 'Poppins', -apple-system, BlinkMacSystemFont, Arial, sans-serif; font-size: ${fontSize}; font-weight: 700; color: #FFB04F; line-height: 1; letter-spacing: -0.02em; white-space: nowrap; pointer-events: none;">
-                  ${firstName}
-                </div>
-              </div>
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation">
+                <tr>
+                  <td style="padding: 0; border-top-left-radius: 12px; border-top-right-radius: 12px; overflow: hidden; font-size: 0; line-height: 0;">
+                    <img src="${heroBannerUrl}" alt="Hey ${firstName}! Your certificate is ready." width="600" style="display: block; width: 100%; max-width: 600px; height: auto; border: 0; outline: none; margin: 0; padding: 0; border-top-left-radius: 12px; border-top-right-radius: 12px;" />
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
 
