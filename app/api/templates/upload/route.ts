@@ -14,7 +14,7 @@ export const maxDuration = 60 // Maximum duration in seconds
  */
 export async function POST(request: NextRequest) {
   console.log('\n[API /templates/upload] ===== NEW REQUEST =====')
-  
+
   try {
     // Check S3 configuration
     console.log('[API /templates/upload] Checking S3 configuration...')
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     const eventId = formData.get('eventId') as string | null
     const organizationId = formData.get('organizationId') as string | null
     const fieldConfiguration = formData.get('fieldConfiguration') as string | null
-    
+
     console.log('[API /templates/upload] Received:', {
       hasFile: !!file,
       fileName: file?.name,
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     // Upload to S3
     console.log(`[Template Upload] Uploading template for event: ${eventId}`)
     const s3Key = await uploadTemplate(buffer, organizationId, eventId, file.name)
-    console.log(`[Template Upload] Successfully uploaded to S3: ${s3Key}`)
+    console.log(`[Template Upload] Successfully uploaded template               : ${s3Key}`)
 
     // Connect to MongoDB and update Event
     console.log('[API /templates/upload] Connecting to MongoDB...')

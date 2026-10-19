@@ -5,7 +5,7 @@ import { getProviderById, validateProviderConfig } from '@/lib/email-providers'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { providerId, to, subject, body: emailBody, cc, bcc } = body
+    const { providerId, to, subject, body: emailBody, cc, bcc, html: rawHtml } = body
 
     // Validate required fields
     if (!providerId || !to || !subject || !emailBody) {
@@ -88,6 +88,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Determine HTML vs text
+    const hasHtmlTags = /<[a-z][\s\S]*>/i.test(emailBody)
+    const formattedHtml = rawHtml || (hasHtmlTags ? emailBody : emailBody.replace(/\n/g, '<br>'))
+    const plainText = hasHtmlTags ? emailBody.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : emailBody
+
     // Send email
     const info = await transporter.sendMail({
       from: `"${provider.displayName}" <${provider.email}>`,
@@ -95,8 +100,8 @@ export async function POST(request: NextRequest) {
       cc: cc || undefined,
       bcc: bcc || undefined,
       subject,
-      text: emailBody,
-      html: emailBody.replace(/\n/g, '<br>'), // Simple HTML conversion
+      text: plainText,
+      html: formattedHtml,
     })
 
     console.log('Email sent successfully:', {

@@ -50,6 +50,7 @@ import {
 import { format } from "date-fns"
 import { toast } from "sonner"
 import Link from "next/link"
+import ContactComposeBox from "@/components/admin/ContactComposeBox"
 
 interface ContactForm {
   _id: string
@@ -88,7 +89,19 @@ export default function ContactFormsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [refreshing, setRefreshing] = useState(false)
   const [selectedForm, setSelectedForm] = useState<ContactForm | null>(null)
+  const [composeForm, setComposeForm] = useState<ContactForm | null>(null)
+  const [isComposeOpen, setIsComposeOpen] = useState(false)
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false)
+
+  const openReply = (form: ContactForm) => {
+    setComposeForm(form)
+    setIsComposeOpen(true)
+  }
+
+  const openNewCompose = () => {
+    setComposeForm(null)
+    setIsComposeOpen(true)
+  }
   const [notesDialogOpen, setNotesDialogOpen] = useState(false)
   const [adminNotes, setAdminNotes] = useState("")
   const [selectedForms, setSelectedForms] = useState<Set<string>>(new Set())
@@ -481,12 +494,14 @@ export default function ContactFormsPage() {
                     <TableCell>
                       <div className="flex flex-col">
                         <span className="font-medium text-gray-900">{form.name}</span>
-                        <a
-                          href={`mailto:${form.email}`}
-                          className="text-sm text-blue-600 hover:underline"
+                        <button
+                          type="button"
+                          onClick={() => openReply(form)}
+                          title={`Click to reply to ${form.email}`}
+                          className="text-sm text-blue-600 hover:underline text-left cursor-pointer"
                         >
                           {form.email}
-                        </a>
+                        </button>
                       </div>
                     </TableCell>
                     <TableCell className="max-w-md">
@@ -532,8 +547,9 @@ export default function ContactFormsPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => window.open(`mailto:${form.email}?subject=Re: Your Contact Form Submission`)}
-                          className="h-8 w-8 p-0"
+                          onClick={() => openReply(form)}
+                          title={`Reply to ${form.name}`}
+                          className="h-8 w-8 p-0 hover:text-[#00D492]"
                         >
                           <Send className="w-4 h-4" />
                         </Button>
@@ -640,12 +656,17 @@ export default function ContactFormsPage() {
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-700">Email</label>
-                    <a
-                      href={`mailto:${selectedForm.email}`}
-                      className="text-blue-600 hover:underline mt-1 block"
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDetailsDialogOpen(false)
+                        openReply(selectedForm)
+                      }}
+                      title={`Click to reply to ${selectedForm.email}`}
+                      className="text-blue-600 hover:underline mt-1 block text-left cursor-pointer"
                     >
                       {selectedForm.email}
-                    </a>
+                    </button>
                   </div>
                 </div>
 
@@ -698,7 +719,10 @@ export default function ContactFormsPage() {
                   Add Notes
                 </Button>
                 <Button
-                  onClick={() => window.open(`mailto:${selectedForm.email}?subject=Re: Your Contact Form Submission`)}
+                  onClick={() => {
+                    setDetailsDialogOpen(false)
+                    openReply(selectedForm)
+                  }}
                   className="bg-[#00D492] hover:bg-[#00D492]/90"
                 >
                   <Send className="w-4 h-4 mr-2" />
@@ -741,6 +765,18 @@ export default function ContactFormsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Gmail-Style Compose Box (strictly scoped to this contact-forms page) */}
+      <ContactComposeBox
+        form={composeForm}
+        isOpen={isComposeOpen}
+        onClose={() => {
+          setIsComposeOpen(false)
+          setComposeForm(null)
+        }}
+        onOpenNew={openNewCompose}
+        onSuccess={() => fetchContactForms()}
+      />
     </div>
   )
 }
