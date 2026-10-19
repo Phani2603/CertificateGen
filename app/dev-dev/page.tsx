@@ -64,7 +64,15 @@ export default function DevDevPage() {
                 <section>
                     <div className="text-center mb-8">
                         <h2 className="text-3xl font-bold text-gray-900 mb-2">Email Testing</h2>
-                        <p className="text-gray-600">Test email providers and send test emails</p>
+                        <p className="text-gray-600 mb-4">Test email providers and send test emails</p>
+                        <div className="flex justify-center">
+                            <a 
+                                href="/dev-dev/email-preview" 
+                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm transition-all shadow-md"
+                            >
+                                <span>📧</span> Open Participant Certificate Email Preview
+                            </a>
+                        </div>
                     </div>
 
                     <EmailForm />

@@ -5,6 +5,7 @@ import connectDB from '@/lib/mongodb';
 import Certificate from '@/models/Certificate';
 import EmailJob from '@/models/EmailJob';
 import CertificateHistory from '@/models/CertificateHistory';
+import { generateParticipantCertificateEmailHtml } from '@/lib/email-templates/participant-certificate';
 
 export const maxDuration = 60; // Max execution time for Vercel Hobby
 
@@ -92,26 +93,39 @@ export async function POST(request: NextRequest) {
       }
 
       // 4. Create or Reset EmailJobs in bulk
-      const bulkOps = toQueue.map((c: any) => ({
-        updateOne: {
-          filter: { certificateId: c._id, type: EMAIL_TYPE },
-          update: {
-            $set: {
-              status: 'pending',
-              attempts: 0,
-              lastError: '',
-              batchId: c.metadata?.batchId || batchId,
-              data: {
-                to: c.recipientEmail,
-                toName: c.recipientName,
-                subject: 'Your Certificate is Ready',
-                html: `<p>Hi ${c.recipientName},</p><p>Your certificate is ready. View and download it here: <a href="${baseUrl}/verify/${c.verificationId}">${baseUrl}/verify/${c.verificationId}</a></p>`
+      const bulkOps = toQueue.map((c: any) => {
+        const issuerName = c.organizationName || c.clubName || 'Certiflo';
+        const verificationUrl = `${baseUrl.replace(/\/$/, '')}/verify/${c.verificationId}`;
+        const html = generateParticipantCertificateEmailHtml({
+          recipientName: c.recipientName,
+          eventName: c.eventName,
+          issuerName,
+          verificationUrl,
+          baseUrl,
+        });
+
+        return {
+          updateOne: {
+            filter: { certificateId: c._id, type: EMAIL_TYPE },
+            update: {
+              $set: {
+                status: 'pending',
+                attempts: 0,
+                lastError: '',
+                batchId: c.metadata?.batchId || batchId,
+                data: {
+                  to: c.recipientEmail,
+                  toName: c.recipientName,
+                  fromName: issuerName,
+                  subject: `🎓 Congratulations! Your Certificate for ${c.eventName} is Ready`,
+                  html,
+                }
               }
-            }
-          },
-          upsert: true
-        }
-      }));
+            },
+            upsert: true
+          }
+        };
+      });
 
       await EmailJob.bulkWrite(bulkOps);
       
@@ -133,11 +147,22 @@ export async function POST(request: NextRequest) {
 
       // We explicitly upsert each job, resetting its status to 'pending'
       const upsertPromises = certs.map(async (c: any) => {
+        const issuerName = c.organizationName || c.clubName || 'Certiflo';
+        const verificationUrl = `${baseUrl.replace(/\/$/, '')}/verify/${c.verificationId}`;
+        const html = generateParticipantCertificateEmailHtml({
+          recipientName: c.recipientName,
+          eventName: c.eventName,
+          issuerName,
+          verificationUrl,
+          baseUrl,
+        });
+
         const payloadData = {
           to: c.recipientEmail,
           toName: c.recipientName,
-          subject: 'Your Certificate is Ready',
-          html: `<p>Hi ${c.recipientName},</p><p>Your certificate is ready. View and download it here: <a href="${baseUrl}/verify/${c.verificationId}">${baseUrl}/verify/${c.verificationId}</a></p>`
+          fromName: issuerName,
+          subject: `🎓 Congratulations! Your Certificate for ${c.eventName} is Ready`,
+          html,
         };
 
         const job = await EmailJob.findOneAndUpdate(

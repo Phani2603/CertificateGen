@@ -16,6 +16,7 @@ export interface ZeptoMailResponse {
 export interface SendEmailPayload {
   to: string;
   toName?: string;
+  fromName?: string;
   subject: string;
   html: string;
 }
@@ -47,7 +48,7 @@ export async function sendZeptoMail(payload: SendEmailPayload): Promise<ZeptoMai
       body: JSON.stringify({
         from: { 
           address: senderEmail,
-          name: process.env.ZEPTOMAIL_SENDER_NAME || 'GoCertiflo'
+          name: payload.fromName || process.env.ZEPTOMAIL_SENDER_NAME || 'GoCertiflo'
         },
         to: [
           {
