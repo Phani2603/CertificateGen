@@ -25,6 +25,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { useIslandAlerts } from "@/components/ui/island-alerts"
 
@@ -50,6 +51,7 @@ export default function OrganizationsPage() {
   const [activeTab, setActiveTab] = useState("all")
   const { toast } = useToast()
   const { addAlert } = useIslandAlerts()
+  const router = useRouter()
 
   useEffect(() => {
     fetchOrgs()
@@ -224,13 +226,9 @@ export default function OrganizationsPage() {
                                 Copy ID
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              {org.orgType === 'corporate' && (
-                                <DropdownMenuItem asChild>
-                                  <a href={`/${org.slug}/dashboard`} target="_blank" rel="noopener noreferrer">
+                              <DropdownMenuItem onClick={() => router.push(`/admin/organizations/${org._id}/view`)}>
                                     <ExternalLink className="mr-2 h-4 w-4" /> View Dashboard
-                                  </a>
-                                </DropdownMenuItem>
-                              )}
+                              </DropdownMenuItem>
                               <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(org._id, org.name)}>
                                 <Trash2 className="mr-2 h-4 w-4" /> Delete Org
                               </DropdownMenuItem>
