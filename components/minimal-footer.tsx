@@ -35,6 +35,17 @@ export function MinimalFooter() {
           >
             Privacy Policy
           </Link>
+
+          {/* Divider */}
+          <span className="hidden sm:inline text-gray-300">|</span>
+
+          {/* Terms of Service Link */}
+          <Link 
+            href="/terms" 
+            className="hover:text-[#21808D] transition-colors underline-offset-2 hover:underline"
+          >
+            Terms & Conditions
+          </Link>
         </div>
       </div>
     </footer>

@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ArrowLeft, Eye, EyeOff } from "lucide-react"
 import Image from "next/image"
+import { TermsModal } from "@/components/terms-modal"
 import { Poppins, Raleway } from "next/font/google"
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"] })
@@ -32,6 +33,7 @@ function SignupContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [showTermsModal, setShowTermsModal] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -62,6 +64,12 @@ function SignupContent() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+
+    if (!agreedToTerms) {
+      setShowTermsModal(true)
+      return
+    }
+
     setIsLoading(true)
     setError("")
 
@@ -102,6 +110,14 @@ function SignupContent() {
     }
   }
   return (
+    <>
+      <TermsModal
+        isOpen={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+        onAgree={() => setAgreedToTerms(true)}
+        showAgreeButton={true}
+        requireScrollToBottom={true}
+      />
       <div className={`min-h-screen bg-gray-50 flex items-center justify-center p-2 md:p-3 ${poppins.className}`}>
         {/* Mobile Back Button */}
         <div className="md:hidden fixed top-2 left-2 z-10">
@@ -293,33 +309,49 @@ function SignupContent() {
             )}
 
             {/* Terms & Policies Acceptance */}
-            <div className="flex items-start gap-2 p-2.5 bg-gray-50 rounded-lg border border-gray-100">
+            <div className="flex items-start gap-2.5 p-3 bg-gray-50 rounded-lg border border-gray-200">
               <Checkbox
                 id="terms"
                 checked={agreedToTerms}
-                onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+                onCheckedChange={(checked) => {
+                  if (checked && !agreedToTerms) {
+                    setShowTermsModal(true)
+                  } else {
+                    setAgreedToTerms(Boolean(checked))
+                  }
+                }}
                 className="mt-0.5"
               />
               <div className="flex-1">
-                <Label htmlFor="terms" className="text-[10px] font-medium cursor-pointer leading-relaxed">
-                  I agree to the Terms & Policies
-                </Label>
-                <p className="text-[9px] text-gray-600 mt-0.5 leading-relaxed">
+                <div 
+                  onClick={() => {
+                    if (!agreedToTerms) setShowTermsModal(true)
+                  }}
+                  className="cursor-pointer"
+                >
+                  <div className="text-xs font-semibold leading-relaxed text-black flex items-center justify-between">
+                    <span>I agree to the Terms & Policies</span>
+                    {agreedToTerms ? (
+                      <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">✓ Accepted</span>
+                    ) : (
+                      <span className="text-[11px] font-bold text-black underline bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded border border-gray-300">
+                        Read &amp; scroll to accept →
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">
                   By signing up, you agree to our{" "}
-                  <Link href="/TERMS&CONDTIONS.docx" target="_blank" className="text-emerald-600 hover:underline font-medium">
+                  <button
+                    type="button"
+                    onClick={() => setShowTermsModal(true)}
+                    className="text-black hover:underline font-semibold cursor-pointer"
+                  >
                     Terms & Conditions
-                  </Link>
-                  {", "}
-                  <Link href="/PRIVACY POLICY.docx" target="_blank" className="text-emerald-600 hover:underline font-medium">
-                    Privacy Policy
-                  </Link>
-                  {", "}
-                  <Link href="/USER AGREEMENT.docx" target="_blank" className="text-emerald-600 hover:underline font-medium">
-                    User Agreement
-                  </Link>
+                  </button>
                   {" and "}
-                  <Link href="/USER POLICIES.docx" target="_blank" className="text-emerald-600 hover:underline font-medium">
-                    User Policies
+                  <Link href="/privacy-policy" target="_blank" className="text-black hover:underline font-semibold">
+                    Privacy Policy
                   </Link>
                   .
                 </p>
@@ -329,7 +361,7 @@ function SignupContent() {
             <Button
               type="submit"
               className="w-full h-9 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-lg transition-all active:scale-[0.98] text-xs"
-              disabled={isLoading || !agreedToTerms}
+              disabled={isLoading}
             >
               {isLoading ? 'Creating account...' : 'Create account'}
             </Button>
@@ -344,6 +376,7 @@ function SignupContent() {
         </Card>
       </div>
     </div>
+    </>
   )
 }
 

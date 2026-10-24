@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { CookieIcon, X } from "lucide-react"
+import Link from "next/link"
 import NeumorphButton from "@/components/ui/neumorph-button"
 
 export default function CookieConsent() {
@@ -70,8 +71,8 @@ export default function CookieConsent() {
                         </div>
 
                         <div className="mt-4 flex gap-4 text-xs text-gray-500">
-                            <a href="#" className="hover:text-gray-900 hover:underline">Privacy Policy</a>
-                            <a href="#" className="hover:text-gray-900 hover:underline">Terms of Service</a>
+                            <Link href="/privacy-policy" className="hover:text-gray-900 hover:underline">Privacy Policy</Link>
+                            <Link href="/terms" className="hover:text-gray-900 hover:underline">Terms of Service</Link>
                         </div>
                     </div>
                 </motion.div>

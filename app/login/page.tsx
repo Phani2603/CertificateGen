@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card"
 import { ArrowLeft, Eye, EyeOff } from "lucide-react"
 import Image from "next/image"
 import { ForgotPasswordModal } from "@/components/ForgotPasswordModal"
+import { TermsModal } from "@/components/terms-modal"
 import { Poppins, Raleway } from "next/font/google"
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"] })
@@ -24,6 +25,7 @@ function LoginContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [showForgotPassword, setShowForgotPassword] = useState(false)
+  const [showTermsModal, setShowTermsModal] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [hasCheckedRedirect, setHasCheckedRedirect] = useState(false)
   const [formData, setFormData] = useState({
@@ -142,6 +144,11 @@ function LoginContent() {
       <ForgotPasswordModal
         isOpen={showForgotPassword}
         onClose={() => setShowForgotPassword(false)}
+      />
+      <TermsModal
+        isOpen={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+        showAgreeButton={false}
       />
 
       <div className={`min-h-screen bg-gray-50 flex items-center justify-center p-2 md:p-3 ${poppins.className}`}>
@@ -324,22 +331,18 @@ function LoginContent() {
               </Button>
             </form>
 
-            <p className="text-center text-[10px] text-gray-500 mt-3 leading-relaxed">
+            <p className="text-center text-xs text-gray-500 mt-3 leading-relaxed">
               By signing in, you agree to our{" "}
-              <Link href="/TERMS&CONDTIONS.docx" target="_blank" className="text-emerald-600 hover:underline font-medium">
+              <button
+                type="button"
+                onClick={() => setShowTermsModal(true)}
+                className="text-black hover:underline font-semibold cursor-pointer"
+              >
                 Terms & Conditions
-              </Link>
-              {", "}
-              <Link href="/PRIVACY POLICY.docx" target="_blank" className="text-emerald-600 hover:underline font-medium">
-                Privacy Policy
-              </Link>
-              {", "}
-              <Link href="/USER AGREEMENT.docx" target="_blank" className="text-emerald-600 hover:underline font-medium">
-                User Agreement
-              </Link>
+              </button>
               {" and "}
-              <Link href="/USER POLICIES.docx" target="_blank" className="text-emerald-600 hover:underline font-medium">
-                User Policies
+              <Link href="/privacy-policy" target="_blank" className="text-black hover:underline font-semibold">
+                Privacy Policy
               </Link>
               .
             </p>

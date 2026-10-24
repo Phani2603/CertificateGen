@@ -121,9 +121,9 @@ export default function SiteFooterGlassmorphism() {
                         <div ref={legalRef}>
                             <FooterTitle>Legal</FooterTitle>
                             <FooterList>
-                                <FooterLink href="#">Privacy Policy</FooterLink>
-                                <FooterLink href="#">Terms of Service</FooterLink>
-                                <FooterLink href="#">Cookie Policy</FooterLink>
+                                <FooterLink href="/privacy-policy">Privacy Policy</FooterLink>
+                                <FooterLink href="/terms">Terms of Service</FooterLink>
+                                <FooterLink href="/terms">Cookie Policy</FooterLink>
                             </FooterList>
                             <div className="mt-8">
                                 <TrustBoxWidget />
